@@ -1,0 +1,3 @@
+# Python is only needed for the helper tools in tools/. The app itself is Godot.
+# Python 3.9 or newer.
+Pillow>=10.0        # tools/validate_project.py checks the texture pack

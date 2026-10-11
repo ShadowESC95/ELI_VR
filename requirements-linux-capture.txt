@@ -1,0 +1,5 @@
+# Live desktop on Linux/Wayland (native/desktop_portal_bridge).
+# Distro packages are the easy way: tools/install-linux-wayland-capture-deps.sh
+# pip works too, but still needs the system GStreamer + PipeWire plugins.
+dbus-python>=1.3
+PyGObject>=3.42

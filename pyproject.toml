@@ -1,0 +1,31 @@
+# ELI VR is a Godot project. This file covers the Python helper tools only.
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "eli-vr-tools"
+version = "0.6.3"
+description = "Helper tools for ELI VR: config CLI, project checks, release packaging"
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [{ name = "ShadowESC95" }]
+keywords = ["vr", "openxr", "godot", "spatial", "workspace"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: Microsoft :: Windows",
+]
+dependencies = []
+
+[project.optional-dependencies]
+checks = ["Pillow>=10.0"]
+linux-capture = ["dbus-python>=1.3", "PyGObject>=3.42"]
+
+[project.urls]
+Repository = "https://github.com/ShadowESC95/ELI_VR"
+
+# Nothing to install as a package; the tools run in place from tools/.
+[tool.setuptools]
+packages = []
