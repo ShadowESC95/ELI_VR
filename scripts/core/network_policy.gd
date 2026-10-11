@@ -7,6 +7,10 @@ enum Mode {
     ONLINE
 }
 
+# An IPv6 host is written inside brackets, as in http://[::1]:8081
+const IPV6_OPEN := "["
+const IPV6_CLOSE := "]"
+
 var mode: Mode = Mode.LOCAL_ONLY
 var allow_loopback := true
 var allow_remote := false
@@ -48,9 +52,13 @@ func permits_host(host: String) -> bool:
     return permits_remote()
 
 func permits_url(url: String) -> bool:
+    # Judge the host itself. A prefix test would pass "127.0.0.1.example.com".
     var u := url.strip_edges().to_lower()
-    if u.begins_with("ws://127.0.0.1") or u.begins_with("ws://localhost") or u.begins_with("ws://[::1]"):
-        return permits_loopback()
-    if u.begins_with("wss://127.0.0.1") or u.begins_with("wss://localhost") or u.begins_with("wss://[::1]"):
-        return permits_loopback()
-    return permits_remote()
+    var rest := u.get_slice("://", 1) if u.contains("://") else u
+    var authority := rest.get_slice("/", 0)
+    var host := authority
+    if authority.begins_with(IPV6_OPEN):
+        host = authority.get_slice(IPV6_CLOSE, 0) + IPV6_CLOSE
+    else:
+        host = authority.get_slice(":", 0)
+    return permits_host(host)

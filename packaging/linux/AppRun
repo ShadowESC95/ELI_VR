@@ -1,0 +1,4 @@
+#!/bin/bash
+# AppImage entry point: the same launcher a download or a checkout uses.
+HERE="$(dirname "$(readlink -f "$0")")"
+exec "$HERE/usr/share/eli-vr/launch/eli-vr.sh" "$@"

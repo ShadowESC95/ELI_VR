@@ -13,6 +13,7 @@ A headset is optional everywhere. Without one, ELI VR opens as a normal 3D windo
 - [macOS](#macos)
 - [Headsets and OpenXR runtimes](#headsets-and-openxr-runtimes)
 - [Live desktop screen](#live-desktop-screen)
+- [With ELI v3](#with-eli-v3)
 - [Where your settings live](#where-your-settings-live)
 - [Uninstall](#uninstall)
 - [Troubleshooting](#troubleshooting)
@@ -315,6 +316,23 @@ All three helpers read the same optional variables:
 Frames only ever travel over `127.0.0.1:47831`. The helper refuses to listen on anything else.
 
 ---
+
+## With ELI v3
+
+Optional. ELI VR runs on its own; with ELI v3 on the same machine, ELI is present in the rooms and you can talk to him.
+
+1. Start ELI v3's local server (in ELI v3: `./scripts/eli_serve.sh`, or the server switch in its window).
+2. Start ELI VR with the link on:
+
+   | | From source | Release build |
+   |---|---|---|
+   | Linux | `./launch/run-linux.sh -- --eli-link=on` | `./ELI-VR.x86_64 -- --eli-link=on` |
+   | Windows | `.\launch\run-windows.ps1 -Eli` | `.\ELI-VR.exe -- --eli-link=on` |
+   | macOS | `./launch/run-macos.command -- --eli-link=on` | `"ELI VR.app/Contents/MacOS/ELI VR" -- --eli-link=on` |
+
+3. Hold **A** / **X** on a controller, or **T** on the keyboard, to talk. Your OS may ask for microphone permission the first time.
+
+To have ELI v3 list ELI VR among its bundles and start it for you, run `python3 tools/register_eli_bundle.py` once. More in [ELI_INTEGRATION.md](ELI_INTEGRATION.md).
 
 ## Where your settings live
 

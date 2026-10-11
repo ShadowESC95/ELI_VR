@@ -2,8 +2,7 @@
   "schema_version": 1,
   "app": {
     "name": "ELI VR",
-    "standalone": true,
-    "future_eli_bridge_enabled": false
+    "standalone": true
   },
   "xr": {
     "mode": "auto",
@@ -93,9 +92,9 @@
   },
   "eli_bridge": {
     "enabled": false,
-    "transport": "websocket",
-    "endpoint": "ws://127.0.0.1:47832",
-    "token_env": "ELI_VR_TOKEN"
+    "endpoint": "http://127.0.0.1:8081",
+    "token_env": "ELI_VR_TOKEN",
+    "voice": true
   },
   "audio": {
     "enabled": true,

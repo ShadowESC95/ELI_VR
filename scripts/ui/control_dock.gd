@@ -105,6 +105,11 @@ func setup(p_app: Node, registry, config) -> void:
     console_toggle.toggled.connect(func(v): app.set_spatial_console_enabled(v))
     root.add_child(console_toggle)
 
+    var exit_button := Button.new()
+    exit_button.text = "Exit ELI VR"
+    exit_button.pressed.connect(func(): app.request_exit())
+    root.add_child(exit_button)
+
     var help := RichTextLabel.new()
     help.fit_content = true
     help.bbcode_enabled = true

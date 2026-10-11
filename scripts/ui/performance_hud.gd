@@ -24,3 +24,9 @@ func _process(_delta: float) -> void:
         str(app.desktop_status()),
         opt
     ]
+    var eli: String = str(app.eli_status())
+    if not eli.is_empty():
+        label.text += "  |  " + eli
+    var leaving: String = str(app.exit_notice())
+    if not leaving.is_empty():
+        label.text += "  |  " + leaving

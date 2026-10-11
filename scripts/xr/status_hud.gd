@@ -36,3 +36,9 @@ func _process(delta: float) -> void:
         + "%s\n" % str(app.current_environment_name())
         + "QUALITY %s  •  DESKTOP %s" % [quality.to_upper(), desktop]
     )
+    var eli: String = str(app.eli_status())
+    if not eli.is_empty():
+        label.text += "\n" + eli
+    var leaving: String = str(app.exit_notice())
+    if not leaving.is_empty():
+        label.text += "\n" + leaving

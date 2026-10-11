@@ -25,8 +25,28 @@ def config():
         base=deep_merge(base,json.loads(USER.read_text()))
     return base
 
-def save(data):
+def saved_settings():
+    """Where the app keeps the settings changed inside it, per user."""
+    if sys.platform=="win32":
+        base=Path(os.environ.get("APPDATA",Path.home()/"AppData"/"Roaming"))/"Godot"
+    elif sys.platform=="darwin":
+        base=Path.home()/"Library"/"Application Support"/"Godot"
+    else:
+        base=Path(os.environ.get("XDG_DATA_HOME",Path.home()/".local"/"share"))/"godot"
+    return base/"app_userdata"/"ELI VR"/"eli_vr"/"settings.json"
+
+def save(data, change):
     USER.write_text(json.dumps(data,indent=2)+"\n")
+    # The app loads its own saved settings last, so a change made only here
+    # would be overruled by them. Make the same change there too.
+    saved=saved_settings()
+    if saved.exists():
+        try:
+            current=json.loads(saved.read_text())
+        except (OSError, ValueError):
+            return
+        saved.write_text(json.dumps(deep_merge(current,change),indent="\t"))
+        print(f"Updated {saved}")
 
 def set_path(data,path,value):
     cur=data
@@ -62,6 +82,7 @@ def main():
     p=sub.add_parser("quality"); p.add_argument("id",choices=["low","medium","high","ultra"])
     p=sub.add_parser("xr"); p.add_argument("mode",choices=["auto","on","off"])
     p=sub.add_parser("desktop"); p.add_argument("mode",choices=["on","off"])
+    p=sub.add_parser("eli"); p.add_argument("mode",choices=["on","off"])
     p=sub.add_parser("set"); p.add_argument("path"); p.add_argument("value")
 
     p=sub.add_parser("launch")
@@ -86,24 +107,28 @@ def main():
         for k in THEMES: print(k)
         return
 
+    # Each command is one small change, applied to the project override and
+    # to the settings the app has saved for this user.
+    change={}
     if args.cmd=="room":
-        set_path(data,"world.room",args.id); set_path(data,"world.environment_override","")
+        change={"world":{"room":args.id,"environment_override":""}}
     elif args.cmd=="environment":
-        set_path(data,"world.environment_override","" if args.id=="default" else args.id)
+        change={"world":{"environment_override":"" if args.id=="default" else args.id}}
     elif args.cmd=="theme":
-        set_path(data,"world.theme",args.id)
+        change={"world":{"theme":args.id}}
     elif args.cmd=="quality":
-        profile=json.loads((ROOT/f"config/profiles/{args.id}.json").read_text())
-        data=deep_merge(data,profile)
+        change=json.loads((ROOT/f"config/profiles/{args.id}.json").read_text())
     elif args.cmd=="xr":
-        set_path(data,"xr.mode",args.mode)
+        change={"xr":{"mode":args.mode}}
     elif args.cmd=="desktop":
-        set_path(data,"desktop.enabled",args.mode=="on")
+        change={"desktop":{"enabled":args.mode=="on"}}
+    elif args.cmd=="eli":
+        change={"eli_bridge":{"enabled":args.mode=="on"}}
     elif args.cmd=="set":
         raw=args.value
         try: val=json.loads(raw)
         except Exception: val=raw
-        set_path(data,args.path,val)
+        set_path(change,args.path,val)
     elif args.cmd=="launch":
         godot=find_godot()
         if not godot:
@@ -117,7 +142,7 @@ def main():
         os.execv(godot,cmd)
 
     if args.cmd!="launch":
-        save(data)
+        save(deep_merge(data,change), change)
         print(f"Updated {USER}")
 
 if __name__=="__main__":

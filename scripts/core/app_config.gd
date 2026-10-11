@@ -57,6 +57,10 @@ func _apply_cmdline() -> void:
             apply_profile(arg.get_slice("=", 1))
         elif arg.begins_with("--eli-xr="):
             set_value("xr.mode", arg.get_slice("=", 1))
+        elif arg.begins_with("--eli-link="):
+            set_value("eli_bridge.enabled", arg.get_slice("=", 1) == "on")
+        elif arg.begins_with("--eli-endpoint="):
+            set_value("eli_bridge.endpoint", arg.get_slice("=", 1))
         elif arg == "--eli-desktop=off":
             set_value("desktop.enabled", false)
         elif arg == "--eli-desktop=on":

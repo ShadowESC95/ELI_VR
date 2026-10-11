@@ -54,11 +54,11 @@ An empty `environment_override` means the symbolic room chooses its normal envir
 
 `desktop.curvature_reserved` and `desktop.interactive_input_reserved` are intentionally present for the later production desktop bridge.
 
-## Future ELI integration
+## ELI link
 
-`eli_bridge.enabled` is false.
+`eli_bridge.enabled` is false by default: ELI VR runs on its own.
 
-The path is reserved now so the standalone world does not need architectural surgery later.
+Switch it on to have ELI v3 present in the rooms and to talk to him. See [ELI_INTEGRATION.md](ELI_INTEGRATION.md) for the settings and what moves between the two.
 
 ## Network
 

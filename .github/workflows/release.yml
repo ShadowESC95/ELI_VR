@@ -255,8 +255,10 @@ jobs:
           # Each package keeps the repo's layout, so the launchers and
           # docs/INSTALL.md work the same from a download as from a clone.
           common() {
-            cp README.md VERSION ELI-VR-0.2-environment-preview.jpg "$1/"
+            cp README.md VERSION ELI-VR-0.2-environment-preview.jpg icon.svg "$1/"
             cp -r docs "$1/docs"
+            mkdir -p "$1/tools"
+            cp tools/register_eli_bundle.py "$1/tools/"
           }
 
           L="ELI_VR-$VERSION-linux-x86_64"

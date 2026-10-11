@@ -42,6 +42,7 @@ python3 tools/eli_vr.py theme solar
 python3 tools/eli_vr.py quality high
 python3 tools/eli_vr.py xr auto
 python3 tools/eli_vr.py desktop on
+python3 tools/eli_vr.py eli on
 
 python3 tools/eli_vr.py set desktop.distance_m 4.5
 python3 tools/eli_vr.py set desktop.width_m 6.5

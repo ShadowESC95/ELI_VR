@@ -72,11 +72,11 @@ macOS   -> IOSurface/Metal
 
 The `DesktopSurface` API does not need to change when these are introduced.
 
-## ELI v3 integration seam
+## ELI v3 link
 
-`scripts/core/future_eli_bridge.gd` is disabled.
+`scripts/eli/` holds the link: `eli_link.gd` (the socket and HTTP calls to ELI v3's local server), `eli_presence.gd` (ELI in the room) and `eli_voice.gd` (push to talk). Off by default.
 
-The future ELI process can publish room/world state through a local transport and drive this application without moving ELI's domain model into Godot.
+ELI v3 publishes its room and world state over a local socket and this application draws it, without moving ELI's domain model into Godot. See [ELI_INTEGRATION.md](ELI_INTEGRATION.md).
 
 That keeps:
 

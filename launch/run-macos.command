@@ -10,10 +10,15 @@ if [ -z "$GODOT" ] || [ ! -x "$GODOT" ]; then
   exit 1
 fi
 
-# Same modes as the Linux and Windows launchers.
-case "${1:-auto}" in
-  xr)     exec "$GODOT" --path "$ROOT" --xr-mode on ;;
-  flat)   exec "$GODOT" --path "$ROOT" --xr-mode off ;;
-  compat) exec "$GODOT" --path "$ROOT" --rendering-method gl_compatibility ;;
-  *)      exec "$GODOT" --path "$ROOT" ;;
+# Same modes as the Linux and Windows launchers. Anything after the mode goes
+# to Godot as it is:  ./launch/run-macos.command flat -- --eli-link=on
+MODE="auto"
+case "${1:-}" in
+  auto|xr|flat|compat) MODE="$1"; shift ;;
+esac
+case "$MODE" in
+  xr)     exec "$GODOT" --path "$ROOT" --xr-mode on "$@" ;;
+  flat)   exec "$GODOT" --path "$ROOT" --xr-mode off "$@" ;;
+  compat) exec "$GODOT" --path "$ROOT" --rendering-method gl_compatibility "$@" ;;
+  *)      exec "$GODOT" --path "$ROOT" "$@" ;;
 esac

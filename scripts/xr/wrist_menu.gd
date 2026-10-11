@@ -71,6 +71,7 @@ func _build() -> void:
         ["MOUNTAIN", "environment", "mountain_observatory"],
         ["MATRIX", "environment", "digital_matrix"],
         ["CALIBRATE", "system", "calibration"],
+        ["EXIT", "system", "exit"],
     ]
 
     for i in range(items.size()):

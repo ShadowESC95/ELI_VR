@@ -20,11 +20,11 @@ Normal world rendering, OpenXR operation, settings, room switching, themes, audi
 
 ## Loopback IPC
 
-Two optional local services reserve loopback-only IPC:
+Two optional local services use loopback-only IPC:
 
 ```text
 127.0.0.1:47831   local desktop capture bridge
-127.0.0.1:47832   future local ELI bridge (disabled)
+127.0.0.1:8081    ELI v3's local server, only when the ELI link is switched on
 ```
 
 ELI VR's standalone `NetworkPolicy` defaults to:
@@ -37,7 +37,7 @@ The desktop client refuses a non-loopback host.
 
 The Rust desktop bridge refuses to bind to a non-loopback IP.
 
-The future ELI bridge refuses a non-loopback WebSocket URL.
+The ELI link is off by default and refuses any address that is not loopback. With it on, the microphone is recorded only while the talk button is held, and the clip goes to ELI v3 on this machine and nowhere else.
 
 ## First-time dependency downloads
 
@@ -65,8 +65,8 @@ python3 tools/install_room_pack.py /path/to/room-pack.zip
 
 This installer accepts local `.zip` files only.
 
-## Future ELI v3 integration
+## ELI v3
 
-When ELI VR becomes part of ELI v3, this local policy is intended to sit underneath ELI's stronger socket-level network toggle.
+When ELI VR runs beside ELI v3, this local policy sits underneath ELI's stronger socket-level network toggle.
 
 If ELI's network toggle is OFF, that higher-level control should remain authoritative.

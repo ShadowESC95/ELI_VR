@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=ELI VR
+Comment=A spatial workspace in a headset or on a monitor
+Exec=AppRun
+Icon=eli-vr
+Categories=Utility;
+Terminal=false

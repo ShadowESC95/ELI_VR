@@ -35,7 +35,7 @@ func setup(p_app: Node, registry, config) -> void:
         ["ICE BLUE","theme","aurora"],["WHITE","theme","monolith"],["AUTO","quality","auto"],
         ["LOW","quality","low"],["MEDIUM","quality","medium"],["HIGH","quality","high"],
         ["ULTRA","quality","ultra"],["DESKTOP","toggle","desktop"],["HUD","toggle","hud"],
-        ["RESET UI","system","reset_workspace"]
+        ["RESET UI","system","reset_workspace"],["EXIT","system","exit"]
     ], 3)
 
 func _build_panel(

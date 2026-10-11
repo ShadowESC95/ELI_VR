@@ -15,7 +15,9 @@ set -Eeuo pipefail
 # - Monado receives the known-good stdin FIFO workaround.
 # - Godot is run as a child so Monado is cleaned up on exit.
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
+# shellcheck source=launch/lib-session.sh
+source "$ROOT/launch/lib-session.sh"
 STATE="${XDG_STATE_HOME:-$HOME/.local/state}/eli-vr-standalone"
 FIFO="$STATE/monado.stdin.fifo"
 MONADO_LOG="$STATE/monado.log"
@@ -37,8 +39,8 @@ if pgrep -x vrserver >/dev/null 2>&1 || pgrep -x vrcompositor >/dev/null 2>&1; t
   die "SteamVR is running. Stop SteamVR before starting native Monado."
 fi
 
-GODOT="${GODOT_BIN:-$(command -v godot || command -v godot4 || true)}"
-[[ -n "$GODOT" ]] || die "Godot 4.7.2 not found. Set GODOT_BIN=/path/to/Godot."
+eli_app_command || die "Godot 4.7.2 not found. Set GODOT_BIN=/path/to/Godot."
+eli_split_args "$@"
 
 MONADO="$(command -v monado-service || true)"
 if [[ -z "$MONADO" ]]; then
@@ -96,7 +98,10 @@ cleanup(){
     wait "$MONADO_PID" 2>/dev/null || true
   fi
 
+  # Nothing this session started may be left holding the GPU.
+  vr_stop_started
   rm -f "$IPC" "$FIFO" 2>/dev/null || true
+  session_report
   exit "$rc"
 }
 trap cleanup EXIT INT TERM HUP
@@ -113,6 +118,7 @@ if pgrep -x monado-service >/dev/null 2>&1; then
 fi
 
 rm -f "$IPC" "$FIFO" 2>/dev/null || true
+vr_snapshot
 
 # The pinned native Monado build epolls stdin when not socket-activated.
 # A FIFO avoids the /dev/null -> epoll_ctl failure seen on this CV1 stack.
@@ -208,12 +214,12 @@ say "Godot log: $GODOT_LOG"
 : > "$GODOT_LOG"
 set +e
 env XR_RUNTIME_JSON="$MANIFEST" \
-  "$GODOT" \
-    --path "$ROOT" \
+  "${APP[@]}" \
     --xr-mode on \
     --log-file "$GODOT_LOG" \
+    "${ENGINE_ARGS[@]}" \
     -- \
-    --eli-xr=on &
+    --eli-xr=on "${USER_ARGS[@]}" &
 GODOT_PID=$!
 
 wait "$GODOT_PID"

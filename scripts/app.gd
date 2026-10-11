@@ -5,7 +5,9 @@ const RegistryClass = preload("res://scripts/core/registry.gd")
 const CapabilityClass = preload("res://scripts/core/capability_detector.gd")
 const NetworkPolicyClass = preload("res://scripts/core/network_policy.gd")
 const RuntimeOptimizerClass = preload("res://scripts/core/runtime_optimizer.gd")
-const FutureEliBridgeClass = preload("res://scripts/core/future_eli_bridge.gd")
+const EliLinkClass = preload("res://scripts/eli/eli_link.gd")
+const EliPresenceClass = preload("res://scripts/eli/eli_presence.gd")
+const EliVoiceClass = preload("res://scripts/eli/eli_voice.gd")
 const XRBootstrapClass = preload("res://scripts/xr/xr_bootstrap.gd")
 const XRLocomotionClass = preload("res://scripts/xr/locomotion.gd")
 const XRPointerClass = preload("res://scripts/xr/xr_pointer.gd")
@@ -58,6 +60,13 @@ var controller_calibration
 var calibration_widget
 var _by_toggle_latched := false
 
+var eli_link
+var eli_presence
+var eli_voice
+var _talk_latched := false
+var _exit_armed_until_ms := 0
+var _eli_called_until_ms := 0
+
 func _ready() -> void:
     config = AppConfigClass.new()
     config.load_all()
@@ -88,10 +97,7 @@ func _ready() -> void:
     var session_policy = XRSessionPolicyClass.new(); session_policy.name = "XRSessionPolicy"; add_child(session_policy); session_policy.setup(self, config, xr_bootstrap.interface if xr_bootstrap else null)
     _apply_current_room()
 
-    var future_bridge = FutureEliBridgeClass.new()
-    future_bridge.name = "FutureEliBridge"
-    add_child(future_bridge)
-    future_bridge.configure(config, network_policy)
+    _setup_eli()
 
     print("ELI VR ready")
     print(JSON.stringify(capabilities, "\t"))
@@ -347,6 +353,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
             Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 
 func _process(_delta: float) -> void:
+    _process_eli_talk()
     if not xr_active:
         return
     var by_pressed := left_hand.is_button_pressed("by_button") or right_hand.is_button_pressed("by_button")
@@ -376,6 +383,8 @@ func apply_console_action(kind: String, value: String) -> void:
                     console.reset_layout()
                 if desktop_surface and desktop_surface.has_method("reset_workspace_transform"):
                     desktop_surface.reset_workspace_transform()
+            elif value == "exit":
+                request_exit()
 
 func change_room(room_id: String) -> void:
     if not registry.rooms.has(room_id):
@@ -385,6 +394,7 @@ func change_room(room_id: String) -> void:
     config.save_runtime()
     reset_play_space()
     _apply_current_room()
+    _tell_eli_where_we_are()
 
 func change_environment(environment_id: String) -> void:
     if not environment_id.is_empty() and not registry.environments.has(environment_id):
@@ -458,6 +468,7 @@ func _apply_current_room() -> void:
     room_factory.build(room_root,env_id,theme,config)
     if ambient_audio: ambient_audio.play_environment(env_id)
     _build_portals()
+    _refresh_eli_presence()
 
 func _build_portals() -> void:
     for child in portal_root.get_children():
@@ -519,3 +530,122 @@ func desktop_status() -> String:
     if not desktop_surface or not desktop_surface.visible:
         return "OFF"
     return desktop_surface.bridge_status()
+
+# --- ELI ---------------------------------------------------------------------
+# Only when the link is switched on. Standalone, none of this exists.
+
+func _setup_eli() -> void:
+    eli_link = EliLinkClass.new()
+    eli_link.name = "EliLink"
+    add_child(eli_link)
+    eli_link.configure(config, network_policy)
+    if not eli_link.enabled:
+        return
+
+    eli_presence = EliPresenceClass.new()
+    eli_presence.name = "EliPresence"
+    add_child(eli_presence)
+    eli_presence.setup(_theme_accent())
+
+    if bool(config.get_value("eli_bridge.voice", true)):
+        eli_voice = EliVoiceClass.new()
+        eli_voice.name = "EliVoice"
+        add_child(eli_voice)
+        eli_voice.setup(eli_link, eli_presence)
+        eli_voice.state_changed.connect(_on_eli_voice_state)
+
+    eli_link.world_state_received.connect(_on_eli_world_state)
+    eli_link.link_changed.connect(_on_eli_link_changed)
+    _refresh_eli_presence()
+
+func _theme_accent() -> Color:
+    var theme: Dictionary = registry.theme(str(config.get_value("world.theme", "frontier")))
+    return Color(str(theme.get("accent", "#63ddff")))
+
+func _current_room_id() -> String:
+    return str(config.get_value("world.room", "core_room"))
+
+func _on_eli_link_changed(connected: bool) -> void:
+    eli_presence.set_mode("idle" if connected else "dormant")
+    if connected:
+        eli_link.send_event("vr_session_started", "The user opened ELI VR", {"xr": xr_active})
+        _tell_eli_where_we_are()
+    _refresh_eli_presence()
+
+func _on_eli_world_state(state: Dictionary) -> void:
+    eli_presence.apply_world_state(state)
+    _refresh_eli_presence()
+
+func _on_eli_voice_state(state: String) -> void:
+    eli_presence.set_mode(state if eli_link.connected else "dormant")
+    if state != "idle":
+        _eli_called_until_ms = Time.get_ticks_msec() + 60000
+    _refresh_eli_presence()
+
+func _tell_eli_where_we_are() -> void:
+    if eli_link == null or not eli_link.connected:
+        return
+    eli_link.send_event(
+        "vr_room_entered",
+        "The user entered the %s in ELI VR" % current_room_name(),
+        {"room": _current_room_id()}
+    )
+
+# ELI is shown in the room his own world puts him in. Speaking to him brings
+# him to you for a minute.
+func _refresh_eli_presence() -> void:
+    if eli_presence == null:
+        return
+    eli_presence.set_accent(_theme_accent())
+    var called := Time.get_ticks_msec() < _eli_called_until_ms
+    eli_presence.visible = called or eli_presence.eli_room == _current_room_id()
+
+# Hold A/X on a controller, or T on the keyboard, to talk.
+func _process_eli_talk() -> void:
+    if eli_voice == null:
+        return
+    var held := Input.is_key_pressed(KEY_T)
+    if xr_active and left_hand and right_hand:
+        held = held or left_hand.is_button_pressed("ax_button") or right_hand.is_button_pressed("ax_button")
+    if held and not _talk_latched:
+        eli_voice.start_listening()
+    elif not held and _talk_latched:
+        eli_voice.stop_listening()
+    _talk_latched = held
+
+func eli_status() -> String:
+    if eli_link == null or not eli_link.enabled:
+        return ""
+    if not eli_link.connected:
+        return "ELI NOT RUNNING"
+    if eli_voice != null and eli_voice.state != "idle":
+        return "ELI %s" % eli_voice.state.to_upper()
+    if eli_presence.eli_room == _current_room_id():
+        return "ELI HERE"
+    var room: Dictionary = registry.room(eli_presence.eli_room)
+    return "ELI IN %s" % str(room.get("name", eli_presence.eli_room)).to_upper()
+
+# --- leaving -----------------------------------------------------------------
+# A stray trigger pull should not end the session: the first press arms the
+# button for a few seconds, the second one leaves.
+
+func request_exit() -> void:
+    if Time.get_ticks_msec() < _exit_armed_until_ms:
+        quit_app()
+        return
+    _exit_armed_until_ms = Time.get_ticks_msec() + 4000
+
+func exit_notice() -> String:
+    return "PRESS EXIT AGAIN TO CLOSE" if Time.get_ticks_msec() < _exit_armed_until_ms else ""
+
+# The launcher that started us is waiting for this process to end; it then
+# stops the VR runtime and the desktop helper it started.
+func quit_app() -> void:
+    if eli_link != null and eli_link.connected:
+        eli_link.send_event("vr_session_ended", "The user closed ELI VR", {})
+        await get_tree().process_frame
+        await get_tree().process_frame
+    if desktop_surface and desktop_surface.has_method("set_desktop_visible"):
+        desktop_surface.set_desktop_visible(false)
+    print("ELI VR closing")
+    get_tree().quit()

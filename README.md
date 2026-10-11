@@ -6,7 +6,7 @@ A spatial workspace you can stand inside: fifteen 3D environments, a movable liv
 
 ![ELI VR environment preview](ELI-VR-0.2-environment-preview.jpg)
 
-ELI VR is part of the ELI family but does not need ELI to run. There is no account, no telemetry and no network use at runtime.
+ELI VR is part of the ELI family but does not need ELI to run. With ELI v3 running beside it, ELI is present in the rooms and you can talk to him. There is no account, no telemetry and nothing leaves the machine.
 
 ## Status
 
@@ -18,6 +18,7 @@ This is an early build. Be clear-eyed about what has and has not been tried:
 | Flat (no headset) mode on Linux | Tested. |
 | Windows and macOS builds | Built by CI. Not yet run on real hardware. |
 | Valve Index, HTC Vive, Windows Mixed Reality, generic OpenXR controllers | Bound, not yet tested on hardware. |
+| The link to ELI v3 (presence, talking) | Tested against ELI v3's own routes without a headset. Not yet used in one. |
 | Quest, Pico and other standalone headsets | No native app yet. Use them through a PC link (Link, Air Link, Virtual Desktop, ALVR, WiVRn). |
 | macOS in VR | No common OpenXR runtime exists there. Flat mode only. |
 
@@ -109,6 +110,20 @@ Start the helper, then start ELI VR. The screen reconnects on its own. On Waylan
 
 The screen is view-only for now: you can move, resize and rotate it, but not click through it.
 
+## With ELI v3
+
+Off by default. Switch the link on and, while ELI v3's local server is running on the same machine:
+
+- ELI appears as a body of light in whichever room his own world has him in, and the status line says where he is when it is not yours.
+- Hold **A** / **X** on a controller, or **T** on the keyboard, to talk to him. He answers in his own voice from where he stands.
+
+```bash
+python3 tools/eli_vr.py eli on            # remembered
+./launch/run-linux.sh -- --eli-link=on    # this run only
+```
+
+ELI v3 can also list ELI VR among its bundles and start it: `python3 tools/register_eli_bundle.py`. Details in [docs/ELI_INTEGRATION.md](docs/ELI_INTEGRATION.md).
+
 ## Settings
 
 Defaults live in `config/defaults.json`. Changes made in the app are saved per user, outside the project. To override defaults for a source checkout, copy `config/user.example.json` to `config/user.json`.
@@ -137,7 +152,7 @@ The only sockets are on the local machine:
 
 ```text
 127.0.0.1:47831   desktop capture bridge
-127.0.0.1:47832   reserved for a future local ELI link (off)
+127.0.0.1:8081    ELI v3's local server, only when the ELI link is on
 ```
 
 Installing Godot, OS packages or Rust crates the first time does use the network. See [docs/NETWORK-POLICY.md](docs/NETWORK-POLICY.md).
@@ -152,7 +167,7 @@ Installing Godot, OS packages or Rust crates the first time does use the network
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | How the pieces fit |
 | [docs/PLATFORM_SUPPORT.md](docs/PLATFORM_SUPPORT.md) | Platform strategy |
 | [docs/QUICKSTART-UBUNTU-CV1.md](docs/QUICKSTART-UBUNTU-CV1.md) | The Ubuntu + Monado + Rift CV1 reference setup |
-| [docs/ELI_INTEGRATION.md](docs/ELI_INTEGRATION.md) | The planned link to ELI |
+| [docs/ELI_INTEGRATION.md](docs/ELI_INTEGRATION.md) | The link to ELI v3 |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | What comes next |
 | [RELEASE.md](RELEASE.md) | How a release is cut |
 
