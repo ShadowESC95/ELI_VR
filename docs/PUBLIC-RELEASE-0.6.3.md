@@ -31,9 +31,9 @@ All three are fixed. On the reference machine the Wayland helper now delivers 12
 
 ## Install and release
 
-- [docs/INSTALL.md](https://github.com/ShadowESC95/ELI_VR/blob/Me/docs/INSTALL.md): full guides for Linux, Windows and macOS.
+- [docs/INSTALL.md](https://github.com/ShadowESC95/ELI_VR/blob/main/docs/INSTALL.md): full guides for Linux, Windows and macOS.
 - `requirements.txt`, `requirements-linux-capture.txt` and `pyproject.toml` for the Python helper tools.
-- A release workflow that builds all three systems from a tag. See [RELEASE.md](https://github.com/ShadowESC95/ELI_VR/blob/Me/RELEASE.md).
+- A release workflow that builds all three systems from a tag. See [RELEASE.md](https://github.com/ShadowESC95/ELI_VR/blob/main/RELEASE.md).
 
 ## Known gaps
 
