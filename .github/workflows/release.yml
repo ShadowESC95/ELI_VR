@@ -1,0 +1,310 @@
+# ELI VR release pipeline.
+#
+# Push a tag v<version> (it has to match VERSION) and this builds and publishes:
+#   ELI_VR-<v>-linux-x86_64.tar.gz
+#   ELI_VR-<v>-windows-x64.zip
+#   ELI_VR-<v>-macos-universal.zip
+#   ELI_VR-<v>-source.zip
+#   SHA256SUMS.txt
+#
+#   git tag v0.6.3 && git push origin v0.6.3
+#
+# Run it by hand for a dry run: everything is built and kept as workflow
+# artifacts, and no Release is made.
+#
+# Linux jobs name ubuntu-24.04 on purpose. The desktop helper needs the glibc
+# of the machine it was built on, so "latest" moving would raise that quietly.
+
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  GODOT_VERSION: "4.7.2"
+
+jobs:
+  check:
+    name: checks and version guard
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Version agrees everywhere and matches the tag
+        id: ver
+        run: |
+          VERSION="$(tr -d '[:space:]' < VERSION)"
+          PYPROJECT="$(python3 -c "import tomllib,pathlib; print(tomllib.loads(pathlib.Path('pyproject.toml').read_text())['project']['version'])")"
+          GODOT="$(sed -n 's/^config\/version="\(.*\)"$/\1/p' project.godot)"
+          echo "VERSION=$VERSION pyproject.toml=$PYPROJECT project.godot=$GODOT"
+          if [[ "$VERSION" != "$PYPROJECT" || "$VERSION" != "$GODOT" ]]; then
+            echo "::error::VERSION, pyproject.toml and project.godot disagree. Bump all three."
+            exit 1
+          fi
+          if [[ "$GITHUB_REF" == refs/tags/* && "${GITHUB_REF#refs/tags/}" != "v$VERSION" ]]; then
+            echo "::error::Tag '${GITHUB_REF#refs/tags/}' does not match VERSION '$VERSION'."
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Project checks
+        run: |
+          python -m pip install -r requirements.txt
+          python tools/source_sanity.py
+          python tools/validate_project.py
+          python tools/network_audit.py
+          for f in launch/*.sh launch/*.command tools/*.sh native/desktop_bridge/*.sh; do
+            bash -n "$f"
+          done
+
+      - name: Source package (this is also the privacy scan)
+        run: python tools/make_release.py
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: source
+          path: build/release/ELI_VR-*-source.zip
+          if-no-files-found: error
+
+  export:
+    name: godot export (linux, windows, macos)
+    needs: check
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Cache Godot and its export templates
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: .godot-dl
+          key: godot-${{ env.GODOT_VERSION }}-stable-linux-editor-and-templates
+
+      - name: Download Godot and its export templates
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p .godot-dl && cd .godot-dl
+          BASE="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable"
+          curl -fL --retry 5 --retry-all-errors -o godot.zip "$BASE/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          curl -fL --retry 5 --retry-all-errors -o templates.tpz "$BASE/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+
+      - name: Install Godot and the three desktop templates
+        run: |
+          mkdir -p "$RUNNER_TEMP/godot"
+          unzip -q .godot-dl/godot.zip -d "$RUNNER_TEMP/godot"
+          echo "GODOT=$RUNNER_TEMP/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64" >> "$GITHUB_ENV"
+          TPL="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          mkdir -p "$TPL"
+          unzip -q -j .godot-dl/templates.tpz \
+            'templates/version.txt' \
+            'templates/linux_*.x86_64' \
+            'templates/windows_*_x86_64*.exe' \
+            'templates/macos.zip' \
+            -d "$TPL"
+          ls -la "$TPL"
+
+      - name: Import
+        run: |
+          "$GODOT" --headless --path . --xr-mode off --import 2>&1 | tee "$RUNNER_TEMP/import.log"
+          if grep -Eq 'SCRIPT ERROR:|Parse Error:|Failed to load script' "$RUNNER_TEMP/import.log"; then
+            echo "::error::Godot reported script errors during import."
+            exit 1
+          fi
+
+      - name: Export
+        run: |
+          mkdir -p build/linux build/windows build/macos
+          "$GODOT" --headless --path . --xr-mode off --export-release "Linux" build/linux/ELI-VR.x86_64
+          "$GODOT" --headless --path . --xr-mode off --export-release "Windows Desktop" build/windows/ELI-VR.exe
+          "$GODOT" --headless --path . --xr-mode off --export-release "macOS" build/macos/ELI-VR.zip
+          ls -la build/linux build/windows build/macos
+          # Godot can exit 0 and still leave nothing behind, so look.
+          test -s build/linux/ELI-VR.x86_64
+          test -s build/linux/ELI-VR.pck
+          test -s build/windows/ELI-VR.exe
+          test -s build/windows/ELI-VR.pck
+          test -s build/macos/ELI-VR.zip
+          unzip -l build/macos/ELI-VR.zip | head -20
+
+      - name: The Linux build starts and reaches a room
+        run: |
+          chmod +x build/linux/ELI-VR.x86_64
+          timeout 180 build/linux/ELI-VR.x86_64 --headless --xr-mode off --quit-after 240 2>&1 | tee "$RUNNER_TEMP/run.log"
+          if grep -Eq 'SCRIPT ERROR:|Parse Error:|Failed to load' "$RUNNER_TEMP/run.log"; then
+            echo "::error::The exported build reported errors on start."
+            exit 1
+          fi
+          grep -q 'ELI VR ready' "$RUNNER_TEMP/run.log" || {
+            echo "::error::The exported build never reported 'ELI VR ready'."
+            exit 1
+          }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: export-linux
+          path: build/linux/
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: export-windows
+          path: build/windows/
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: export-macos
+          path: build/macos/ELI-VR.zip
+          if-no-files-found: error
+
+  bridge:
+    name: desktop helper (${{ matrix.name }})
+    needs: check
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: linux, os: ubuntu-24.04, bin: eli-vr-desktop-bridge }
+          - { name: windows, os: windows-latest, bin: eli-vr-desktop-bridge.exe }
+          - { name: macos, os: macos-latest, bin: eli-vr-desktop-bridge }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Linux build headers
+        if: matrix.name == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libclang-dev libxcb1-dev libxrandr-dev \
+            libdbus-1-dev libpipewire-0.3-dev libwayland-dev libegl-dev libgbm-dev
+
+      - name: Build
+        if: matrix.name != 'macos'
+        working-directory: native/desktop_bridge
+        run: cargo build --release --locked
+
+      - name: Build for Apple Silicon and Intel, then join them
+        if: matrix.name == 'macos'
+        working-directory: native/desktop_bridge
+        run: |
+          rustup target add aarch64-apple-darwin x86_64-apple-darwin
+          cargo build --release --locked --target aarch64-apple-darwin
+          cargo build --release --locked --target x86_64-apple-darwin
+          mkdir -p target/release
+          lipo -create -output target/release/eli-vr-desktop-bridge \
+            target/aarch64-apple-darwin/release/eli-vr-desktop-bridge \
+            target/x86_64-apple-darwin/release/eli-vr-desktop-bridge
+          lipo -info target/release/eli-vr-desktop-bridge
+
+      - name: PowerShell launchers parse
+        if: matrix.name == 'windows'
+        shell: pwsh
+        run: |
+          $bad = 0
+          Get-ChildItem -Recurse -Filter *.ps1 | ForEach-Object {
+            $errors = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$null, [ref]$errors)
+            if ($errors.Count -gt 0) {
+              $errors | ForEach-Object { Write-Host "::error file=$($_.Extent.File),line=$($_.Extent.StartLineNumber)::$($_.Message)" }
+              $bad++
+            }
+          }
+          if ($bad -gt 0) { exit 1 }
+
+      - name: The helper runs
+        shell: bash
+        run: native/desktop_bridge/target/release/${{ matrix.bin }} --help
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bridge-${{ matrix.name }}
+          path: native/desktop_bridge/target/release/${{ matrix.bin }}
+          if-no-files-found: error
+
+  package:
+    name: package and publish
+    needs: [check, export, bridge]
+    runs-on: ubuntu-24.04
+    env:
+      VERSION: ${{ needs.check.outputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          path: in
+
+      - name: Assemble the packages
+        run: |
+          set -euo pipefail
+          ls -R in | head -60
+          mkdir -p dist
+          HELPER=native/desktop_bridge/target/release
+
+          # Each package keeps the repo's layout, so the launchers and
+          # docs/INSTALL.md work the same from a download as from a clone.
+          common() {
+            cp README.md VERSION ELI-VR-0.2-environment-preview.jpg "$1/"
+            cp -r docs "$1/docs"
+          }
+
+          L="ELI_VR-$VERSION-linux-x86_64"
+          mkdir -p "$L/launch" "$L/$HELPER" "$L/native/desktop_portal_bridge" "$L/tools"
+          cp in/export-linux/ELI-VR.x86_64 in/export-linux/ELI-VR.pck "$L/"
+          cp in/bridge-linux/eli-vr-desktop-bridge "$L/$HELPER/"
+          cp native/desktop_portal_bridge/eli_portal_bridge.py "$L/native/desktop_portal_bridge/"
+          cp launch/start-desktop-bridge-linux.sh "$L/launch/"
+          cp tools/install-linux-wayland-capture-deps.sh tools/check-linux-wayland-capture.sh "$L/tools/"
+          chmod +x "$L/ELI-VR.x86_64" "$L/$HELPER/eli-vr-desktop-bridge" "$L"/launch/*.sh "$L"/tools/*.sh
+          common "$L"
+          tar -czf "dist/$L.tar.gz" "$L"
+
+          W="ELI_VR-$VERSION-windows-x64"
+          mkdir -p "$W/launch" "$W/$HELPER"
+          cp in/export-windows/* "$W/"
+          cp in/bridge-windows/eli-vr-desktop-bridge.exe "$W/$HELPER/"
+          cp launch/start-desktop-bridge-windows.ps1 "$W/launch/"
+          common "$W"
+          zip -qr "dist/$W.zip" "$W"
+
+          M="ELI_VR-$VERSION-macos-universal"
+          mkdir -p "$M/launch" "$M/$HELPER"
+          unzip -q in/export-macos/ELI-VR.zip -d "$M"
+          cp in/bridge-macos/eli-vr-desktop-bridge "$M/$HELPER/"
+          cp launch/start-desktop-bridge-macos.command "$M/launch/"
+          chmod +x "$M/$HELPER/eli-vr-desktop-bridge" "$M"/launch/*.command
+          common "$M"
+          zip -qry "dist/$M.zip" "$M"
+
+          cp in/source/ELI_VR-*-source.zip dist/
+          (cd dist && sha256sum ELI_VR-* > SHA256SUMS.txt && cat SHA256SUMS.txt)
+          ls -la dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-packages
+          path: dist/
+          if-no-files-found: error
+
+      - name: Publish the Release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          NOTES="docs/PUBLIC-RELEASE-$VERSION.md"
+          if [[ -f "$NOTES" ]]; then
+            gh release create "$GITHUB_REF_NAME" dist/* --title "ELI VR $VERSION" --notes-file "$NOTES"
+          else
+            gh release create "$GITHUB_REF_NAME" dist/* --title "ELI VR $VERSION" --generate-notes
+          fi
