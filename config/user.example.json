@@ -1,0 +1,18 @@
+{
+  "world": {
+    "room": "reflection_chamber",
+    "environment_override": "mountain_observatory",
+    "theme": "frontier"
+  },
+  "graphics": {
+    "quality": "high"
+  },
+  "xr": {
+    "mode": "auto"
+  },
+  "desktop": {
+    "enabled": true,
+    "distance_m": 4.0,
+    "width_m": 6.0
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "mountain_observatory": {
+    "sky": "",
+    "ambient": "res://assets/environment_packs/cinematic_v1/audio/mountain.ogg",
+    "asset_quality": "frontier_procedural_runtime",
+    "license": "Generated for ELI VR project"
+  },
+  "forest_sanctuary": {
+    "sky": "",
+    "ambient": "res://assets/environment_packs/cinematic_v1/audio/forest.ogg",
+    "asset_quality": "frontier_procedural_runtime",
+    "license": "Generated for ELI VR project"
+  },
+  "ocean_platform": {
+    "sky": "",
+    "ambient": "res://assets/environment_packs/cinematic_v1/audio/ocean.ogg",
+    "asset_quality": "frontier_procedural_runtime",
+    "license": "Generated for ELI VR project"
+  },
+  "deep_space": {
+    "sky": "",
+    "ambient": "res://assets/environment_packs/cinematic_v1/audio/deep_space.ogg",
+    "asset_quality": "frontier_procedural_runtime",
+    "license": "Generated for ELI VR project"
+  },
+  "digital_matrix": {
+    "sky": "",
+    "ambient": "res://assets/environment_packs/cinematic_v1/audio/digital_matrix.ogg",
+    "asset_quality": "frontier_procedural_runtime",
+    "license": "Generated for ELI VR project"
+  },
+  "arctic_aurora": {
+    "sky": "",
+    "ambient": "res://assets/environment_packs/cinematic_v1/audio/arctic.ogg",
+    "asset_quality": "frontier_procedural_runtime",
+    "license": "Generated for ELI VR project"
+  },
+  "desert_observatory": {
+    "sky": "",
+    "ambient": "res://assets/environment_packs/cinematic_v1/audio/desert.ogg",
+    "asset_quality": "frontier_procedural_runtime",
+    "license": "Generated for ELI VR project"
+  },
+  "underwater_lab": {
+    "sky": "",
+    "ambient": "res://assets/environment_packs/cinematic_v1/audio/underwater.ogg",
+    "asset_quality": "frontier_procedural_runtime",
+    "license": "Generated for ELI VR project"
+  }
+}

@@ -1,0 +1,13 @@
+.godot/
+.godot.*/
+build/*
+!build/.gitkeep
+config/user.json
+native/desktop_bridge/target/
+__pycache__/
+*.pyc
+*.before-*
+*.bak
+*.orig
+.DS_Store
+Thumbs.db

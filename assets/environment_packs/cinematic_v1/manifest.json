@@ -1,0 +1,56 @@
+{
+  "id": "cinematic_v1",
+  "name": "Cinematic Procedural Environment Pack",
+  "version": "1.0",
+  "resolution": "4096x2048",
+  "environments": {
+    "mountain_observatory": {
+      "sky": "res://assets/environment_packs/cinematic_v1/skies/mountain_observatory.png",
+      "ambient": "res://assets/environment_packs/cinematic_v1/audio/mountain.ogg",
+      "asset_quality": "4k_procedural",
+      "license": "Generated for ELI VR project"
+    },
+    "forest_sanctuary": {
+      "sky": "res://assets/environment_packs/cinematic_v1/skies/forest_sanctuary.png",
+      "ambient": "res://assets/environment_packs/cinematic_v1/audio/forest.ogg",
+      "asset_quality": "4k_procedural",
+      "license": "Generated for ELI VR project"
+    },
+    "ocean_platform": {
+      "sky": "res://assets/environment_packs/cinematic_v1/skies/ocean_platform.png",
+      "ambient": "res://assets/environment_packs/cinematic_v1/audio/ocean.ogg",
+      "asset_quality": "4k_procedural",
+      "license": "Generated for ELI VR project"
+    },
+    "deep_space": {
+      "sky": "res://assets/environment_packs/cinematic_v1/skies/deep_space.png",
+      "ambient": "res://assets/environment_packs/cinematic_v1/audio/deep_space.ogg",
+      "asset_quality": "4k_procedural",
+      "license": "Generated for ELI VR project"
+    },
+    "digital_matrix": {
+      "sky": "res://assets/environment_packs/cinematic_v1/skies/digital_matrix.png",
+      "ambient": "res://assets/environment_packs/cinematic_v1/audio/digital_matrix.ogg",
+      "asset_quality": "4k_procedural",
+      "license": "Generated for ELI VR project"
+    },
+    "arctic_aurora": {
+      "sky": "res://assets/environment_packs/cinematic_v1/skies/arctic_aurora.png",
+      "ambient": "res://assets/environment_packs/cinematic_v1/audio/arctic.ogg",
+      "asset_quality": "4k_procedural",
+      "license": "Generated for ELI VR project"
+    },
+    "desert_observatory": {
+      "sky": "res://assets/environment_packs/cinematic_v1/skies/desert_observatory.png",
+      "ambient": "res://assets/environment_packs/cinematic_v1/audio/desert.ogg",
+      "asset_quality": "4k_procedural",
+      "license": "Generated for ELI VR project"
+    },
+    "underwater_lab": {
+      "sky": "res://assets/environment_packs/cinematic_v1/skies/underwater_lab.png",
+      "ambient": "res://assets/environment_packs/cinematic_v1/audio/underwater.ogg",
+      "asset_quality": "4k_procedural",
+      "license": "Generated for ELI VR project"
+    }
+  }
+}

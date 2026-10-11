@@ -1,0 +1,574 @@
+[gd_resource type="OpenXRActionMap" load_steps=137 format=3]
+
+[sub_resource type="OpenXRAction" id="OpenXRAction_trigger"]
+resource_name = "trigger"
+localized_name = "Trigger"
+action_type = 1
+toplevel_paths = PackedStringArray("/user/hand/left", "/user/hand/right")
+
+[sub_resource type="OpenXRAction" id="OpenXRAction_trigger_click"]
+resource_name = "trigger_click"
+localized_name = "Trigger click"
+action_type = 0
+toplevel_paths = PackedStringArray("/user/hand/left", "/user/hand/right")
+
+[sub_resource type="OpenXRAction" id="OpenXRAction_grip"]
+resource_name = "grip"
+localized_name = "Grip"
+action_type = 1
+toplevel_paths = PackedStringArray("/user/hand/left", "/user/hand/right")
+
+[sub_resource type="OpenXRAction" id="OpenXRAction_grip_click"]
+resource_name = "grip_click"
+localized_name = "Grip click"
+action_type = 0
+toplevel_paths = PackedStringArray("/user/hand/left", "/user/hand/right")
+
+[sub_resource type="OpenXRAction" id="OpenXRAction_primary"]
+resource_name = "primary"
+localized_name = "Primary thumbstick"
+action_type = 2
+toplevel_paths = PackedStringArray("/user/hand/left", "/user/hand/right")
+
+[sub_resource type="OpenXRAction" id="OpenXRAction_primary_click"]
+resource_name = "primary_click"
+localized_name = "Primary thumbstick click"
+action_type = 0
+toplevel_paths = PackedStringArray("/user/hand/left", "/user/hand/right")
+
+[sub_resource type="OpenXRAction" id="OpenXRAction_menu"]
+resource_name = "menu_button"
+localized_name = "Menu"
+action_type = 0
+toplevel_paths = PackedStringArray("/user/hand/left", "/user/hand/right")
+
+[sub_resource type="OpenXRAction" id="OpenXRAction_ax"]
+resource_name = "ax_button"
+localized_name = "A/X button"
+action_type = 0
+toplevel_paths = PackedStringArray("/user/hand/left", "/user/hand/right")
+
+[sub_resource type="OpenXRAction" id="OpenXRAction_by"]
+resource_name = "by_button"
+localized_name = "B/Y button"
+action_type = 0
+toplevel_paths = PackedStringArray("/user/hand/left", "/user/hand/right")
+
+[sub_resource type="OpenXRAction" id="OpenXRAction_aim"]
+resource_name = "aim_pose"
+localized_name = "Aim pose"
+action_type = 3
+toplevel_paths = PackedStringArray("/user/hand/left", "/user/hand/right")
+
+[sub_resource type="OpenXRAction" id="OpenXRAction_grip_pose"]
+resource_name = "grip_pose"
+localized_name = "Grip pose"
+action_type = 3
+toplevel_paths = PackedStringArray("/user/hand/left", "/user/hand/right")
+
+[sub_resource type="OpenXRAction" id="OpenXRAction_haptic"]
+resource_name = "haptic"
+localized_name = "Haptic"
+action_type = 4
+toplevel_paths = PackedStringArray("/user/hand/left", "/user/hand/right")
+
+[sub_resource type="OpenXRActionSet" id="OpenXRActionSet_eli"]
+resource_name = "eli_vr"
+localized_name = "ELI VR"
+actions = [SubResource("OpenXRAction_trigger"), SubResource("OpenXRAction_trigger_click"), SubResource("OpenXRAction_grip"), SubResource("OpenXRAction_grip_click"), SubResource("OpenXRAction_primary"), SubResource("OpenXRAction_primary_click"), SubResource("OpenXRAction_menu"), SubResource("OpenXRAction_ax"), SubResource("OpenXRAction_by"), SubResource("OpenXRAction_aim"), SubResource("OpenXRAction_grip_pose"), SubResource("OpenXRAction_haptic")]
+
+[sub_resource type="OpenXRIPBinding" id="Touch_aim_l"]
+action = SubResource("OpenXRAction_aim")
+binding_path = "/user/hand/left/input/aim/pose"
+
+[sub_resource type="OpenXRIPBinding" id="Touch_aim_r"]
+action = SubResource("OpenXRAction_aim")
+binding_path = "/user/hand/right/input/aim/pose"
+
+[sub_resource type="OpenXRIPBinding" id="Touch_grip_pose_l"]
+action = SubResource("OpenXRAction_grip_pose")
+binding_path = "/user/hand/left/input/grip/pose"
+
+[sub_resource type="OpenXRIPBinding" id="Touch_grip_pose_r"]
+action = SubResource("OpenXRAction_grip_pose")
+binding_path = "/user/hand/right/input/grip/pose"
+
+[sub_resource type="OpenXRIPBinding" id="Touch_trigger_l"]
+action = SubResource("OpenXRAction_trigger")
+binding_path = "/user/hand/left/input/trigger/value"
+
+[sub_resource type="OpenXRIPBinding" id="Touch_trigger_r"]
+action = SubResource("OpenXRAction_trigger")
+binding_path = "/user/hand/right/input/trigger/value"
+
+[sub_resource type="OpenXRIPBinding" id="Touch_trigger_click_l"]
+action = SubResource("OpenXRAction_trigger_click")
+binding_path = "/user/hand/left/input/trigger/value"
+
+[sub_resource type="OpenXRIPBinding" id="Touch_trigger_click_r"]
+action = SubResource("OpenXRAction_trigger_click")
+binding_path = "/user/hand/right/input/trigger/value"
+
+[sub_resource type="OpenXRIPBinding" id="Touch_grip_l"]
+action = SubResource("OpenXRAction_grip")
+binding_path = "/user/hand/left/input/squeeze/value"
+
+[sub_resource type="OpenXRIPBinding" id="Touch_grip_r"]
+action = SubResource("OpenXRAction_grip")
+binding_path = "/user/hand/right/input/squeeze/value"
+
+[sub_resource type="OpenXRIPBinding" id="Touch_grip_click_l"]
+action = SubResource("OpenXRAction_grip_click")
+binding_path = "/user/hand/left/input/squeeze/value"
+
+[sub_resource type="OpenXRIPBinding" id="Touch_grip_click_r"]
+action = SubResource("OpenXRAction_grip_click")
+binding_path = "/user/hand/right/input/squeeze/value"
+
+[sub_resource type="OpenXRIPBinding" id="Touch_primary_l"]
+action = SubResource("OpenXRAction_primary")
+binding_path = "/user/hand/left/input/thumbstick"
+
+[sub_resource type="OpenXRIPBinding" id="Touch_primary_r"]
+action = SubResource("OpenXRAction_primary")
+binding_path = "/user/hand/right/input/thumbstick"
+
+[sub_resource type="OpenXRIPBinding" id="Touch_primary_click_l"]
+action = SubResource("OpenXRAction_primary_click")
+binding_path = "/user/hand/left/input/thumbstick/click"
+
+[sub_resource type="OpenXRIPBinding" id="Touch_primary_click_r"]
+action = SubResource("OpenXRAction_primary_click")
+binding_path = "/user/hand/right/input/thumbstick/click"
+
+[sub_resource type="OpenXRIPBinding" id="Touch_menu_l"]
+action = SubResource("OpenXRAction_menu")
+binding_path = "/user/hand/left/input/menu/click"
+
+[sub_resource type="OpenXRIPBinding" id="Touch_ax_l"]
+action = SubResource("OpenXRAction_ax")
+binding_path = "/user/hand/left/input/x/click"
+
+[sub_resource type="OpenXRIPBinding" id="Touch_ax_r"]
+action = SubResource("OpenXRAction_ax")
+binding_path = "/user/hand/right/input/a/click"
+
+[sub_resource type="OpenXRIPBinding" id="Touch_by_l"]
+action = SubResource("OpenXRAction_by")
+binding_path = "/user/hand/left/input/y/click"
+
+[sub_resource type="OpenXRIPBinding" id="Touch_by_r"]
+action = SubResource("OpenXRAction_by")
+binding_path = "/user/hand/right/input/b/click"
+
+[sub_resource type="OpenXRIPBinding" id="Touch_haptic_l"]
+action = SubResource("OpenXRAction_haptic")
+binding_path = "/user/hand/left/output/haptic"
+
+[sub_resource type="OpenXRIPBinding" id="Touch_haptic_r"]
+action = SubResource("OpenXRAction_haptic")
+binding_path = "/user/hand/right/output/haptic"
+
+[sub_resource type="OpenXRInteractionProfile" id="Profile_touch"]
+interaction_profile_path = "/interaction_profiles/oculus/touch_controller"
+bindings = [SubResource("Touch_aim_l"), SubResource("Touch_aim_r"), SubResource("Touch_grip_pose_l"), SubResource("Touch_grip_pose_r"), SubResource("Touch_trigger_l"), SubResource("Touch_trigger_r"), SubResource("Touch_trigger_click_l"), SubResource("Touch_trigger_click_r"), SubResource("Touch_grip_l"), SubResource("Touch_grip_r"), SubResource("Touch_grip_click_l"), SubResource("Touch_grip_click_r"), SubResource("Touch_primary_l"), SubResource("Touch_primary_r"), SubResource("Touch_primary_click_l"), SubResource("Touch_primary_click_r"), SubResource("Touch_menu_l"), SubResource("Touch_ax_l"), SubResource("Touch_ax_r"), SubResource("Touch_by_l"), SubResource("Touch_by_r"), SubResource("Touch_haptic_l"), SubResource("Touch_haptic_r")]
+
+[sub_resource type="OpenXRIPBinding" id="Simple_aim_l"]
+action = SubResource("OpenXRAction_aim")
+binding_path = "/user/hand/left/input/aim/pose"
+
+[sub_resource type="OpenXRIPBinding" id="Simple_aim_r"]
+action = SubResource("OpenXRAction_aim")
+binding_path = "/user/hand/right/input/aim/pose"
+
+[sub_resource type="OpenXRIPBinding" id="Simple_grip_pose_l"]
+action = SubResource("OpenXRAction_grip_pose")
+binding_path = "/user/hand/left/input/grip/pose"
+
+[sub_resource type="OpenXRIPBinding" id="Simple_grip_pose_r"]
+action = SubResource("OpenXRAction_grip_pose")
+binding_path = "/user/hand/right/input/grip/pose"
+
+[sub_resource type="OpenXRIPBinding" id="Simple_trigger_click_l"]
+action = SubResource("OpenXRAction_trigger_click")
+binding_path = "/user/hand/left/input/select/click"
+
+[sub_resource type="OpenXRIPBinding" id="Simple_trigger_click_r"]
+action = SubResource("OpenXRAction_trigger_click")
+binding_path = "/user/hand/right/input/select/click"
+
+[sub_resource type="OpenXRIPBinding" id="Simple_menu_l"]
+action = SubResource("OpenXRAction_menu")
+binding_path = "/user/hand/left/input/menu/click"
+
+[sub_resource type="OpenXRIPBinding" id="Simple_menu_r"]
+action = SubResource("OpenXRAction_menu")
+binding_path = "/user/hand/right/input/menu/click"
+
+[sub_resource type="OpenXRIPBinding" id="Simple_haptic_l"]
+action = SubResource("OpenXRAction_haptic")
+binding_path = "/user/hand/left/output/haptic"
+
+[sub_resource type="OpenXRIPBinding" id="Simple_haptic_r"]
+action = SubResource("OpenXRAction_haptic")
+binding_path = "/user/hand/right/output/haptic"
+
+[sub_resource type="OpenXRInteractionProfile" id="Profile_simple"]
+interaction_profile_path = "/interaction_profiles/khr/simple_controller"
+bindings = [SubResource("Simple_aim_l"), SubResource("Simple_aim_r"), SubResource("Simple_grip_pose_l"), SubResource("Simple_grip_pose_r"), SubResource("Simple_trigger_click_l"), SubResource("Simple_trigger_click_r"), SubResource("Simple_menu_l"), SubResource("Simple_menu_r"), SubResource("Simple_haptic_l"), SubResource("Simple_haptic_r")]
+
+[sub_resource type="OpenXRIPBinding" id="Generic_aim_l"]
+action = SubResource("OpenXRAction_aim")
+binding_path = "/user/hand/left/input/aim/pose"
+
+[sub_resource type="OpenXRIPBinding" id="Generic_aim_r"]
+action = SubResource("OpenXRAction_aim")
+binding_path = "/user/hand/right/input/aim/pose"
+
+[sub_resource type="OpenXRIPBinding" id="Generic_grip_pose_l"]
+action = SubResource("OpenXRAction_grip_pose")
+binding_path = "/user/hand/left/input/grip/pose"
+
+[sub_resource type="OpenXRIPBinding" id="Generic_grip_pose_r"]
+action = SubResource("OpenXRAction_grip_pose")
+binding_path = "/user/hand/right/input/grip/pose"
+
+[sub_resource type="OpenXRIPBinding" id="Generic_ax_l"]
+action = SubResource("OpenXRAction_ax")
+binding_path = "/user/hand/left/input/primary/click"
+
+[sub_resource type="OpenXRIPBinding" id="Generic_ax_r"]
+action = SubResource("OpenXRAction_ax")
+binding_path = "/user/hand/right/input/primary/click"
+
+[sub_resource type="OpenXRIPBinding" id="Generic_by_l"]
+action = SubResource("OpenXRAction_by")
+binding_path = "/user/hand/left/input/secondary/click"
+
+[sub_resource type="OpenXRIPBinding" id="Generic_by_r"]
+action = SubResource("OpenXRAction_by")
+binding_path = "/user/hand/right/input/secondary/click"
+
+[sub_resource type="OpenXRIPBinding" id="Generic_trigger_l"]
+action = SubResource("OpenXRAction_trigger")
+binding_path = "/user/hand/left/input/trigger/value"
+
+[sub_resource type="OpenXRIPBinding" id="Generic_trigger_r"]
+action = SubResource("OpenXRAction_trigger")
+binding_path = "/user/hand/right/input/trigger/value"
+
+[sub_resource type="OpenXRIPBinding" id="Generic_trigger_click_l"]
+action = SubResource("OpenXRAction_trigger_click")
+binding_path = "/user/hand/left/input/trigger/value"
+
+[sub_resource type="OpenXRIPBinding" id="Generic_trigger_click_r"]
+action = SubResource("OpenXRAction_trigger_click")
+binding_path = "/user/hand/right/input/trigger/value"
+
+[sub_resource type="OpenXRIPBinding" id="Generic_grip_l"]
+action = SubResource("OpenXRAction_grip")
+binding_path = "/user/hand/left/input/squeeze/value"
+
+[sub_resource type="OpenXRIPBinding" id="Generic_grip_r"]
+action = SubResource("OpenXRAction_grip")
+binding_path = "/user/hand/right/input/squeeze/value"
+
+[sub_resource type="OpenXRIPBinding" id="Generic_grip_click_l"]
+action = SubResource("OpenXRAction_grip_click")
+binding_path = "/user/hand/left/input/squeeze/value"
+
+[sub_resource type="OpenXRIPBinding" id="Generic_grip_click_r"]
+action = SubResource("OpenXRAction_grip_click")
+binding_path = "/user/hand/right/input/squeeze/value"
+
+[sub_resource type="OpenXRIPBinding" id="Generic_primary_l"]
+action = SubResource("OpenXRAction_primary")
+binding_path = "/user/hand/left/input/thumbstick"
+
+[sub_resource type="OpenXRIPBinding" id="Generic_primary_r"]
+action = SubResource("OpenXRAction_primary")
+binding_path = "/user/hand/right/input/thumbstick"
+
+[sub_resource type="OpenXRIPBinding" id="Generic_primary_click_l"]
+action = SubResource("OpenXRAction_primary_click")
+binding_path = "/user/hand/left/input/thumbstick/click"
+
+[sub_resource type="OpenXRIPBinding" id="Generic_primary_click_r"]
+action = SubResource("OpenXRAction_primary_click")
+binding_path = "/user/hand/right/input/thumbstick/click"
+
+[sub_resource type="OpenXRIPBinding" id="Generic_haptic_l"]
+action = SubResource("OpenXRAction_haptic")
+binding_path = "/user/hand/left/output/haptic"
+
+[sub_resource type="OpenXRIPBinding" id="Generic_haptic_r"]
+action = SubResource("OpenXRAction_haptic")
+binding_path = "/user/hand/right/output/haptic"
+
+[sub_resource type="OpenXRInteractionProfile" id="Profile_generic"]
+interaction_profile_path = "/interaction_profiles/khr/generic_controller"
+bindings = [SubResource("Generic_aim_l"), SubResource("Generic_aim_r"), SubResource("Generic_grip_pose_l"), SubResource("Generic_grip_pose_r"), SubResource("Generic_ax_l"), SubResource("Generic_ax_r"), SubResource("Generic_by_l"), SubResource("Generic_by_r"), SubResource("Generic_trigger_l"), SubResource("Generic_trigger_r"), SubResource("Generic_trigger_click_l"), SubResource("Generic_trigger_click_r"), SubResource("Generic_grip_l"), SubResource("Generic_grip_r"), SubResource("Generic_grip_click_l"), SubResource("Generic_grip_click_r"), SubResource("Generic_primary_l"), SubResource("Generic_primary_r"), SubResource("Generic_primary_click_l"), SubResource("Generic_primary_click_r"), SubResource("Generic_haptic_l"), SubResource("Generic_haptic_r")]
+
+[sub_resource type="OpenXRIPBinding" id="Index_aim_l"]
+action = SubResource("OpenXRAction_aim")
+binding_path = "/user/hand/left/input/aim/pose"
+
+[sub_resource type="OpenXRIPBinding" id="Index_aim_r"]
+action = SubResource("OpenXRAction_aim")
+binding_path = "/user/hand/right/input/aim/pose"
+
+[sub_resource type="OpenXRIPBinding" id="Index_grip_pose_l"]
+action = SubResource("OpenXRAction_grip_pose")
+binding_path = "/user/hand/left/input/grip/pose"
+
+[sub_resource type="OpenXRIPBinding" id="Index_grip_pose_r"]
+action = SubResource("OpenXRAction_grip_pose")
+binding_path = "/user/hand/right/input/grip/pose"
+
+[sub_resource type="OpenXRIPBinding" id="Index_ax_l"]
+action = SubResource("OpenXRAction_ax")
+binding_path = "/user/hand/left/input/a/click"
+
+[sub_resource type="OpenXRIPBinding" id="Index_ax_r"]
+action = SubResource("OpenXRAction_ax")
+binding_path = "/user/hand/right/input/a/click"
+
+[sub_resource type="OpenXRIPBinding" id="Index_by_l"]
+action = SubResource("OpenXRAction_by")
+binding_path = "/user/hand/left/input/b/click"
+
+[sub_resource type="OpenXRIPBinding" id="Index_by_r"]
+action = SubResource("OpenXRAction_by")
+binding_path = "/user/hand/right/input/b/click"
+
+[sub_resource type="OpenXRIPBinding" id="Index_trigger_l"]
+action = SubResource("OpenXRAction_trigger")
+binding_path = "/user/hand/left/input/trigger/value"
+
+[sub_resource type="OpenXRIPBinding" id="Index_trigger_r"]
+action = SubResource("OpenXRAction_trigger")
+binding_path = "/user/hand/right/input/trigger/value"
+
+[sub_resource type="OpenXRIPBinding" id="Index_trigger_click_l"]
+action = SubResource("OpenXRAction_trigger_click")
+binding_path = "/user/hand/left/input/trigger/click"
+
+[sub_resource type="OpenXRIPBinding" id="Index_trigger_click_r"]
+action = SubResource("OpenXRAction_trigger_click")
+binding_path = "/user/hand/right/input/trigger/click"
+
+[sub_resource type="OpenXRIPBinding" id="Index_grip_l"]
+action = SubResource("OpenXRAction_grip")
+binding_path = "/user/hand/left/input/squeeze/value"
+
+[sub_resource type="OpenXRIPBinding" id="Index_grip_r"]
+action = SubResource("OpenXRAction_grip")
+binding_path = "/user/hand/right/input/squeeze/value"
+
+[sub_resource type="OpenXRIPBinding" id="Index_grip_click_l"]
+action = SubResource("OpenXRAction_grip_click")
+binding_path = "/user/hand/left/input/squeeze/value"
+
+[sub_resource type="OpenXRIPBinding" id="Index_grip_click_r"]
+action = SubResource("OpenXRAction_grip_click")
+binding_path = "/user/hand/right/input/squeeze/value"
+
+[sub_resource type="OpenXRIPBinding" id="Index_primary_l"]
+action = SubResource("OpenXRAction_primary")
+binding_path = "/user/hand/left/input/thumbstick"
+
+[sub_resource type="OpenXRIPBinding" id="Index_primary_r"]
+action = SubResource("OpenXRAction_primary")
+binding_path = "/user/hand/right/input/thumbstick"
+
+[sub_resource type="OpenXRIPBinding" id="Index_primary_click_l"]
+action = SubResource("OpenXRAction_primary_click")
+binding_path = "/user/hand/left/input/thumbstick/click"
+
+[sub_resource type="OpenXRIPBinding" id="Index_primary_click_r"]
+action = SubResource("OpenXRAction_primary_click")
+binding_path = "/user/hand/right/input/thumbstick/click"
+
+[sub_resource type="OpenXRIPBinding" id="Index_haptic_l"]
+action = SubResource("OpenXRAction_haptic")
+binding_path = "/user/hand/left/output/haptic"
+
+[sub_resource type="OpenXRIPBinding" id="Index_haptic_r"]
+action = SubResource("OpenXRAction_haptic")
+binding_path = "/user/hand/right/output/haptic"
+
+[sub_resource type="OpenXRInteractionProfile" id="Profile_index"]
+interaction_profile_path = "/interaction_profiles/valve/index_controller"
+bindings = [SubResource("Index_aim_l"), SubResource("Index_aim_r"), SubResource("Index_grip_pose_l"), SubResource("Index_grip_pose_r"), SubResource("Index_ax_l"), SubResource("Index_ax_r"), SubResource("Index_by_l"), SubResource("Index_by_r"), SubResource("Index_trigger_l"), SubResource("Index_trigger_r"), SubResource("Index_trigger_click_l"), SubResource("Index_trigger_click_r"), SubResource("Index_grip_l"), SubResource("Index_grip_r"), SubResource("Index_grip_click_l"), SubResource("Index_grip_click_r"), SubResource("Index_primary_l"), SubResource("Index_primary_r"), SubResource("Index_primary_click_l"), SubResource("Index_primary_click_r"), SubResource("Index_haptic_l"), SubResource("Index_haptic_r")]
+
+[sub_resource type="OpenXRIPBinding" id="Vive_aim_l"]
+action = SubResource("OpenXRAction_aim")
+binding_path = "/user/hand/left/input/aim/pose"
+
+[sub_resource type="OpenXRIPBinding" id="Vive_aim_r"]
+action = SubResource("OpenXRAction_aim")
+binding_path = "/user/hand/right/input/aim/pose"
+
+[sub_resource type="OpenXRIPBinding" id="Vive_grip_pose_l"]
+action = SubResource("OpenXRAction_grip_pose")
+binding_path = "/user/hand/left/input/grip/pose"
+
+[sub_resource type="OpenXRIPBinding" id="Vive_grip_pose_r"]
+action = SubResource("OpenXRAction_grip_pose")
+binding_path = "/user/hand/right/input/grip/pose"
+
+[sub_resource type="OpenXRIPBinding" id="Vive_menu_l"]
+action = SubResource("OpenXRAction_menu")
+binding_path = "/user/hand/left/input/menu/click"
+
+[sub_resource type="OpenXRIPBinding" id="Vive_menu_r"]
+action = SubResource("OpenXRAction_menu")
+binding_path = "/user/hand/right/input/menu/click"
+
+[sub_resource type="OpenXRIPBinding" id="Vive_trigger_l"]
+action = SubResource("OpenXRAction_trigger")
+binding_path = "/user/hand/left/input/trigger/value"
+
+[sub_resource type="OpenXRIPBinding" id="Vive_trigger_r"]
+action = SubResource("OpenXRAction_trigger")
+binding_path = "/user/hand/right/input/trigger/value"
+
+[sub_resource type="OpenXRIPBinding" id="Vive_trigger_click_l"]
+action = SubResource("OpenXRAction_trigger_click")
+binding_path = "/user/hand/left/input/trigger/click"
+
+[sub_resource type="OpenXRIPBinding" id="Vive_trigger_click_r"]
+action = SubResource("OpenXRAction_trigger_click")
+binding_path = "/user/hand/right/input/trigger/click"
+
+[sub_resource type="OpenXRIPBinding" id="Vive_grip_l"]
+action = SubResource("OpenXRAction_grip")
+binding_path = "/user/hand/left/input/squeeze/click"
+
+[sub_resource type="OpenXRIPBinding" id="Vive_grip_r"]
+action = SubResource("OpenXRAction_grip")
+binding_path = "/user/hand/right/input/squeeze/click"
+
+[sub_resource type="OpenXRIPBinding" id="Vive_grip_click_l"]
+action = SubResource("OpenXRAction_grip_click")
+binding_path = "/user/hand/left/input/squeeze/click"
+
+[sub_resource type="OpenXRIPBinding" id="Vive_grip_click_r"]
+action = SubResource("OpenXRAction_grip_click")
+binding_path = "/user/hand/right/input/squeeze/click"
+
+[sub_resource type="OpenXRIPBinding" id="Vive_primary_l"]
+action = SubResource("OpenXRAction_primary")
+binding_path = "/user/hand/left/input/trackpad"
+
+[sub_resource type="OpenXRIPBinding" id="Vive_primary_r"]
+action = SubResource("OpenXRAction_primary")
+binding_path = "/user/hand/right/input/trackpad"
+
+[sub_resource type="OpenXRIPBinding" id="Vive_primary_click_l"]
+action = SubResource("OpenXRAction_primary_click")
+binding_path = "/user/hand/left/input/trackpad/click"
+
+[sub_resource type="OpenXRIPBinding" id="Vive_primary_click_r"]
+action = SubResource("OpenXRAction_primary_click")
+binding_path = "/user/hand/right/input/trackpad/click"
+
+[sub_resource type="OpenXRIPBinding" id="Vive_haptic_l"]
+action = SubResource("OpenXRAction_haptic")
+binding_path = "/user/hand/left/output/haptic"
+
+[sub_resource type="OpenXRIPBinding" id="Vive_haptic_r"]
+action = SubResource("OpenXRAction_haptic")
+binding_path = "/user/hand/right/output/haptic"
+
+[sub_resource type="OpenXRInteractionProfile" id="Profile_vive"]
+interaction_profile_path = "/interaction_profiles/htc/vive_controller"
+bindings = [SubResource("Vive_aim_l"), SubResource("Vive_aim_r"), SubResource("Vive_grip_pose_l"), SubResource("Vive_grip_pose_r"), SubResource("Vive_menu_l"), SubResource("Vive_menu_r"), SubResource("Vive_trigger_l"), SubResource("Vive_trigger_r"), SubResource("Vive_trigger_click_l"), SubResource("Vive_trigger_click_r"), SubResource("Vive_grip_l"), SubResource("Vive_grip_r"), SubResource("Vive_grip_click_l"), SubResource("Vive_grip_click_r"), SubResource("Vive_primary_l"), SubResource("Vive_primary_r"), SubResource("Vive_primary_click_l"), SubResource("Vive_primary_click_r"), SubResource("Vive_haptic_l"), SubResource("Vive_haptic_r")]
+
+[sub_resource type="OpenXRIPBinding" id="WMR_aim_l"]
+action = SubResource("OpenXRAction_aim")
+binding_path = "/user/hand/left/input/aim/pose"
+
+[sub_resource type="OpenXRIPBinding" id="WMR_aim_r"]
+action = SubResource("OpenXRAction_aim")
+binding_path = "/user/hand/right/input/aim/pose"
+
+[sub_resource type="OpenXRIPBinding" id="WMR_grip_pose_l"]
+action = SubResource("OpenXRAction_grip_pose")
+binding_path = "/user/hand/left/input/grip/pose"
+
+[sub_resource type="OpenXRIPBinding" id="WMR_grip_pose_r"]
+action = SubResource("OpenXRAction_grip_pose")
+binding_path = "/user/hand/right/input/grip/pose"
+
+[sub_resource type="OpenXRIPBinding" id="WMR_menu_l"]
+action = SubResource("OpenXRAction_menu")
+binding_path = "/user/hand/left/input/menu/click"
+
+[sub_resource type="OpenXRIPBinding" id="WMR_menu_r"]
+action = SubResource("OpenXRAction_menu")
+binding_path = "/user/hand/right/input/menu/click"
+
+[sub_resource type="OpenXRIPBinding" id="WMR_trigger_l"]
+action = SubResource("OpenXRAction_trigger")
+binding_path = "/user/hand/left/input/trigger/value"
+
+[sub_resource type="OpenXRIPBinding" id="WMR_trigger_r"]
+action = SubResource("OpenXRAction_trigger")
+binding_path = "/user/hand/right/input/trigger/value"
+
+[sub_resource type="OpenXRIPBinding" id="WMR_trigger_click_l"]
+action = SubResource("OpenXRAction_trigger_click")
+binding_path = "/user/hand/left/input/trigger/value"
+
+[sub_resource type="OpenXRIPBinding" id="WMR_trigger_click_r"]
+action = SubResource("OpenXRAction_trigger_click")
+binding_path = "/user/hand/right/input/trigger/value"
+
+[sub_resource type="OpenXRIPBinding" id="WMR_grip_l"]
+action = SubResource("OpenXRAction_grip")
+binding_path = "/user/hand/left/input/squeeze/click"
+
+[sub_resource type="OpenXRIPBinding" id="WMR_grip_r"]
+action = SubResource("OpenXRAction_grip")
+binding_path = "/user/hand/right/input/squeeze/click"
+
+[sub_resource type="OpenXRIPBinding" id="WMR_grip_click_l"]
+action = SubResource("OpenXRAction_grip_click")
+binding_path = "/user/hand/left/input/squeeze/click"
+
+[sub_resource type="OpenXRIPBinding" id="WMR_grip_click_r"]
+action = SubResource("OpenXRAction_grip_click")
+binding_path = "/user/hand/right/input/squeeze/click"
+
+[sub_resource type="OpenXRIPBinding" id="WMR_primary_l"]
+action = SubResource("OpenXRAction_primary")
+binding_path = "/user/hand/left/input/thumbstick"
+
+[sub_resource type="OpenXRIPBinding" id="WMR_primary_r"]
+action = SubResource("OpenXRAction_primary")
+binding_path = "/user/hand/right/input/thumbstick"
+
+[sub_resource type="OpenXRIPBinding" id="WMR_primary_click_l"]
+action = SubResource("OpenXRAction_primary_click")
+binding_path = "/user/hand/left/input/thumbstick/click"
+
+[sub_resource type="OpenXRIPBinding" id="WMR_primary_click_r"]
+action = SubResource("OpenXRAction_primary_click")
+binding_path = "/user/hand/right/input/thumbstick/click"
+
+[sub_resource type="OpenXRIPBinding" id="WMR_haptic_l"]
+action = SubResource("OpenXRAction_haptic")
+binding_path = "/user/hand/left/output/haptic"
+
+[sub_resource type="OpenXRIPBinding" id="WMR_haptic_r"]
+action = SubResource("OpenXRAction_haptic")
+binding_path = "/user/hand/right/output/haptic"
+
+[sub_resource type="OpenXRInteractionProfile" id="Profile_wmr"]
+interaction_profile_path = "/interaction_profiles/microsoft/motion_controller"
+bindings = [SubResource("WMR_aim_l"), SubResource("WMR_aim_r"), SubResource("WMR_grip_pose_l"), SubResource("WMR_grip_pose_r"), SubResource("WMR_menu_l"), SubResource("WMR_menu_r"), SubResource("WMR_trigger_l"), SubResource("WMR_trigger_r"), SubResource("WMR_trigger_click_l"), SubResource("WMR_trigger_click_r"), SubResource("WMR_grip_l"), SubResource("WMR_grip_r"), SubResource("WMR_grip_click_l"), SubResource("WMR_grip_click_r"), SubResource("WMR_primary_l"), SubResource("WMR_primary_r"), SubResource("WMR_primary_click_l"), SubResource("WMR_primary_click_r"), SubResource("WMR_haptic_l"), SubResource("WMR_haptic_r")]
+
+[resource]
+action_sets = [SubResource("OpenXRActionSet_eli")]
+interaction_profiles = [SubResource("Profile_touch"), SubResource("Profile_simple"), SubResource("Profile_generic"), SubResource("Profile_index"), SubResource("Profile_vive"), SubResource("Profile_wmr")]

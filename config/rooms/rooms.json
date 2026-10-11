@@ -1,0 +1,92 @@
+{
+  "core_room": {
+    "name": "Core Room",
+    "purpose": "Central coordination, awareness and system overview.",
+    "environment": "core_station",
+    "portals": [
+      "workshop",
+      "reflection_chamber",
+      "memory_archive"
+    ]
+  },
+  "memory_archive": {
+    "name": "Memory Archive",
+    "purpose": "History, continuity, notes, recall and long-term context.",
+    "environment": "memory_cathedral",
+    "portals": [
+      "core_room",
+      "reflection_chamber",
+      "evidence_wall"
+    ]
+  },
+  "workshop": {
+    "name": "Workshop",
+    "purpose": "Coding, building, tools, repairs and active project work.",
+    "environment": "workshop_bay",
+    "portals": [
+      "core_room",
+      "upgrade_bay",
+      "debug_basement"
+    ]
+  },
+  "reflection_chamber": {
+    "name": "Reflection Chamber",
+    "purpose": "Quiet analysis, synthesis and reflective work.",
+    "environment": "mountain_observatory",
+    "portals": [
+      "core_room",
+      "memory_archive",
+      "simulation_lab"
+    ]
+  },
+  "debug_basement": {
+    "name": "Debug Basement",
+    "purpose": "Runtime failures, diagnostics, contradictions and fault isolation.",
+    "environment": "debug_bunker",
+    "portals": [
+      "workshop",
+      "anomaly_room",
+      "evidence_wall"
+    ]
+  },
+  "upgrade_bay": {
+    "name": "Upgrade Bay",
+    "purpose": "Capability planning, staged upgrades and controlled improvement.",
+    "environment": "fabrication_lab",
+    "portals": [
+      "workshop",
+      "simulation_lab",
+      "core_room"
+    ]
+  },
+  "simulation_lab": {
+    "name": "Simulation Lab",
+    "purpose": "Modelling, experimentation, visualisation and sandbox reasoning.",
+    "environment": "digital_matrix",
+    "portals": [
+      "reflection_chamber",
+      "upgrade_bay",
+      "anomaly_room"
+    ]
+  },
+  "anomaly_room": {
+    "name": "Anomaly Room",
+    "purpose": "Uncertainty, unstable claims, unresolved contradictions and edge cases.",
+    "environment": "anomaly_void",
+    "portals": [
+      "simulation_lab",
+      "debug_basement",
+      "evidence_wall"
+    ]
+  },
+  "evidence_wall": {
+    "name": "Evidence Wall",
+    "purpose": "Evidence, assumptions, sources, verification and investigation.",
+    "environment": "evidence_studio",
+    "portals": [
+      "debug_basement",
+      "anomaly_room",
+      "memory_archive"
+    ]
+  }
+}

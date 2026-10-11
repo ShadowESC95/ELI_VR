@@ -1,0 +1,90 @@
+{
+  "frontier": {
+    "display_name": "Blue",
+    "surface": "#07121a",
+    "accent": "#58c8ff",
+    "text": "#eefaff",
+    "secondary": "#477f9b",
+    "sky_top": "#0a3154",
+    "sky_horizon": "#537f98",
+    "sky_bottom": "#02070c",
+    "emission_gain": 1.14
+  },
+  "obsidian": {
+    "display_name": "Black",
+    "surface": "#020202",
+    "accent": "#d8d8d8",
+    "text": "#ffffff",
+    "secondary": "#474747",
+    "sky_top": "#101113",
+    "sky_horizon": "#34383c",
+    "sky_bottom": "#000000",
+    "emission_gain": 0.95
+  },
+  "nebula": {
+    "display_name": "Purple",
+    "surface": "#100919",
+    "accent": "#b986ff",
+    "text": "#faf4ff",
+    "secondary": "#765398",
+    "sky_top": "#281047",
+    "sky_horizon": "#75499a",
+    "sky_bottom": "#050208",
+    "emission_gain": 1.22
+  },
+  "emerald": {
+    "display_name": "Green",
+    "surface": "#06110c",
+    "accent": "#68e891",
+    "text": "#effff4",
+    "secondary": "#4b865f",
+    "sky_top": "#0a2d1c",
+    "sky_horizon": "#4f8a62",
+    "sky_bottom": "#020603",
+    "emission_gain": 1.16
+  },
+  "solar": {
+    "display_name": "Orange",
+    "surface": "#170905",
+    "accent": "#ff8b45",
+    "text": "#fff5ec",
+    "secondary": "#a6502b",
+    "sky_top": "#47150a",
+    "sky_horizon": "#c96334",
+    "sky_bottom": "#080201",
+    "emission_gain": 1.18
+  },
+  "abyssal": {
+    "display_name": "Cyan",
+    "surface": "#031016",
+    "accent": "#42d8e8",
+    "text": "#ecfdff",
+    "secondary": "#337989",
+    "sky_top": "#06364a",
+    "sky_horizon": "#318999",
+    "sky_bottom": "#010508",
+    "emission_gain": 1.12
+  },
+  "aurora": {
+    "display_name": "Ice Blue",
+    "surface": "#06101a",
+    "accent": "#8ad7ff",
+    "text": "#f2fbff",
+    "secondary": "#698ca8",
+    "sky_top": "#0d2a51",
+    "sky_horizon": "#4b819f",
+    "sky_bottom": "#020612",
+    "emission_gain": 1.1
+  },
+  "monolith": {
+    "display_name": "White",
+    "surface": "#111214",
+    "accent": "#f0f0f0",
+    "text": "#ffffff",
+    "secondary": "#858585",
+    "sky_top": "#24272a",
+    "sky_horizon": "#787d82",
+    "sky_bottom": "#030405",
+    "emission_gain": 0.92
+  }
+}

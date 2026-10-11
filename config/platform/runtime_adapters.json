@@ -1,0 +1,44 @@
+{
+  "Windows": {
+    "xr": "system OpenXR runtime",
+    "desktop_capture": "Windows Graphics Capture / Desktop Duplication adapter",
+    "graphics": "Vulkan or D3D-backed Godot renderer",
+    "status": "core portable; native capture adapter required for production"
+  },
+  "Linux_Wayland": {
+    "xr": "system OpenXR runtime / Monado / other conformant runtime",
+    "desktop_capture": "XDG Desktop Portal ScreenCast + PipeWire",
+    "graphics": "Vulkan",
+    "status": "core portable; portal/PipeWire capture adapter required"
+  },
+  "Linux_X11": {
+    "xr": "system OpenXR runtime",
+    "desktop_capture": "X11/native capture adapter",
+    "graphics": "Vulkan/OpenGL compatibility",
+    "status": "core portable"
+  },
+  "macOS": {
+    "xr": "OpenXR provider where available; flat mode otherwise",
+    "desktop_capture": "ScreenCaptureKit + Metal/IOSurface adapter",
+    "graphics": "Metal through Godot",
+    "status": "core portable; XR/runtime availability is platform-dependent"
+  },
+  "Android_XR": {
+    "xr": "OpenXR mobile runtime",
+    "desktop_capture": "remote desktop or MediaProjection adapter",
+    "graphics": "Vulkan/OpenGL ES through Godot",
+    "status": "portable core; packaging/native adapter work required"
+  },
+  "iOS": {
+    "xr": "platform-dependent; flat/spatial mode adapter",
+    "desktop_capture": "ReplayKit/remote source",
+    "graphics": "Metal through Godot",
+    "status": "portable core; XR mode depends on available runtime"
+  },
+  "Web": {
+    "xr": "WebXR adapter/future path",
+    "desktop_capture": "browser capture APIs with explicit permission",
+    "graphics": "WebGL/WebGPU depending Godot target",
+    "status": "portable world/UI logic; separate web XR adapter required"
+  }
+}

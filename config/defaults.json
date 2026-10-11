@@ -1,0 +1,121 @@
+{
+  "schema_version": 1,
+  "app": {
+    "name": "ELI VR",
+    "standalone": true,
+    "future_eli_bridge_enabled": false
+  },
+  "xr": {
+    "mode": "auto",
+    "reference_space": "stage",
+    "render_scale": 1.0,
+    "snap_turn_degrees": 30,
+    "smooth_locomotion": true,
+    "move_speed": 2.0,
+    "turn_cooldown_seconds": 0.3,
+    "controller_rays": true,
+    "foveation": "auto",
+    "hand_tracking": "auto",
+    "eye_gaze": "auto",
+    "composition_layers": "auto",
+    "pause_when_unfocused": true,
+    "locomotion_mode": "auto",
+    "fly_speed": 5.0,
+    "boost_multiplier": 2.4,
+    "controller_calibration": {
+      "offset_x_m": 0.0,
+      "offset_y_m": 0.0,
+      "offset_z_m": 0.0,
+      "yaw_deg": 0.0,
+      "target_forward_m": 0.42,
+      "target_down_m": 0.3
+    },
+    "universal_flight": true
+  },
+  "graphics": {
+    "quality": "auto",
+    "renderer": "mobile",
+    "shadows": true,
+    "fog": true,
+    "particles": true,
+    "world_detail_scale": 1.0,
+    "auto_quality": true,
+    "dynamic_resolution": true,
+    "minimum_render_scale": 0.65,
+    "maximum_render_scale": 1.1,
+    "target_fps_ratio": 0.92,
+    "texture_budget": "auto",
+    "stereo_safe_effects_only": true
+  },
+  "world": {
+    "room": "core_room",
+    "environment_override": "",
+    "theme": "frontier",
+    "time_of_day": "dusk",
+    "portals": true,
+    "spatial_console": true,
+    "object_manipulation": true,
+    "palette_world_strength": 0.02
+  },
+  "desktop": {
+    "enabled": true,
+    "capture_mode": "auto",
+    "bridge_host": "127.0.0.1",
+    "bridge_port": 47831,
+    "bridge_fps": 15,
+    "bridge_width": 1280,
+    "jpeg_quality": 72,
+    "distance_m": 5.6,
+    "width_m": 4.2,
+    "height_m": 2.36,
+    "vertical_offset_m": 2.55,
+    "curvature_reserved": 0.0,
+    "interactive_input_reserved": false,
+    "display_mode": "mesh",
+    "composition_layer_preferred": true,
+    "spectator_mesh": false,
+    "input_mode": "reserved",
+    "horizontal_offset_m": 0.0,
+    "layout_version": 2
+  },
+  "ui": {
+    "desktop_dock": true,
+    "performance_hud": true,
+    "show_help_on_start": true,
+    "console_distance_m": 2.7,
+    "wrist_menu": true,
+    "spatial_panels_grabbable": true
+  },
+  "developer": {
+    "log_level": "info",
+    "show_fps": true,
+    "allow_experimental": true
+  },
+  "eli_bridge": {
+    "enabled": false,
+    "transport": "websocket",
+    "endpoint": "ws://127.0.0.1:47832",
+    "token_env": "ELI_VR_TOKEN"
+  },
+  "audio": {
+    "enabled": true,
+    "ambient_volume_db": -18.0,
+    "spatial_ui_volume_db": -10.0
+  },
+  "diagnostics": {
+    "hardware_doctor_on_first_run": true,
+    "write_session_report": true,
+    "xr_input_overlay": false
+  },
+  "network": {
+    "mode": "local_only",
+    "allow_loopback": true,
+    "allow_remote": false,
+    "telemetry": false,
+    "analytics": false,
+    "sign_in": false,
+    "cloud_sync": false,
+    "auto_update": false,
+    "remote_asset_downloads": false
+  }
+}

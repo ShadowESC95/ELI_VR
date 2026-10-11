@@ -1,0 +1,12 @@
+{
+  "graphics": {
+    "quality": "high",
+    "shadows": true,
+    "fog": true,
+    "particles": true,
+    "world_detail_scale": 1.35
+  },
+  "xr": {
+    "render_scale": 1.0
+  }
+}

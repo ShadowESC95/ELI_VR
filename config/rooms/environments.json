@@ -1,0 +1,92 @@
+{
+  "core_station": {
+    "name": "Orbital Core Station",
+    "style": "core_station",
+    "locomotion": "free_flight",
+    "world_scale": "large"
+  },
+  "memory_cathedral": {
+    "name": "Memory Cathedral",
+    "style": "memory_cathedral",
+    "locomotion": "free_flight",
+    "world_scale": "large"
+  },
+  "workshop_bay": {
+    "name": "Engineering Workshop",
+    "style": "workshop_bay",
+    "locomotion": "free_flight",
+    "world_scale": "large"
+  },
+  "mountain_observatory": {
+    "name": "Mountain Observatory",
+    "style": "mountain",
+    "locomotion": "free_flight",
+    "world_scale": "large"
+  },
+  "debug_bunker": {
+    "name": "Debug Bunker",
+    "style": "debug_bunker",
+    "locomotion": "free_flight",
+    "world_scale": "large"
+  },
+  "fabrication_lab": {
+    "name": "Fabrication Lab",
+    "style": "fabrication_lab",
+    "locomotion": "free_flight",
+    "world_scale": "large"
+  },
+  "digital_matrix": {
+    "name": "Digital Matrix",
+    "style": "digital_matrix",
+    "locomotion": "free_flight",
+    "world_scale": "large"
+  },
+  "anomaly_void": {
+    "name": "Anomaly Void",
+    "style": "anomaly_void",
+    "locomotion": "free_flight",
+    "world_scale": "large"
+  },
+  "evidence_studio": {
+    "name": "Evidence Studio",
+    "style": "evidence_studio",
+    "locomotion": "free_flight",
+    "world_scale": "large"
+  },
+  "forest_sanctuary": {
+    "name": "Forest Sanctuary",
+    "style": "forest",
+    "locomotion": "free_flight",
+    "world_scale": "large"
+  },
+  "ocean_platform": {
+    "name": "Ocean Platform",
+    "style": "ocean",
+    "locomotion": "free_flight",
+    "world_scale": "large"
+  },
+  "deep_space": {
+    "name": "Deep Space Observatory",
+    "style": "deep_space",
+    "locomotion": "free_flight",
+    "world_scale": "large"
+  },
+  "arctic_aurora": {
+    "name": "Arctic Aurora",
+    "style": "arctic",
+    "locomotion": "free_flight",
+    "world_scale": "large"
+  },
+  "desert_observatory": {
+    "name": "Desert Observatory",
+    "style": "desert",
+    "locomotion": "free_flight",
+    "world_scale": "large"
+  },
+  "underwater_lab": {
+    "name": "Underwater Research Lab",
+    "style": "underwater",
+    "locomotion": "free_flight",
+    "world_scale": "large"
+  }
+}
