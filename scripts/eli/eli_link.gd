@@ -10,6 +10,7 @@ signal world_state_received(state: Dictionary)
 signal link_changed(connected: bool)
 
 const DEFAULT_ENDPOINT := "http://127.0.0.1:8081"
+const LOOPBACK := "http://127.0.0.1"
 const OLD_PLACEHOLDER := "ws://127.0.0.1:47832"
 const RETRY_SECONDS := 5.0
 
@@ -32,7 +33,7 @@ func configure(config, policy) -> void:
     # ELI's port can be moved off 8081. When ELI starts us it says which one.
     var port := OS.get_environment("ELI_API_PORT")
     if base_url == DEFAULT_ENDPOINT and port.is_valid_int():
-        base_url = "http://127.0.0.1:%s" % port
+        base_url = "%s:%s" % [LOOPBACK, port]
 
     var token_env := str(config.get_value("eli_bridge.token_env", "ELI_VR_TOKEN"))
     _token = OS.get_environment(token_env) if not token_env.is_empty() else ""
