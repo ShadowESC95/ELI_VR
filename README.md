@@ -1,6 +1,6 @@
 # ELI VR
 
-A spatial workspace you can stand inside: fifteen 3D environments, a movable live desktop screen, and a control console, built on Godot 4.7 and OpenXR. It runs in a headset, and it runs on a plain monitor when there isn't one.
+A spatial workspace you can stand inside: fifteen places from an orbiting station to a misty forest, a movable live desktop screen, and a control console, built on Godot 4.7 and OpenXR. It runs in a headset, and it runs on a plain monitor when there isn't one.
 
 **Version 0.7.0** · Linux · Windows · macOS
 
@@ -80,31 +80,38 @@ Oculus Touch is the tested layout. Valve Index, HTC Vive (trackpad stands in for
 
 ## Environments
 
-Nine ELI rooms, each with its own environment:
+Fifteen places, each built as somewhere to be and none of them still.
 
-| Room | Environment |
+![All fifteen rooms](docs/images/rooms-all.jpg)
+
+The nine ELI rooms:
+
+| Room | Where you are | What moves |
+|---|---|---|
+| Core Room | An open deck on a station in orbit, Earth below, the real Milky Way overhead | The station's outer ring, the hub, a projected globe, Earth's cloud |
+| Memory Archive | A marble hall open to the stars, walls shelved with small lights | Every light keeps its own time; some drift loose and rise; rings turn overhead |
+| Workshop | A repair bay with its door open to space | A welding arm, a crane on its rails, a beacon, Earth going by outside |
+| Reflection Chamber | A stone terrace on a mountain plateau at dawn, ringed by still water | Birds, dust in the first light |
+| Debug Basement | A concrete bunker of racks and old terminals | Status lamps, scrolling logs, a roof fan, one strip light on its way out |
+| Upgrade Bay | A clean white lab | A printer building a part, crates on a belt, an arm sorting them |
+| Simulation Lab | A world that is only being computed: grid, wire hills, towers of data | Everything |
+| Anomaly Room | A cracked deck drifting towards a black hole | The disc of the hole, arcs between pylons, debris spiralling in |
+| Evidence Wall | A dim studio with a long wall of pinned sheets strung with thread | A fan, a projector changing slides, dust in the lamps |
+
+Six more workspaces:
+
+| Workspace | Where you are |
 |---|---|
-| Core Room | Orbital Core Station |
-| Memory Archive | Memory Cathedral |
-| Workshop | Engineering Workshop |
-| Reflection Chamber | Mountain Observatory |
-| Debug Basement | Debug Bunker |
-| Upgrade Bay | Fabrication Lab |
-| Simulation Lab | Digital Matrix |
-| Anomaly Room | Anomaly Void |
-| Evidence Wall | Evidence Studio |
+| Forest Sanctuary | A timber deck among tall pines in morning mist |
+| Ocean Platform | A rig at sea at sunset; the water carries the sky |
+| Deep Space Observatory | A platform beside a ringed giant, rocks tumbling past |
+| Arctic Aurora | A snowfield at night under the northern lights |
+| Desert Observatory | Dunes under the Milky Way, a dome and a dish at work |
+| Underwater Research Lab | A glass dome on the seabed, kelp, shoals, shafts of light |
 
-Six more workspaces: Forest Sanctuary, Ocean Platform, Deep Space Observatory, Arctic Aurora, Desert Observatory and Underwater Research Lab.
+The night sky is NASA's star map and the Earth is NASA's Blue Marble. The forest, the mountain and the sunset are photographs of real places, laid on the ground so that what is near stays put as you move. Stone, wood, metal, snow and sand are scanned materials. All of it is free to use and listed in [assets/CREDITS.md](assets/CREDITS.md).
 
-All of them are real 3D places, not panoramic photos.
-
-The **Core Room** is the first one rebuilt to a higher standard: an open observation deck on a station in orbit. The sky is NASA's real star map, Earth below is NASA's Blue Marble with drifting cloud and city lights on the night side, the deck is scanned metal, and things move: the station's outer ring swings past, the hub turns, screens tick over. The theme sets the colour of every light in the room.
-
-| | |
-|---|---|
-| ![The Core Room from outside](docs/images/core-room-outside.jpg) | ![Looking towards the sun](docs/images/core-room-sun.jpg) |
-
-The other fourteen are still the simple generated versions and are next. Eight interface themes and four quality profiles (`low`, `medium`, `high`, `ultra`) apply to every room. Art sources and licences are in [assets/CREDITS.md](assets/CREDITS.md).
+Eight themes set the colour of the lights in every room, and four quality profiles (`low`, `medium`, `high`, `ultra`) apply everywhere. All fifteen hold 90 frames a second on the reference headset.
 
 ## Live desktop screen
 

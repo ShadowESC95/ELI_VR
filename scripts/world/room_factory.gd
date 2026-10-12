@@ -5,7 +5,25 @@ const Manipulable3DClass = preload("res://scripts/world/manipulable_3d.gd")
 const CosmicFieldClass = preload("res://scripts/world/cosmic_field.gd")
 const ProceduralGeometryClass = preload("res://scripts/world/procedural_geometry.gd")
 const CinematicAssetsClass = preload("res://scripts/world/cinematic_assets.gd")
-const OrbitalCoreClass = preload("res://scripts/world/rooms/orbital_core.gd")
+# Rooms rebuilt as places of their own. Each is a script in rooms/; anything
+# not listed here still comes from the older builders further down.
+const REBUILT := {
+    "core_station": preload("res://scripts/world/rooms/orbital_core.gd"),
+    "deep_space": preload("res://scripts/world/rooms/deep_space.gd"),
+    "anomaly_void": preload("res://scripts/world/rooms/anomaly_void.gd"),
+    "arctic_aurora": preload("res://scripts/world/rooms/arctic_aurora.gd"),
+    "digital_matrix": preload("res://scripts/world/rooms/digital_matrix.gd"),
+    "desert_observatory": preload("res://scripts/world/rooms/desert_observatory.gd"),
+    "mountain_observatory": preload("res://scripts/world/rooms/mountain_observatory.gd"),
+    "forest_sanctuary": preload("res://scripts/world/rooms/forest_sanctuary.gd"),
+    "ocean_platform": preload("res://scripts/world/rooms/ocean_platform.gd"),
+    "underwater_lab": preload("res://scripts/world/rooms/underwater_lab.gd"),
+    "memory_cathedral": preload("res://scripts/world/rooms/memory_cathedral.gd"),
+    "workshop_bay": preload("res://scripts/world/rooms/workshop_bay.gd"),
+    "debug_bunker": preload("res://scripts/world/rooms/debug_bunker.gd"),
+    "fabrication_lab": preload("res://scripts/world/rooms/fabrication_lab.gd"),
+    "evidence_studio": preload("res://scripts/world/rooms/evidence_studio.gd"),
+}
 
 var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 var theme: Dictionary = {}
@@ -36,13 +54,16 @@ func build(
     particles = bool(config.get_value("graphics.particles", true))
     palette_world_strength = float(config.get_value("world.palette_world_strength", 0.02))
 
+    if REBUILT.has(environment_id):
+        var room = REBUILT[environment_id].new()
+        room.name = environment_id
+        parent.add_child(room)
+        room.build(theme, config)
+        return
+
     match environment_id:
         "core_station":
-            # Rooms rebuilt as places of their own live in scripts/world/rooms/.
-            var room = OrbitalCoreClass.new()
-            room.name = "OrbitalCore"
-            parent.add_child(room)
-            room.build(theme, config)
+            _build_core(parent)
         "memory_cathedral":
             _build_memory(parent)
         "workshop_bay":

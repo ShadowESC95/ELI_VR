@@ -101,6 +101,130 @@ static func arc(r0: float, y0: float, r1: float, y1: float, angle: float, steps:
         out.append(dir * (r1 + (r0 - r1) * cos(t)) + Vector3.UP * (y0 + (y1 - y0) * sin(t)))
     return out
 
+# Open ground: a square of land centred on the origin. It is level inside
+# `flat` metres of the centre, where the room's floor goes, and rises into
+# the noise over the next `rise` metres. `bowl` lifts the far edges, for land
+# that climbs away from you.
+static func terrain(
+    size: float, cells: int, noise: FastNoiseLite, height: float,
+    flat: float, rise: float, bowl: float = 0.0, base_y: float = 0.0
+) -> ArrayMesh:
+    var step := size / float(cells)
+    var half := size * 0.5
+    var heights := PackedFloat32Array()
+    heights.resize((cells + 1) * (cells + 1))
+    for j in cells + 1:
+        for i in cells + 1:
+            var x := -half + step * i
+            var z := -half + step * j
+            var r := Vector2(x, z).length()
+            var lift := smoothstep(flat, flat + rise, r)
+            var far := clampf((r - flat) / maxf(half - flat, 0.001), 0.0, 1.0)
+            heights[j * (cells + 1) + i] = base_y + lift * (
+                height * (noise.get_noise_2d(x, z) * 0.5 + 0.5) + bowl * far * far)
+
+    var st := SurfaceTool.new()
+    st.begin(Mesh.PRIMITIVE_TRIANGLES)
+    for j in cells + 1:
+        for i in cells + 1:
+            var x := -half + step * i
+            var z := -half + step * j
+            var left := heights[j * (cells + 1) + maxi(i - 1, 0)]
+            var right := heights[j * (cells + 1) + mini(i + 1, cells)]
+            var back := heights[maxi(j - 1, 0) * (cells + 1) + i]
+            var front := heights[mini(j + 1, cells) * (cells + 1) + i]
+            st.set_normal(Vector3(left - right, 2.0 * step, back - front).normalized())
+            st.set_uv(Vector2(x, z))
+            st.add_vertex(Vector3(x, heights[j * (cells + 1) + i], z))
+    for j in cells:
+        for i in cells:
+            var a := j * (cells + 1) + i
+            var b := a + 1
+            var c := a + cells + 1
+            var d := c + 1
+            for index in [a, b, c, b, d, c]:
+                st.add_index(index)
+    st.generate_tangents()
+    return st.commit()
+
+# A boulder: a ball pushed in and out by noise. Each seed is a different rock.
+static func rock(seed_value: int, radius: float, lumps: float = 0.35, rings: int = 14) -> ArrayMesh:
+    var noise := FastNoiseLite.new()
+    noise.seed = seed_value
+    noise.frequency = 0.9
+    noise.fractal_octaves = 3
+    var around := rings * 2
+    var st := SurfaceTool.new()
+    st.begin(Mesh.PRIMITIVE_TRIANGLES)
+    for j in rings + 1:
+        var v := float(j) / float(rings)
+        var polar := v * PI
+        for i in around + 1:
+            var u := float(i) / float(around)
+            var angle := u * TAU
+            var dir := Vector3(sin(polar) * cos(angle), cos(polar), sin(polar) * sin(angle))
+            var push := 1.0 + lumps * noise.get_noise_3dv(dir * 1.7) + lumps * 0.4 * noise.get_noise_3dv(dir * 5.0)
+            st.set_uv(Vector2(u * 4.0, v * 2.0) * radius)
+            st.add_vertex(dir * radius * push * Vector3(1.0, 0.78, 1.0))
+    for j in rings:
+        for i in around:
+            var a := j * (around + 1) + i
+            var b := a + 1
+            var c := a + around + 1
+            var d := c + 1
+            for index in [a, b, c, b, d, c]:
+                st.add_index(index)
+    st.generate_normals()
+    st.generate_tangents()
+    return st.commit()
+
+# A sheet hanging along a path: aurora, banners, falls of light. UV.x runs
+# along the path in metres, UV.y from 0 at the bottom to 1 at the top.
+static func curtain(path: PackedVector3Array, height: float) -> ArrayMesh:
+    var st := SurfaceTool.new()
+    st.begin(Mesh.PRIMITIVE_TRIANGLES)
+    var run := 0.0
+    for i in range(path.size() - 1):
+        var p := path[i]
+        var q := path[i + 1]
+        var length := p.distance_to(q)
+        if length < 0.0001:
+            continue
+        var normal := Vector3.UP.cross(q - p).normalized()
+        var up := Vector3.UP * height
+        _quad(
+            st, p, q, q + up, p + up, normal, normal,
+            Vector2(run, 0.0), Vector2(run + length, 0.0), Vector2(run + length, 1.0), Vector2(run, 1.0)
+        )
+        run += length
+    st.generate_tangents()
+    return st.commit()
+
+# A plant: blades fanned round a point, each standing up and leaning over as
+# it rises. Ferns, kelp, reeds. UV.y is 1 at the root and 0 at the tip.
+static func plant(blades: int, width: float, height: float, lean: float, seed_value: int = 1, segments: int = 6) -> ArrayMesh:
+    var rng := RandomNumberGenerator.new()
+    rng.seed = seed_value
+    var st := SurfaceTool.new()
+    st.begin(Mesh.PRIMITIVE_TRIANGLES)
+    for b in blades:
+        var angle := TAU * float(b) / float(blades) + rng.randf_range(-0.3, 0.3)
+        var out := Vector3(cos(angle), 0.0, sin(angle))
+        var side := Vector3(-sin(angle), 0.0, cos(angle))
+        var tall := height * rng.randf_range(0.7, 1.1)
+        var over := lean * rng.randf_range(0.6, 1.25)
+        for s in segments:
+            var t0 := float(s) / float(segments)
+            var t1 := float(s + 1) / float(segments)
+            var p0 := out * (over * t0 * t0) + Vector3.UP * (tall * (t0 - 0.28 * t0 * t0))
+            var p1 := out * (over * t1 * t1) + Vector3.UP * (tall * (t1 - 0.28 * t1 * t1))
+            var w := side * width * 0.5
+            var normal := side.cross(p1 - p0).normalized()
+            _quad(st, p0 - w, p0 + w, p1 + w, p1 - w, normal, normal,
+                Vector2(0.0, 1.0 - t0), Vector2(1.0, 1.0 - t0), Vector2(1.0, 1.0 - t1), Vector2(0.0, 1.0 - t1))
+    st.generate_tangents()
+    return st.commit()
+
 # Two triangles, wound so the face shows from the side its normal points to.
 static func _quad(
     st: SurfaceTool,

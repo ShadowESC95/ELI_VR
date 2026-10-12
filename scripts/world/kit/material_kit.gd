@@ -27,6 +27,28 @@ static func metal(name: String, tile: float = 1.0, tint: Color = Color.WHITE, po
     m.uv1_scale = Vector3(1.0 / tile, 1.0 / tile, 1.0)
     return m
 
+# Stone, snow, sand, wood: the same scanned sets, for surfaces that are not
+# metal. `wrap` maps the texture from three sides, for rocks and rough land
+# that have no sensible flat layout.
+static func surface(name: String, tile: float = 1.0, tint: Color = Color.WHITE, polish: float = 1.0, wrap: bool = false) -> StandardMaterial3D:
+    var m := metal(name, tile, tint, polish)
+    m.uv1_triplanar = wrap
+    return m
+
+# Glass and ice: see-through, with a sheen.
+static func glass(colour: Color, clarity: float = 0.35, glow: float = 0.0) -> StandardMaterial3D:
+    var m := StandardMaterial3D.new()
+    m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+    m.albedo_color = Color(colour.r, colour.g, colour.b, clarity)
+    m.roughness = 0.08
+    m.metallic = 0.3
+    m.cull_mode = BaseMaterial3D.CULL_DISABLED
+    if glow > 0.0:
+        m.emission_enabled = true
+        m.emission = colour
+        m.emission_energy_multiplier = glow
+    return m
+
 # A surface that is a light: strips, lamps, screens.
 static func light(colour: Color, energy: float = 2.0) -> StandardMaterial3D:
     var m := StandardMaterial3D.new()

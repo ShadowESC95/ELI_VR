@@ -661,7 +661,8 @@ func quit_app() -> void:
 # --eli-shot=<file.png> lets the room settle, saves what the flat camera sees
 # and quits. --eli-shot-view=x,y,z,yaw,pitch places the camera; several views
 # separated by ";" give one picture each. For the README pictures, and for
-# looking at a room without putting the headset on.
+# looking at a room without putting the headset on. --eli-shot-clean leaves
+# out the control panels, portals and desktop screen.
 
 func _setup_shot() -> void:
     var path := ""
@@ -678,6 +679,11 @@ func _setup_shot() -> void:
         return
     if dock: dock.visible = false
     if hud: hud.visible = false
+    if "--eli-shot-clean" in OS.get_cmdline_user_args():
+        # the room alone, without the panels, portals and screen in front of it
+        if console: console.visible = false
+        if portal_root: portal_root.visible = false
+        if desktop_surface: desktop_surface.visible = false
     if views.is_empty():
         views = PackedStringArray([""])
 

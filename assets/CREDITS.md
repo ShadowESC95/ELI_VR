@@ -1,6 +1,6 @@
 # Where the art comes from
 
-Everything in `assets/space/` and `assets/materials/` was made from the sources below by `tools/prepare_space_assets.py`. All of it is free to use and to redistribute. Nothing is downloaded when ELI VR runs.
+Everything in `assets/space/`, `assets/skies/` and `assets/materials/` was made from the sources below by `tools/prepare_space_assets.py`. All of it is free to use and to redistribute. Nothing is downloaded when ELI VR runs.
 
 ## The night sky
 
@@ -22,7 +22,17 @@ NASA imagery is not copyrighted. Its use here does not imply NASA's or ESA's end
 
 NASA imagery is not copyrighted.
 
-## Metal
+## Places
+
+`assets/skies/` holds 360 degree photographs of real places from Poly Haven, <https://polyhaven.com>. Licence: Creative Commons CC0 1.0 (public domain). Each is the 8K tonemapped version.
+
+| File | Poly Haven panorama | Photographer |
+|---|---|---|
+| `assets/skies/mountain_dawn.jpg` | `kiara_1_dawn` | Greg Zaal |
+| `assets/skies/misty_pines.jpg` | `misty_pines` | Greg Zaal |
+| `assets/skies/sunset_sea.jpg` | `belfast_sunset_puresky` | Dimitrios Savva (photography), Greg Zaal (processing), Jarod Guest (sky edits) |
+
+## Surfaces
 
 Scanned materials from ambientCG, <https://ambientcg.com>, by Lennart Demes. Licence: Creative Commons CC0 1.0 (public domain).
 
@@ -31,5 +41,22 @@ Scanned materials from ambientCG, <https://ambientcg.com>, by Lennart Demes. Lic
 | `assets/materials/hull_panels_*.jpg` | MetalPlates008 |
 | `assets/materials/deck_plating_*.jpg` | MetalPlates017A |
 | `assets/materials/brushed_metal_*.jpg` | Metal009 |
+| `assets/materials/rock_*.jpg` | Rock058 |
+| `assets/materials/moss_rock_*.jpg` | Rock063 |
+| `assets/materials/snow_*.jpg` | Snow010A |
+| `assets/materials/ice_*.jpg` | Ice003 |
+| `assets/materials/forest_floor_*.jpg` | Ground068 |
+| `assets/materials/sand_*.jpg` | Ground080 |
+| `assets/materials/concrete_*.jpg` | Concrete030 |
+| `assets/materials/marble_white_*.jpg` | Marble012 |
+| `assets/materials/marble_black_*.jpg` | Marble016 |
+| `assets/materials/wood_floor_*.jpg` | WoodFloor043 |
+| `assets/materials/planks_*.jpg` | Planks037A |
+| `assets/materials/lab_tiles_*.jpg` | Tiles107 |
+| `assets/materials/bark_*.jpg` | Bark012 |
 
 Each set is the 1K version, repacked as colour, normal (OpenGL convention) and one texture holding occlusion, roughness and metalness.
+
+## Drawn for ELI VR
+
+`assets/materials/fern_frond.png` and `assets/materials/kelp_blade.png` are drawn by `tools/prepare_space_assets.py` itself and belong to this project.
