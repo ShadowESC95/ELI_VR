@@ -2,7 +2,7 @@
 
 A spatial workspace you can stand inside: fifteen 3D environments, a movable live desktop screen, and a control console, built on Godot 4.7 and OpenXR. It runs in a headset, and it runs on a plain monitor when there isn't one.
 
-**Version 0.6.3** · Linux · Windows · macOS
+**Version 0.7.0** · Linux · Windows · macOS
 
 ![ELI VR environment preview](ELI-VR-0.2-environment-preview.jpg)
 
@@ -28,7 +28,7 @@ If you run it on something not listed as tested, an issue saying what happened i
 
 Full step-by-step guides for every OS are in **[docs/INSTALL.md](docs/INSTALL.md)**. The short version:
 
-**From a release build** (no Godot needed): download the archive for your OS from the [Releases](https://github.com/ShadowESC95/ELI_VR/releases) page, unpack it and run `ELI-VR`.
+**From a release build** (no Godot needed): download the archive for your OS from the [Releases](https://github.com/ShadowESC95/ELI_VR/releases) page, unpack it and run `ELI-VR`. On Linux there is also a one-file AppImage that starts everything and stops the VR runtime again when you leave.
 
 **From source** (needs [Godot 4.7.2](https://godotengine.org/download)):
 
@@ -72,6 +72,9 @@ With `auto`, ELI VR uses a headset when an OpenXR runtime is active and falls ba
 | Right stick | Snap turn |
 | B / Y | Show or hide the spatial console |
 | Menu (left) | Wrist menu |
+| Hold A / X | Talk to ELI (with the ELI link on) |
+
+**Leaving:** press **EXIT** on the spatial console or the wrist menu twice, or **Exit ELI VR** in the settings dock (`F1`). Started through `./launch/eli-vr.sh` or the AppImage on Linux, closing ELI VR also stops the VR runtime it started, so no GPU memory stays held.
 
 Oculus Touch is the tested layout. Valve Index, HTC Vive (trackpad stands in for the stick), Windows Mixed Reality and the OpenXR generic controller are mapped to the same actions. Anything else falls back to the OpenXR simple profile, which gives trigger and menu only.
 

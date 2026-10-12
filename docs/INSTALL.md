@@ -37,7 +37,37 @@ What has actually been tested is listed in the [README](../README.md#status). Li
 
 ## Linux
 
+### AppImage
+
+One file, nothing to unpack. Download `ELI_VR-<version>-x86_64.AppImage` from the [Releases](https://github.com/ShadowESC95/ELI_VR/releases) page, then:
+
+```bash
+chmod +x ELI_VR-*-x86_64.AppImage
+./ELI_VR-*-x86_64.AppImage
+```
+
+It starts the desktop helper and ELI VR. When ELI VR closes, it stops the helper and every VR runtime process it started, so nothing is left holding GPU memory, and prints what is still in use.
+
+| Option | Meaning |
+|---|---|
+| `--flat`, `--xr`, `--compat` | No headset, force a headset, OpenGL fallback |
+| `--monado` | Start native Monado first, then ELI VR, and stop Monado on exit. For a Rift CV1 on Wayland; Monado must already be installed. |
+| `--eli` | Switch on the link to ELI v3 |
+| `--no-desktop` | Do not start the desktop helper |
+
+To double-click it and always get the same options, put them on one line in `~/.config/eli-vr/launch.conf`:
+
+```text
+--monado --eli
+```
+
+Started without a terminal, its output goes to `~/.local/state/eli-vr-standalone/session.log`. If a double-click does nothing, the system has no FUSE: run it once in a terminal with `--appimage-extract-and-run`.
+
+Monado and the Wayland capture pieces are not inside the AppImage. They come from your system; see [Live desktop screen](#live-desktop-screen).
+
 ### Release build
+
+The same build as a folder. `./launch/eli-vr.sh` in it is the launcher the AppImage uses and takes the same options.
 
 1. Download `ELI_VR-<version>-linux-x86_64.tar.gz` from the [Releases](https://github.com/ShadowESC95/ELI_VR/releases) page.
 2. Unpack and run:
@@ -90,6 +120,8 @@ vulkaninfo --summary     # from the vulkan-tools package
    ./launch/run-linux.sh xr
    ./launch/run-linux.sh compat   # OpenGL fallback
    ```
+
+   `./launch/eli-vr.sh` does more: it also starts the desktop helper, and on exit stops the helper and any VR runtime the session started. It takes the options listed under [AppImage](#appimage).
 
    The first start takes a minute while Godot imports the textures.
 
@@ -351,6 +383,8 @@ Changes made inside ELI VR are saved per user:
 Delete the ELI VR folder, then the settings folder above. Nothing else is installed: no services, no registry entries, no system files.
 
 ## Troubleshooting
+
+**GPU memory is still in use after closing.** Start ELI VR through the AppImage or `./launch/eli-vr.sh`; they stop the VR runtime they started and print what is left. A runtime you started yourself, and ELI v3 with its model, are left running on purpose.
 
 **The window is black or the app closes at once.** Update the GPU driver, then try the OpenGL fallback (`compat` from source, or `--rendering-method gl_compatibility` on a release build).
 

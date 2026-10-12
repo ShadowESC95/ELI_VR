@@ -1,13 +1,14 @@
 # ELI VR release pipeline.
 #
 # Push a tag v<version> (it has to match VERSION) and this builds and publishes:
+#   ELI_VR-<v>-x86_64.AppImage
 #   ELI_VR-<v>-linux-x86_64.tar.gz
 #   ELI_VR-<v>-windows-x64.zip
 #   ELI_VR-<v>-macos-universal.zip
 #   ELI_VR-<v>-source.zip
 #   SHA256SUMS.txt
 #
-#   git tag v0.6.3 && git push origin v0.6.3
+#   git tag v0.7.0 && git push origin v0.7.0
 #
 # Run it by hand for a dry run: everything is built and kept as workflow
 # artifacts, and no Release is made.
@@ -67,7 +68,7 @@ jobs:
           python tools/source_sanity.py
           python tools/validate_project.py
           python tools/network_audit.py
-          for f in launch/*.sh launch/*.command tools/*.sh native/desktop_bridge/*.sh; do
+          for f in launch/*.sh launch/*.command tools/*.sh native/desktop_bridge/*.sh packaging/linux/*.sh packaging/linux/AppRun; do
             bash -n "$f"
           done
 
@@ -266,11 +267,15 @@ jobs:
           cp in/export-linux/ELI-VR.x86_64 in/export-linux/ELI-VR.pck "$L/"
           cp in/bridge-linux/eli-vr-desktop-bridge "$L/$HELPER/"
           cp native/desktop_portal_bridge/eli_portal_bridge.py "$L/native/desktop_portal_bridge/"
-          cp launch/start-desktop-bridge-linux.sh "$L/launch/"
+          cp launch/eli-vr.sh launch/lib-session.sh launch/run-linux-monado-cv1-reference.sh \
+            launch/start-desktop-bridge-linux.sh "$L/launch/"
           cp tools/install-linux-wayland-capture-deps.sh tools/check-linux-wayland-capture.sh "$L/tools/"
           chmod +x "$L/ELI-VR.x86_64" "$L/$HELPER/eli-vr-desktop-bridge" "$L"/launch/*.sh "$L"/tools/*.sh
           common "$L"
           tar -czf "dist/$L.tar.gz" "$L"
+
+          # The same folder as one file to double-click.
+          bash packaging/linux/build-appimage.sh "$L" "dist/ELI_VR-$VERSION-x86_64.AppImage"
 
           W="ELI_VR-$VERSION-windows-x64"
           mkdir -p "$W/launch" "$W/$HELPER"
@@ -292,6 +297,20 @@ jobs:
           cp in/source/ELI_VR-*-source.zip dist/
           (cd dist && sha256sum ELI_VR-* > SHA256SUMS.txt && cat SHA256SUMS.txt)
           ls -la dist
+
+      - name: The AppImage starts, reaches a room and shuts down clean
+        run: |
+          export XDG_STATE_HOME="$RUNNER_TEMP/state" APPIMAGE_EXTRACT_AND_RUN=1
+          timeout 180 "dist/ELI_VR-$VERSION-x86_64.AppImage" --flat --no-desktop --headless --quit-after 240 2>&1 | tee "$RUNNER_TEMP/appimage.log"
+          cat "$XDG_STATE_HOME/eli-vr-standalone/session.log" >> "$RUNNER_TEMP/appimage.log" 2>/dev/null || true
+          if grep -Eq 'SCRIPT ERROR:|Parse Error:|Failed to load' "$RUNNER_TEMP/appimage.log"; then
+            echo "::error::The AppImage reported errors on start."
+            exit 1
+          fi
+          grep -q 'ELI VR ready' "$RUNNER_TEMP/appimage.log" || {
+            echo "::error::The AppImage never reported 'ELI VR ready'."
+            exit 1
+          }
 
       - uses: actions/upload-artifact@v4
         with:
