@@ -1,6 +1,6 @@
 # ELI VR network policy
 
-ELI VR 0.2.1 is **offline-capable by design**.
+ELI VR is **offline by design**.
 
 ## Runtime guarantees of this package
 
@@ -70,3 +70,5 @@ This installer accepts local `.zip` files only.
 When ELI VR runs beside ELI v3, this local policy sits underneath ELI's stronger socket-level network toggle.
 
 If ELI's network toggle is OFF, that higher-level control should remain authoritative.
+
+Opened from ELI v3 as a bundle, nothing here changes. ELI v3 starts its server on `127.0.0.1` if it was not running, and ELI VR is told the port. Registering ELI VR with ELI v3 writes one local file and opens no socket.

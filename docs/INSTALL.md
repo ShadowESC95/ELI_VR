@@ -31,6 +31,8 @@ A headset is optional everywhere. Without one, ELI VR opens as a normal 3D windo
 
 Running from source also needs **Godot 4.7.2** (standard build, not .NET) from <https://godotengine.org/download>.
 
+Python 3.10 or newer is only needed for the helper tools in `tools/` and for putting ELI VR on ELI v3's list of bundles. The app itself does not use it.
+
 What has actually been tested is listed in the [README](../README.md#status). Linux with a Rift CV1 is the reference setup; Windows and macOS builds come out of CI and have not been run on real machines yet.
 
 ---
@@ -54,6 +56,7 @@ It starts the desktop helper and ELI VR. When ELI VR closes, it stops the helper
 | `--monado` | Start native Monado first, then ELI VR, and stop Monado on exit. For a Rift CV1 on Wayland; Monado must already be installed. |
 | `--eli` | Switch on the link to ELI v3 |
 | `--no-desktop` | Do not start the desktop helper |
+| `--register-eli`, `--unregister-eli` | Put this copy on ELI v3's list of bundles, or take it off. Starts nothing. See [With ELI v3](#with-eli-v3). |
 
 To double-click it and always get the same options, put them on one line in `~/.config/eli-vr/launch.conf`:
 
@@ -364,7 +367,38 @@ Optional. ELI VR runs on its own; with ELI v3 on the same machine, ELI is presen
 
 3. Hold **A** / **X** on a controller, or **T** on the keyboard, to talk. Your OS may ask for microphone permission the first time.
 
-To have ELI v3 list ELI VR among its bundles and start it for you, run `python3 tools/register_eli_bundle.py` once. More in [ELI_INTEGRATION.md](ELI_INTEGRATION.md).
+ELI VR names no model. Whichever model ELI v3 has loaded answers, and speech goes through ELI v3's own recognition and voice.
+
+### Opened from ELI v3
+
+ELI v3 lists the ELI applications installed beside it (its bundles) and opens them: it asks at start-up, and there is a Bundles menu and `eli --bundle vr`. To put ELI VR on that list, tell ELI v3 once where this copy is:
+
+| You have | Run once |
+|---|---|
+| The AppImage | `./ELI_VR-<version>-x86_64.AppImage --register-eli` |
+| A Linux release folder or a checkout | `./launch/eli-vr.sh --register-eli` |
+| A Windows release folder or a checkout | `py tools\register_eli_bundle.py` |
+| A macOS release folder or a checkout | `python3 tools/register_eli_bundle.py` |
+
+That writes one small file, `vr.json`, where ELI v3 looks for bundles:
+
+| OS | Folder |
+|---|---|
+| Linux | `~/.local/share/ELI_v3/bundles/` |
+| Windows | `%LOCALAPPDATA%\ELI_v3\bundles\` |
+| macOS | `~/Library/Application Support/ELI_v3/bundles/` |
+
+Move or rename ELI VR afterwards and ELI v3 stops listing it; register again from the new place. `--unregister-eli`, or `tools/register_eli_bundle.py --remove`, takes it off the list.
+
+Opened from ELI v3, its local server is started for you if it is not already running, and ELI VR comes up with the link on. That needs an ELI v3 newer than 3.0.131; with 3.0.131 itself, switch ELI's server on first.
+
+If you work in ELI v3's own Python environment you can install ELI VR's small Python package there instead, and ELI v3 finds it with nothing registered:
+
+```bash
+pip install -e /path/to/ELI_VR
+```
+
+More in [ELI_INTEGRATION.md](ELI_INTEGRATION.md).
 
 ## Where your settings live
 
@@ -376,13 +410,25 @@ Changes made inside ELI VR are saved per user:
 | Windows | `%APPDATA%\Godot\app_userdata\ELI VR\` |
 | macOS | `~/Library/Application Support/Godot/app_userdata/ELI VR/` |
 
-`eli_vr/settings.json` in that folder holds your settings. Delete it to go back to defaults. On Linux, the CV1 launcher and the Wayland helper also keep logs and the remembered screen choice in `~/.local/state/eli-vr-standalone/`.
+`eli_vr/settings.json` in that folder holds your settings. Delete it to go back to defaults. On Linux, the launchers and the Wayland helper also keep logs and the remembered screen choice in `~/.local/state/eli-vr-standalone/`.
+
+Two more small files, only if you use them:
+
+| OS | Folder | Holds |
+|---|---|---|
+| Linux | `~/.config/eli-vr/` | `launch.conf` (your usual launcher options) and `location` (where ELI VR was when you registered it with ELI v3) |
+| Windows | `%APPDATA%\eli-vr\` | `location` |
+| macOS | `~/Library/Application Support/eli-vr/` | `location` |
 
 ## Uninstall
 
-Delete the ELI VR folder, then the settings folder above. Nothing else is installed: no services, no registry entries, no system files.
+If you put ELI VR on ELI v3's list, take it off first (`--unregister-eli`, or `tools/register_eli_bundle.py --remove`). Then delete the ELI VR folder and the settings folders above. Nothing else is installed: no services, no registry entries, no system files.
 
 ## Troubleshooting
+
+**ELI v3 does not list ELI VR.** Run `eli --bundles` in ELI v3. If ELI VR is missing, register it again from where it is now: the registration names the program, and ELI v3 skips one that is no longer there.
+
+**Opened from ELI v3, the status line says ELI is not running.** The port ELI's server uses is held by another program, or your ELI v3 is 3.0.131 and its server was off. Switch the server on in ELI v3 and start ELI VR again.
 
 **GPU memory is still in use after closing.** Start ELI VR through the AppImage or `./launch/eli-vr.sh`; they stop the VR runtime they started and print what is left. A runtime you started yourself, and ELI v3 with its model, are left running on purpose.
 

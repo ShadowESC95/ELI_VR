@@ -27,8 +27,10 @@ Install Rust through rustup if required, then:
 ## 3. Start native CV1 + ELI VR
 
 ```bash
-./launch/run-linux-monado-cv1-reference.sh
+./launch/eli-vr.sh --monado
 ```
+
+That runs `launch/run-linux-monado-cv1-reference.sh` and, when ELI VR closes, stops Monado and anything else the session started. Add `--eli` for the link to ELI v3.
 
 This launcher:
 

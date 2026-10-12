@@ -2,11 +2,11 @@
 
 A spatial workspace you can stand inside: fifteen places from an orbiting station to a misty forest, a movable live desktop screen, and a control console, built on Godot 4.7 and OpenXR. It runs in a headset, and it runs on a plain monitor when there isn't one.
 
-**Version 0.7.0** · Linux · Windows · macOS
+**Version 0.8.0** · Linux · Windows · macOS
 
 ![The Core Room: an observation deck in orbit, Earth below and the Milky Way overhead](docs/images/core-room.jpg)
 
-ELI VR is part of the ELI family but does not need ELI to run. With ELI v3 running beside it, ELI is present in the rooms and you can talk to him. There is no account, no telemetry and nothing leaves the machine.
+ELI VR is part of the ELI family but does not need ELI to run. With ELI v3 running beside it, ELI is present in the rooms and you can talk to him, and ELI v3 can open ELI VR itself as one of its bundles. There is no account, no telemetry and nothing leaves the machine.
 
 ## Status
 
@@ -19,6 +19,7 @@ This is an early build. Be clear-eyed about what has and has not been tried:
 | Windows and macOS builds | Built by CI. Not yet run on real hardware. |
 | Valve Index, HTC Vive, Windows Mixed Reality, generic OpenXR controllers | Bound, not yet tested on hardware. |
 | The link to ELI v3 (presence, talking) | Tested against ELI v3's own routes without a headset. Not yet used in one. |
+| Opened from ELI v3 as a bundle | Tested with ELI v3's own launch code and a stand-in for the app. Not yet opened that way into a headset. |
 | Quest, Pico and other standalone headsets | No native app yet. Use them through a PC link (Link, Air Link, Virtual Desktop, ALVR, WiVRn). |
 | macOS in VR | No common OpenXR runtime exists there. Flat mode only. |
 
@@ -111,7 +112,7 @@ Six more workspaces:
 
 The night sky is NASA's star map and the Earth is NASA's Blue Marble. The forest, the mountain and the sunset are photographs of real places, laid on the ground so that what is near stays put as you move. Stone, wood, metal, snow and sand are scanned materials. All of it is free to use and listed in [assets/CREDITS.md](assets/CREDITS.md).
 
-Eight themes set the colour of the lights in every room, and four quality profiles (`low`, `medium`, `high`, `ultra`) apply everywhere. All fifteen hold 90 frames a second on the reference headset.
+Eight themes set the colour of the lights in every room, and four quality profiles (`low`, `medium`, `high`, `ultra`) apply everywhere. On the reference setup, a mid-range desktop GPU, all fifteen hold the headset's 90 frames a second at `ultra`; `low` and `medium` are there for less. See [docs/ADVANCED-PLATFORM-OPTIMIZATION.md](docs/ADVANCED-PLATFORM-OPTIMIZATION.md).
 
 ## Live desktop screen
 
@@ -140,7 +141,19 @@ python3 tools/eli_vr.py eli on            # remembered
 ./launch/run-linux.sh -- --eli-link=on    # this run only
 ```
 
-ELI v3 can also list ELI VR among its bundles and start it: `python3 tools/register_eli_bundle.py`. Details in [docs/ELI_INTEGRATION.md](docs/ELI_INTEGRATION.md).
+ELI VR names no model: whichever one ELI v3 has loaded answers.
+
+### Opened from ELI v3
+
+ELI v3 lists the ELI applications installed beside it and opens them, at start-up, from its Bundles menu or with `eli --bundle vr`. ELI VR is one of those bundles, the same way ELI Legal is. Tell ELI v3 once where this copy is:
+
+```bash
+./ELI_VR-*-x86_64.AppImage --register-eli     # the AppImage
+./launch/eli-vr.sh --register-eli             # a Linux download or checkout
+python3 tools/register_eli_bundle.py          # any OS
+```
+
+Opened that way, ELI v3 has its local server answering first and ELI VR starts with the link on. Running ELI VR on its own is unchanged. Details in [docs/ELI_INTEGRATION.md](docs/ELI_INTEGRATION.md).
 
 ## Settings
 
@@ -183,9 +196,13 @@ Installing Godot, OS packages or Rust crates the first time does use the network
 | [docs/SETTINGS.md](docs/SETTINGS.md) | Every setting |
 | [docs/COMMANDS.md](docs/COMMANDS.md) | CLI and tool commands |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | How the pieces fit |
-| [docs/PLATFORM_SUPPORT.md](docs/PLATFORM_SUPPORT.md) | Platform strategy |
+| [docs/PLATFORM_SUPPORT.md](docs/PLATFORM_SUPPORT.md) | What runs where |
+| [docs/ADVANCED-PLATFORM-OPTIMIZATION.md](docs/ADVANCED-PLATFORM-OPTIMIZATION.md) | Quality profiles and performance |
+| [docs/NETWORK-POLICY.md](docs/NETWORK-POLICY.md) | What ELI VR may connect to |
 | [docs/QUICKSTART-UBUNTU-CV1.md](docs/QUICKSTART-UBUNTU-CV1.md) | The Ubuntu + Monado + Rift CV1 reference setup |
-| [docs/ELI_INTEGRATION.md](docs/ELI_INTEGRATION.md) | The link to ELI v3 |
+| [docs/ELI_INTEGRATION.md](docs/ELI_INTEGRATION.md) | The link to ELI v3, and ELI VR as an ELI v3 bundle |
+| [assets/CREDITS.md](assets/CREDITS.md) | Where the art comes from |
+| [tools/README.md](tools/README.md) | The helper tools |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | What comes next |
 | [RELEASE.md](RELEASE.md) | How a release is cut |
 
@@ -198,6 +215,7 @@ python3 -m pip install -r requirements.txt
 python3 tools/source_sanity.py       # catches mangled GDScript
 python3 tools/validate_project.py    # project structure and assets
 python3 tools/network_audit.py       # no remote URLs in runtime code
+python3 -m unittest discover -s tests   # the ELI v3 bundle side
 ./tools/godot_parse_check.sh         # Godot loads every script
 python3 tools/make_release.py --check
 ```

@@ -2,7 +2,7 @@
 
 This directory is for locally installed room/environment packs.
 
-ELI VR 0.2.1 does not download packs itself.
+ELI VR does not download packs itself.
 
 Install a pack already present on the machine:
 

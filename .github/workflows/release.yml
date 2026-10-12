@@ -8,7 +8,7 @@
 #   ELI_VR-<v>-source.zip
 #   SHA256SUMS.txt
 #
-#   git tag v0.7.0 && git push origin v0.7.0
+#   git tag v0.8.0 && git push origin v0.8.0
 #
 # Run it by hand for a dry run: everything is built and kept as workflow
 # artifacts, and no Release is made.
@@ -68,6 +68,7 @@ jobs:
           python tools/source_sanity.py
           python tools/validate_project.py
           python tools/network_audit.py
+          python -m unittest discover -s tests -v
           for f in launch/*.sh launch/*.command tools/*.sh native/desktop_bridge/*.sh packaging/linux/*.sh packaging/linux/AppRun; do
             bash -n "$f"
           done
@@ -256,9 +257,11 @@ jobs:
           # Each package keeps the repo's layout, so the launchers and
           # docs/INSTALL.md work the same from a download as from a clone.
           common() {
-            cp README.md VERSION icon.svg "$1/"
+            cp README.md VERSION icon.svg pyproject.toml "$1/"
             cp -r docs "$1/docs"
-            mkdir -p "$1/tools"
+            # the Python side: how ELI v3 finds this copy and starts it
+            mkdir -p "$1/tools" "$1/src"
+            cp -r src/eli_vr "$1/src/"
             cp tools/register_eli_bundle.py "$1/tools/"
           }
 

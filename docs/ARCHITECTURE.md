@@ -1,102 +1,90 @@
 # Architecture
 
 ```text
-                     ELI VR CORE
-              rooms / settings / themes
-                         |
-        +----------------+----------------+
-        |                                 |
-    World Renderer                    Platform Services
-       Godot 4                          adapters
-        |                                 |
-  +-----+------+                    +-----+------+
-  |            |                    |            |
-OpenXR       Flat 3D           Desktop capture Future ELI
-  |            |                    |           bridge
-runtime    mouse/keyboard      Rust helper      disabled
+                          ELI VR  (Godot 4.7, GDScript)
+        rooms · themes · settings · console · portals · desktop screen
+                                   |
+        +--------------+-----------+-----------+----------------+
+        |              |                       |                |
+     OpenXR         Flat 3D             Desktop screen       ELI link
+   any runtime   mouse + keyboard     frames on loopback   off by default
+        |                                      |                |
+   the headset                          capture helper     ELI v3's local
+                                        (one per OS)           server
 ```
 
-## Rule: core logic does not depend on a headset vendor or operating system
+Everything above the line is one Godot project that runs the same on Linux, Windows and macOS. Everything below it is optional and found at run time.
 
-The project data model contains no Rift, Quest, Vive, Index, Monado, SteamVR, PipeWire, Windows Graphics Capture, or ScreenCaptureKit assumptions.
+## Rule: the core does not know the headset, the OS or the user
 
-Those are runtime/backend concerns.
+Rooms, themes and settings contain nothing about a headset vendor, an OpenXR runtime, a capture API or a machine. Those are adapters. Paths are worked out at run time from the project folder and the OS's per-user folders; nothing is written into the project.
 
-## OpenXR layer
+## Starting up
 
-`XRBootstrap` discovers Godot's `OpenXR` interface. If it initializes:
+`scripts/app.gd` builds everything: settings (`core/app_config.gd`), the network policy, XR (`xr/xr_bootstrap.gd`), the room, the desktop screen, the console and portals, and the ELI link if it is on.
 
-- main viewport uses XR;
-- XROrigin3D/XRCamera3D are active;
-- Touch/generic OpenXR controllers use Godot's action map;
-- controller rays activate `Interactable3D` nodes.
+`XRBootstrap` asks Godot for an OpenXR interface. If one starts, the viewport renders to the headset, controllers use the action map in `openxr_action_map.tres`, and controller rays press `Interactable3D` nodes. If none does, the same world opens as an ordinary 3D window with mouse and keyboard. Nothing else changes between the two.
 
-If not, the same world runs in ordinary 3D desktop mode.
+## Rooms
 
-## World layer
-
-Room definitions are data:
+What exists is data:
 
 ```text
-config/rooms/rooms.json
-config/rooms/environments.json
+config/rooms/rooms.json          the nine ELI rooms and which place each one is
+config/rooms/environments.json   the fifteen places
+config/themes/themes.json        the eight themes
+config/profiles/*.json           the four quality profiles
 ```
 
-`RoomFactory` currently creates geometry procedurally. This deliberately avoids locking the project to imported commercial assets.
+How a place looks is one script each, in `scripts/world/rooms/`, all built on `room_base.gd`:
 
-Production versions can replace a procedural environment with `.tscn`, glTF or packaged environment content while leaving the room registry intact.
+| Piece | What it gives a room |
+|---|---|
+| `rooms/room_base.gd` | Sky (star map or a photographed panorama laid on the ground), sun, lamps, a deck or a hall, drifting particles, things that turn and blink |
+| `kit/mesh_kit.gd` | Shapes made in code: lathed profiles, terrain, rocks, beams, plants. UVs are in metres |
+| `kit/material_kit.gd` | Scanned materials (albedo, normal, packed occlusion/roughness/metal), glass, lights, shaders |
+| `assets/shaders/` | Planet, atmosphere, water, aurora, hologram, screens and the rest |
+| `assets/space`, `assets/skies`, `assets/materials` | The art. Sources and licences in [assets/CREDITS.md](../assets/CREDITS.md) |
 
-## Desktop layer
+`room_factory.gd` picks the script for the place and hands it the theme and the quality settings. A theme only colours the lights; a quality profile switches shadows, fog and particles and sets the render scale.
 
-The alpha desktop bridge intentionally favors portability over latency:
+`tools/prepare_space_assets.py` is how the art was made from its sources, so it can be made again. Nothing is downloaded when ELI VR runs.
+
+## Desktop screen
 
 ```text
-native OS capture
-      |
-  Rust/xcap
-      |
-JPEG frames over localhost
-      |
-Godot ImageTexture
-      |
-3D desktop mesh
+the OS's screen capture          Wayland: portal + PipeWire (Python helper)
+        |                        X11, Windows, macOS: native helper (Rust)
+JPEG frames over 127.0.0.1:47831
+        |
+desktop/desktop_bridge_client.gd  ->  a texture on desktop/desktop_surface.gd
 ```
 
-Later:
+The app never captures anything itself. It reads frames from a helper on the same machine, and the helper refuses to listen anywhere but loopback. This favours working everywhere over latency; a shared-texture path per OS can replace it later without the screen itself changing.
 
-```text
-Windows -> shared D3D texture
-Linux   -> PipeWire DMA-BUF/Vulkan import
-macOS   -> IOSurface/Metal
-```
+## ELI link
 
-The `DesktopSurface` API does not need to change when these are introduced.
+`scripts/eli/`: `eli_link.gd` (the socket and HTTP calls to ELI v3's local server), `eli_presence.gd` (ELI in the room) and `eli_voice.gd` (push to talk). Off by default.
 
-## ELI v3 link
+ELI v3 publishes his room and state; ELI VR draws them. ELI's reasoning, memory and model stay in ELI v3, and ELI VR stays a renderer that also runs alone. See [ELI_INTEGRATION.md](ELI_INTEGRATION.md).
 
-`scripts/eli/` holds the link: `eli_link.gd` (the socket and HTTP calls to ELI v3's local server), `eli_presence.gd` (ELI in the room) and `eli_voice.gd` (push to talk). Off by default.
+## ELI v3 bundle
 
-ELI v3 publishes its room and world state over a local socket and this application draws it, without moving ELI's domain model into Godot. See [ELI_INTEGRATION.md](ELI_INTEGRATION.md).
+`src/eli_vr/` is a small Python package and the only Python in the product: how ELI v3 finds ELI VR and starts it. `bundle.py` gives ELI v3 the description its bundle contract asks for and a launch function; `cli.py` is the `eli-vr` command that registers a copy. The Godot app does not use it.
 
-That keeps:
+## Linux session
 
-- ELI's reasoning/world state independent;
-- ELI VR replaceable as a renderer;
-- standalone mode available.
+`launch/eli-vr.sh` and `launch/lib-session.sh` start the desktop helper and the app, and on exit stop the helper and every VR runtime process the session started, so nothing is left holding GPU memory. A runtime that was already running is left alone. The AppImage is this launcher in one file.
 
 ## Network boundary
-
-Normal ELI VR runtime has no internet dependency.
-
-All currently permitted socket use is localhost-only and passes through the standalone network policy:
 
 ```text
 ELI VR
   |
 NetworkPolicy (LOCAL_ONLY)
   |
-  +-- 127.0.0.1:47831 desktop bridge
-  +-- 127.0.0.1:47832 future ELI bridge (disabled)
+  +-- 127.0.0.1:47831   desktop capture helper
+  +-- 127.0.0.1:8081    ELI v3's local server, only with the ELI link on
 ```
 
-There is no third-party API client in the runtime.
+No third-party API client is in the runtime, and `tools/network_audit.py` fails the build if a remote address appears in it. See [NETWORK-POLICY.md](NETWORK-POLICY.md).

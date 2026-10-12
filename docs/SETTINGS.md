@@ -1,68 +1,100 @@
 # Settings
 
-All default settings live in `config/defaults.json`.
+Defaults are in `config/defaults.json`. What you change in the app is saved per user, outside the project ([where](INSTALL.md#where-your-settings-live)). In a checkout, `config/user.json` (copy `config/user.example.json`) overrides the defaults for that folder.
 
-## XR
+Change one from a terminal with `python3 tools/eli_vr.py set <key> <value>`, or for one run with the app options in [COMMANDS.md](COMMANDS.md#start).
 
-| Key | Default | Purpose |
-|---|---:|---|
-| `xr.mode` | `auto` | `auto`, `on`, or `off` |
-| `xr.render_scale` | `1.0` | OpenXR render target multiplier |
-| `xr.snap_turn_degrees` | `30` | snap turn angle |
-| `xr.smooth_locomotion` | `true` | left-stick movement |
-| `xr.move_speed` | `2.0` | metres/second |
-| `xr.turn_cooldown_seconds` | `0.30` | snap-turn repeat delay |
+## Headset
+
+| Key | Default | Meaning |
+|---|---|---|
+| `xr.mode` | `auto` | `auto` uses a headset when an OpenXR runtime is active; `on` and `off` force it |
+| `xr.render_scale` | `1.0` | Pixels given to the headset, as a multiple of what it asks for. Read when the session starts |
+| `xr.foveation` | `auto` | `auto` uses it when the runtime can, `off` never |
+| `xr.pause_when_unfocused` | `true` | Pause the world when the headset says the session lost focus |
+| `xr.controller_rays` | `true` | Pointer rays from the controllers |
+| `xr.smooth_locomotion` | `true` | Move with the left stick |
+| `xr.move_speed` | `2.0` | Metres a second |
+| `xr.fly_speed` | `5.0` | Metres a second in free flight |
+| `xr.boost_multiplier` | `2.4` | Left stick click |
+| `xr.universal_flight` | `true` | Free flight in every place, not only the open ones |
+| `xr.snap_turn_degrees` | `30` | Snap turn angle |
+| `xr.turn_cooldown_seconds` | `0.3` | Delay before a held stick turns again |
+
+`xr.controller_calibration` holds the hand offsets the calibration gesture works out. Leave it to the gesture.
 
 ## Graphics
 
-| Key | Default |
-|---|---|
-| `graphics.quality` | `medium` |
-| `graphics.shadows` | `true` |
-| `graphics.fog` | `true` |
-| `graphics.particles` | `true` |
-| `graphics.world_detail_scale` | `1.0` |
+| Key | Default | Meaning |
+|---|---|---|
+| `graphics.quality` | `auto` | `low`, `medium`, `high`, `ultra`, or `auto`: a profile picked at start from this machine's CPU, memory and GPU type. The pick is not saved, so the same settings file works on another machine |
+| `graphics.shadows` | `true` | Lights cast shadows |
+| `graphics.fog` | `true` | Fog and haze |
+| `graphics.particles` | `true` | Dust, snow, sparks and the like |
+| `graphics.world_detail_scale` | `1.0` | How much moves and drifts in a room |
 
-Quality profiles live under `config/profiles/`.
+A profile sets the last four and the render scale together. The table is in [ADVANCED-PLATFORM-OPTIMIZATION.md](ADVANCED-PLATFORM-OPTIMIZATION.md); the files are `config/profiles/`.
 
 ## World
 
-| Key | Default |
-|---|---|
-| `world.room` | `core_room` |
-| `world.environment_override` | empty |
-| `world.theme` | `cyan` |
-| `world.portals` | `true` |
-| `world.spatial_console` | `true` |
+| Key | Default | Meaning |
+|---|---|---|
+| `world.room` | `core_room` | The room you start in |
+| `world.environment_override` | empty | A place to use instead of the room's own. Empty means the room decides |
+| `world.theme` | `frontier` | Colour of the lights: `frontier`, `obsidian`, `nebula`, `emerald`, `solar`, `abyssal`, `aurora`, `monolith` |
+| `world.portals` | `true` | Doors between rooms |
+| `world.spatial_console` | `true` | The control panels in the room |
+| `world.object_manipulation` | `true` | Grab and move things |
 
-An empty `environment_override` means the symbolic room chooses its normal environment.
+## Desktop screen
 
-## Desktop
+| Key | Default | Meaning |
+|---|---|---|
+| `desktop.enabled` | `true` | Show the screen |
+| `desktop.bridge_host` | `127.0.0.1` | Where the capture helper is. Loopback only |
+| `desktop.bridge_port` | `47831` | Its port |
+| `desktop.bridge_fps` | `15` | Frames a second asked of the helper |
+| `desktop.bridge_width` | `1280` | Frame width asked of the helper |
+| `desktop.jpeg_quality` | `72` | Frame quality, native helper |
+| `desktop.distance_m` | `5.6` | How far away the screen stands |
+| `desktop.width_m` | `4.2` | Its width |
+| `desktop.height_m` | `2.36` | Its height |
+| `desktop.vertical_offset_m` | `2.55` | Height of its centre |
+| `desktop.horizontal_offset_m` | `0.0` | Left or right of centre |
 
-| Key | Default |
-|---|---:|
-| `desktop.enabled` | `true` |
-| `desktop.bridge_host` | `127.0.0.1` |
-| `desktop.bridge_port` | `47831` |
-| `desktop.bridge_fps` | `15` |
-| `desktop.bridge_width` | `1600` |
-| `desktop.jpeg_quality` | `72` |
-| `desktop.distance_m` | `3.6` |
-| `desktop.width_m` | `5.2` |
-| `desktop.height_m` | `2.925` |
-| `desktop.vertical_offset_m` | `1.7` |
+Grabbing the screen in the room changes the last five. The keys ending in `_reserved`, and `desktop.input_mode`, are placeholders for clicking through the screen, which is not there yet.
 
-`desktop.curvature_reserved` and `desktop.interactive_input_reserved` are intentionally present for the later production desktop bridge.
+## Interface
+
+| Key | Default | Meaning |
+|---|---|---|
+| `ui.desktop_dock` | `true` | The settings dock in the flat window (`F1`) |
+| `ui.performance_hud` | `true` | Frame rate and state (`F3`) |
+| `ui.wrist_menu` | `true` | The menu on your left wrist |
+| `ui.console_distance_m` | `2.7` | How far the control panels stand |
+| `ui.spatial_panels_grabbable` | `true` | Panels can be grabbed and moved |
+| `ui.show_help_on_start` | `true` | Controls shown at start |
+
+## Sound
+
+| Key | Default | Meaning |
+|---|---|---|
+| `audio.enabled` | `true` | Room sound |
+| `audio.ambient_volume_db` | `-18.0` | Its level |
+| `audio.spatial_ui_volume_db` | `-10.0` | Level of button sounds |
 
 ## ELI link
 
-`eli_bridge.enabled` is false by default: ELI VR runs on its own.
+| Key | Default | Meaning |
+|---|---|---|
+| `eli_bridge.enabled` | `false` | The link to ELI v3. Off: ELI VR runs on its own |
+| `eli_bridge.endpoint` | `http://127.0.0.1:8081` | ELI v3's local server. Loopback only; `ELI_API_PORT` overrides the port |
+| `eli_bridge.voice` | `true` | Push to talk |
+| `eli_bridge.token_env` | `ELI_VR_TOKEN` | Name of an environment variable holding ELI's API token, if you set one |
 
-Switch it on to have ELI v3 present in the rooms and to talk to him. See [ELI_INTEGRATION.md](ELI_INTEGRATION.md) for the settings and what moves between the two.
+More in [ELI_INTEGRATION.md](ELI_INTEGRATION.md).
 
 ## Network
-
-Standalone 0.2.1 defaults:
 
 ```json
 {
@@ -80,4 +112,4 @@ Standalone 0.2.1 defaults:
 }
 ```
 
-`ONLINE` is intentionally not implemented by the standalone application.
+These are not switches to turn on. The app has no code for sign-in, telemetry, sync, updates or remote downloads; the block states what the build is, and `tools/network_audit.py` checks it. See [NETWORK-POLICY.md](NETWORK-POLICY.md).

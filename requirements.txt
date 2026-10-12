@@ -1,3 +1,6 @@
-# Python is only needed for the helper tools in tools/. The app itself is Godot.
-# Python 3.9 or newer.
+# The app itself is Godot and needs none of this.
+# Python 3.10 or newer, for the helper tools in tools/ and for the package in
+# src/ that ELI v3 finds ELI VR by. That package has no dependencies.
 Pillow>=10.0        # tools/validate_project.py checks the texture pack
+# Making the room art again from its sources (tools/prepare_space_assets.py)
+# also needs numpy and ffmpeg. Nothing else does.

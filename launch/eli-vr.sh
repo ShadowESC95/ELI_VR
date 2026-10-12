@@ -9,6 +9,8 @@ set -Eeuo pipefail
 #   ./launch/eli-vr.sh --eli         with the link to ELI v3
 #   ./launch/eli-vr.sh --flat        no headset     (--xr forces one, --compat is OpenGL)
 #   ./launch/eli-vr.sh --no-desktop  do not start the desktop helper
+#   ./launch/eli-vr.sh --register-eli    put this copy on ELI v3's list of bundles
+#   ./launch/eli-vr.sh --unregister-eli  and take it off again
 #
 # Anything else is handed on to the app.
 #
@@ -19,6 +21,16 @@ set -Eeuo pipefail
 ROOT="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
 # shellcheck source=launch/lib-session.sh
 source "$ROOT/launch/lib-session.sh"
+
+case "${1:-}" in
+  --register-eli|--unregister-eli)
+    command -v python3 >/dev/null || { echo "python3 is needed for this." >&2; exit 1; }
+    # an AppImage registers the file itself, not where it happens to be mounted
+    [[ -z "${APPIMAGE:-}" ]] || export ELI_VR_APP="$APPIMAGE"
+    FLAG=(); [[ "$1" == "--register-eli" ]] || FLAG=(--remove)
+    PYTHONDONTWRITEBYTECODE=1 exec python3 "$ROOT/tools/register_eli_bundle.py" "${FLAG[@]}"
+    ;;
+esac
 
 MONADO="${ELI_VR_MONADO:-0}"
 DESKTOP=1

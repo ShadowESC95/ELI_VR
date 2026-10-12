@@ -20,6 +20,7 @@ Add a short note as `docs/PUBLIC-RELEASE-<version>.md`. It becomes the text of t
 python3 tools/source_sanity.py
 python3 tools/validate_project.py
 python3 tools/network_audit.py
+python3 -m unittest discover -s tests
 ./tools/godot_parse_check.sh
 python3 tools/make_release.py --check
 ```
@@ -29,7 +30,7 @@ python3 tools/make_release.py --check
 ## 3. Tag and push
 
 ```bash
-git tag v0.7.0 && git push origin v0.7.0
+git tag v0.8.0 && git push origin v0.8.0
 ```
 
 The `release` workflow does the rest. It fails early if the tag and the three version lines differ.
@@ -45,7 +46,7 @@ The `release` workflow does the rest. It fails early if the tag and the three ve
 | `ELI_VR-<v>-source.zip` | The scanned source tree |
 | `SHA256SUMS.txt` | Checksums for the five above |
 
-The three apps are exported from one Linux machine with Godot's official export templates. The desktop helper is compiled on each OS. Nothing is code-signed or notarised yet, which is why Windows and macOS warn on first launch.
+The three apps are exported from one Linux machine with Godot's official export templates. The desktop helper is compiled on each OS. Every package also carries `src/eli_vr`, `pyproject.toml` and `tools/register_eli_bundle.py`, the Python side that ELI v3 finds ELI VR by. Nothing is code-signed or notarised yet, which is why Windows and macOS warn on first launch.
 
 ## Dry run
 

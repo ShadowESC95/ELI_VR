@@ -1,35 +1,43 @@
-# ELI VR / Godot audit
+# Tools
 
-This is a read-only diagnostic collector for a Godot project.
+Helpers for working on ELI VR. The app does not use any of them at run time. Python 3.10 or newer; `pip install -r requirements.txt` covers the checks.
 
-## Install into the project
+## Everyday
 
-From the project root (the folder containing `project.godot`):
+| Tool | What it does |
+|---|---|
+| `eli_vr.py` | The settings CLI: rooms, themes, quality, the ELI link. `python3 tools/eli_vr.py show` |
+| `register_eli_bundle.py` | Puts this copy of ELI VR on ELI v3's list of bundles. `--show` prints, `--remove` takes it off |
+| `doctor.py` | What this machine has: GPU, OpenXR runtime, capture. Leaves your home folder name out |
+| `install_room_pack.py` | Installs a room pack from a local `.zip` |
 
-```bash
-python3 tools/audit_godot.py
-```
+## Checks
 
-It creates a timestamped report under `build/` and a `.tar.gz` archive.
+| Tool | What it catches |
+|---|---|
+| `source_sanity.py` | Mangled GDScript: a block of code flattened onto one line with literal `\n` in it |
+| `validate_project.py` | Project structure, room and theme data, assets that should be there |
+| `network_audit.py` | A remote address in runtime code |
+| `godot_parse_check.sh` | Anything Godot itself will not load |
+| `make_release.py --check` | Personal data, machine paths or compiled binaries in what would be published |
 
-The report records machine details (paths, environment, GPU and runtime
-information). Read it before sharing it; `build/` is never part of a release.
+`python3 -m unittest discover -s tests` covers the ELI v3 bundle side.
 
-## What it checks
+## Making things
 
-- exact Godot binary, real path, version, ELF/library dependencies
-- headless project startup
-- headless editor startup
-- compatibility-renderer startup
-- NVIDIA driver output
-- Vulkan summary
-- OpenGL summary (if `glxinfo` exists)
-- Wayland/X11 session metadata
-- OpenXR runtime manifests and relevant environment variables
-- `.godot` cache presence/size
-- `project.godot` and `export_presets.cfg`
-- recent Godot log files
-- Git status and project/script diff when the project is a Git checkout
+| Tool | What it does |
+|---|---|
+| `make_release.py` | Builds the clean source package. The privacy gate runs first and stops it |
+| `prepare_space_assets.py` | Turns the downloaded source imagery into the textures the rooms use. Needs numpy, Pillow and ffmpeg |
+| `set_texture_imports.py` | Sets how Godot imports those textures: compressed on the GPU, with mipmaps |
 
-The script does not intentionally modify project files. Godot itself can refresh `.godot`
-cache/import metadata when started in headless/editor mode.
+## Linux desktop capture
+
+| Tool | What it does |
+|---|---|
+| `install-linux-wayland-capture-deps.sh` | Installs what the Wayland helper needs, from the distro |
+| `check-linux-wayland-capture.sh` | Says which of those are missing |
+
+## Reports
+
+`audit_godot.py` collects a full diagnostic report of the Godot project and this machine under `build/`: Godot binary and version, headless start, GPU driver, Vulkan, OpenXR runtime manifests, logs. It records machine details, so read it before sharing it. `build/` is never part of a release.

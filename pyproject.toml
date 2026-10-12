@@ -1,16 +1,17 @@
-# ELI VR is a Godot project. This file covers the Python helper tools only.
+# ELI VR is a Godot project. This file covers its Python side: the package ELI v3
+# finds it by, and the helper tools.
 [build-system]
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "eli-vr-tools"
-version = "0.7.0"
-description = "Helper tools for ELI VR: config CLI, project checks, release packaging"
+name = "eli-vr"
+version = "0.8.0"
+description = "ELI VR: ELI's rooms as places to stand in. The Python side: how ELI v3 finds and starts it"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 authors = [{ name = "ShadowESC95" }]
-keywords = ["vr", "openxr", "godot", "spatial", "workspace"]
+keywords = ["vr", "openxr", "godot", "spatial", "workspace", "eli"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: POSIX :: Linux",
@@ -21,11 +22,21 @@ dependencies = []
 
 [project.optional-dependencies]
 checks = ["Pillow>=10.0"]
+assets = ["Pillow>=10.0", "numpy>=1.24"]
 linux-capture = ["dbus-python>=1.3", "PyGObject>=3.42"]
 
 [project.urls]
 Repository = "https://github.com/ShadowESC95/ELI_VR"
 
-# Nothing to install as a package; the tools run in place from tools/.
-[tool.setuptools]
-packages = []
+[project.scripts]
+eli-vr = "eli_vr.cli:main"
+
+# How ELI v3 finds ELI VR as a bundle it can open.
+[project.entry-points."eli.bundles"]
+vr = "eli_vr.bundle:describe"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+eli_vr = ["*.png"]

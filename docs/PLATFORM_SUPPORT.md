@@ -1,53 +1,24 @@
-# Platform support strategy
+# What runs where
 
-## Windows
+The same project on every system. What differs is the headset runtime and how the desktop is captured. What has actually been tried is in the [README](../README.md#status).
 
-Target:
+| | Linux | Windows | macOS |
+|---|---|---|---|
+| Release build | AppImage, and a folder | Folder | App, Apple Silicon and Intel |
+| Flat window | yes | yes | yes |
+| Headset | Any OpenXR runtime: Monado, SteamVR, WiVRn | Any OpenXR runtime: the headset maker's, SteamVR | No common OpenXR runtime. Flat only |
+| Desktop screen | Wayland: portal + PipeWire helper. X11: native helper | Native helper | Native helper, needs Screen Recording permission |
+| VR runtime stopped on exit | yes, through the launcher | no, the vendor runtime is yours to close | not applicable |
+| Opened from ELI v3 | yes | yes | yes |
 
-- flat 3D: yes
-- OpenXR: yes, where an OpenXR runtime is installed
-- desktop capture helper: source included
-- final capture path: Windows Graphics Capture / shared D3D textures
+Builds are not code-signed, so Windows and macOS warn on first launch. [INSTALL.md](INSTALL.md) has the way round it for each.
 
-## Linux
+## Headsets
 
-Target:
+Any PC headset with an OpenXR runtime. Controller layouts for Oculus Touch, Valve Index, HTC Vive and Windows Mixed Reality are bound, with the OpenXR simple profile as the fallback. Touch is the one tested on hardware.
 
-- flat 3D: yes
-- OpenXR: yes, runtime dependent
-- desktop capture helper: source included
-- final capture path: PipeWire with DMA-BUF/Vulkan where available
+Standalone headsets (Quest, Pico and the like) work through a PC link: Link, Air Link, Virtual Desktop, ALVR, WiVRn. There is no native app for them yet.
 
-Wayland screen capture is permission/compositor sensitive. The portable bridge is a fallback, not the final zero-copy path.
+## Scaling to the machine
 
-## macOS
-
-Target:
-
-- flat 3D: yes
-- desktop capture: source included, Screen Recording permission required
-- XR: only where a suitable OpenXR/runtime path exists
-
-ELI VR does not assume macOS has the same PCVR runtime ecosystem as Windows/Linux.
-
-## Android / standalone XR
-
-Architecture target:
-
-- Godot/OpenXR world
-- no host desktop requirement
-- optional remote ELI/desktop surfaces
-- device-specific export/runtime packaging
-
-Not packaged as an Android APK in this source alpha.
-
-## Hardware scaling
-
-Use the quality profiles:
-
-- low
-- medium
-- high
-- ultra
-
-The room model is identical. Geometry density, volumetrics, particles, shadows and OpenXR render scale change.
+Four quality profiles, the same rooms in each. See [ADVANCED-PLATFORM-OPTIMIZATION.md](ADVANCED-PLATFORM-OPTIMIZATION.md).

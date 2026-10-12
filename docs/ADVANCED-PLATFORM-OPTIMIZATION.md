@@ -1,30 +1,41 @@
-# Advanced platform and optimisation layer
+# Quality and performance
 
-ELI VR 0.2 adds 4K procedural environment assets, ambient audio, OpenXR capability detection, dynamic render-scale control, automatic foveation when supported, XR session focus handling, a composition-layer desktop path with fallback, and a cross-platform hardware doctor.
+ELI VR is built for a headset's frame rate on an ordinary desktop GPU, and scales down from there. It uses Godot's mobile renderer on purpose: forward rendering, a fixed light count per object and effects that are safe in stereo.
 
-Run `python3 tools/doctor.py` before first XR launch.
+## Quality profiles
 
-OpenXR extensions are treated as optional capabilities rather than requirements.
+Out of the box the setting is `auto`: at start ELI VR looks at the CPU, the memory and whether the GPU is a discrete one, and picks a profile. The pick is not saved, so a settings file moved to another machine is judged again there. To choose yourself, use the console (VISUAL), the settings dock (`F1`), or `python3 tools/eli_vr.py quality <name>`.
 
-## Optional photorealistic HDRI pack
+| Profile | Shadows | Fog | Particles | Detail | Headset render scale |
+|---|---|---|---|---|---|
+| `low` | off | off | off | 0.55 | 0.75 |
+| `medium` | on | on | on | 1.0 | 0.9 |
+| `high` | on | on | on | 1.35 | 1.0 |
+| `ultra` | on | on | on | 1.8 | 1.15 |
 
-The project ships with generated 4K panoramas so it works offline. For higher fidelity, the included downloader can install CC0 HDRIs from local environment packs using their public API:
+The rooms are the same at every profile. What changes is how much drifts and moves in them, whether lights cast shadows, and how many pixels the headset is given. The files are `config/profiles/*.json`.
 
-```bash
-```
+Render scale is read once, when the headset session starts. Change the profile and restart to apply it.
 
-For a stronger GPU and more disk space:
+## What the app works out for itself
 
-```bash
-```
+- **The headset's refresh rate.** It follows what the OpenXR runtime reports, and physics ticks at that rate.
+- **Foveation.** Switched on when the runtime supports it, lighter at `low` and `medium`. `xr.foveation` set to `off` disables it.
+- **Glow.** Off in a headset, where it costs a full-screen pass per eye, and on in the flat window.
+- **Textures.** Compressed on the GPU with mipmaps (`tools/set_texture_imports.py`), so the art costs video memory once and not per room.
+- **Focus.** The world pauses when the headset says the session has lost focus, and carries on when it has it back. `xr.pause_when_unfocused` set to `false` keeps it running.
 
-The downloader validates the API-published MD5 hash and rewrites only the relevant `environment_assets.json` entries. The procedural offline assets remain in the project as fallbacks.
+OpenXR extensions are treated as optional. A runtime without one loses that feature, not the session.
 
+## What to expect
 
-## Local room packs
+The reference setup is a mid-range desktop GPU from 2019 driving a 90 Hz PC headset. There, every one of the fifteen places holds 90 frames a second at `ultra`, with roughly 1.5 to 2.1 GB of video memory in use. That is one machine, with the profile chosen by hand. On less, `auto` will pick lower; on integrated graphics expect `low` in the flat window.
 
-```bash
-python3 tools/install_room_pack.py /path/to/room-pack.zip
-```
+The performance HUD (`F3`) shows the frame rate, and `ELI_VR_LOG_FPS=1` writes it to the log every few seconds.
 
-ELI VR does not fetch packs from the internet.
+## If it is slow
+
+1. Drop a profile.
+2. Turn off the desktop screen if you are not using it (`F2`); frames arriving cost time.
+3. In the flat window, `compat` mode uses OpenGL and suits older cards.
+4. Run `python3 tools/doctor.py` and read what it says about the GPU driver and the OpenXR runtime.
