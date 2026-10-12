@@ -2,20 +2,22 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dfkiwtotdlnla"
-path="res://.godot/imported/ELI-VR-0.2-environment-preview.jpg-f5a119a1a52bd6f959feaee8612b3454.ctex"
+uid="uid://b4bdaexn3r0gw"
+path.s3tc="res://.godot/imported/earth_day.jpg-30c3cf6b0a2b30ee1fef339931d575c6.s3tc.ctex"
+path.etc2="res://.godot/imported/earth_day.jpg-30c3cf6b0a2b30ee1fef339931d575c6.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 
 [deps]
 
-source_file="res://ELI-VR-0.2-environment-preview.jpg"
-dest_files=["res://.godot/imported/ELI-VR-0.2-environment-preview.jpg-f5a119a1a52bd6f959feaee8612b3454.ctex"]
+source_file="res://assets/space/earth_day.jpg"
+dest_files=["res://.godot/imported/earth_day.jpg-30c3cf6b0a2b30ee1fef339931d575c6.s3tc.ctex", "res://.godot/imported/earth_day.jpg-30c3cf6b0a2b30ee1fef339931d575c6.etc2.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
@@ -23,7 +25,7 @@ compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=false
+mipmaps/generate=true
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""
@@ -37,4 +39,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=1
+detect_3d/compress_to=0

@@ -98,6 +98,13 @@ func _ready() -> void:
     _apply_current_room()
 
     _setup_eli()
+    _setup_shot()
+    if OS.get_environment("ELI_VR_LOG_FPS") == "1":
+        var ticker := Timer.new()
+        ticker.wait_time = 2.0
+        ticker.autostart = true
+        ticker.timeout.connect(func(): print("ELI VR FPS: %d" % Engine.get_frames_per_second()))
+        add_child(ticker)
 
     print("ELI VR ready")
     print(JSON.stringify(capabilities, "\t"))
@@ -648,4 +655,42 @@ func quit_app() -> void:
     if desktop_surface and desktop_surface.has_method("set_desktop_visible"):
         desktop_surface.set_desktop_visible(false)
     print("ELI VR closing")
+    get_tree().quit()
+
+# --- pictures ----------------------------------------------------------------
+# --eli-shot=<file.png> lets the room settle, saves what the flat camera sees
+# and quits. --eli-shot-view=x,y,z,yaw,pitch places the camera; several views
+# separated by ";" give one picture each. For the README pictures, and for
+# looking at a room without putting the headset on.
+
+func _setup_shot() -> void:
+    var path := ""
+    var views := PackedStringArray()
+    for arg in OS.get_cmdline_user_args():
+        if arg.begins_with("--eli-shot="):
+            path = arg.get_slice("=", 1)
+        elif arg.begins_with("--eli-shot-view="):
+            views = arg.get_slice("=", 1).split(";", false)
+    if path.is_empty() or flat_camera == null:
+        return
+    if DisplayServer.get_name() == "headless":
+        push_warning("ELI VR: --eli-shot needs a real display; nothing was saved.")
+        return
+    if dock: dock.visible = false
+    if hud: hud.visible = false
+    if views.is_empty():
+        views = PackedStringArray([""])
+
+    await get_tree().create_timer(3.0).timeout
+    for i in views.size():
+        var v := views[i].split_floats(",")
+        if v.size() >= 3:
+            flat_camera.position = Vector3(v[0], v[1], v[2])
+        if v.size() >= 5:
+            flat_camera.rotation_degrees = Vector3(v[4], v[3], 0.0)
+        await get_tree().create_timer(0.4).timeout
+        await RenderingServer.frame_post_draw
+        var file := path if views.size() == 1 else "%s_%d.png" % [path.trim_suffix(".png"), i + 1]
+        get_viewport().get_texture().get_image().save_png(file)
+        print("ELI VR picture saved: %s" % file)
     get_tree().quit()

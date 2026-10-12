@@ -36,7 +36,7 @@ func setup(p_app: Node, registry, config) -> void:
         ["LOW","quality","low"],["MEDIUM","quality","medium"],["HIGH","quality","high"],
         ["ULTRA","quality","ultra"],["DESKTOP","toggle","desktop"],["HUD","toggle","hud"],
         ["RESET UI","system","reset_workspace"],["EXIT","system","exit"]
-    ], 3)
+    ], 4)
 
 func _build_panel(
     title: String,
@@ -124,14 +124,16 @@ func _build_panel(
 
 func set_desktop_workspace(enabled: bool) -> void:
     desktop_workspace = enabled
+    # Heights are set so the lowest row of buttons clears the floor, and with
+    # the desktop on, so the top stays under the line of sight to its screen.
     if enabled:
-        _place_panel("RoomsPanel", Vector3(-2.45, 0.82, -2.75), -18.0)
-        _place_panel("EnvironmentsPanel", Vector3(0.0, 0.78, -2.95), 0.0)
-        _place_panel("VisualPanel", Vector3(2.45, 0.82, -2.75), 18.0)
+        _place_panel("RoomsPanel", Vector3(-2.05, 1.20, -2.80), -18.0)
+        _place_panel("EnvironmentsPanel", Vector3(0.0, 1.20, -2.95), 0.0)
+        _place_panel("VisualPanel", Vector3(2.40, 1.20, -2.80), 18.0)
     else:
-        _place_panel("RoomsPanel", Vector3(-2.35, 1.30, -3.10), -16.0)
-        _place_panel("EnvironmentsPanel", Vector3(0.0, 1.30, -3.30), 0.0)
-        _place_panel("VisualPanel", Vector3(2.35, 1.30, -3.10), 16.0)
+        _place_panel("RoomsPanel", Vector3(-2.05, 1.45, -3.10), -16.0)
+        _place_panel("EnvironmentsPanel", Vector3(0.0, 1.45, -3.30), 0.0)
+        _place_panel("VisualPanel", Vector3(2.40, 1.45, -3.10), 16.0)
 
 func reset_layout() -> void:
     set_desktop_workspace(desktop_workspace)
@@ -142,7 +144,7 @@ func _place_panel(panel_name: String, pos: Vector3, yaw_deg: float) -> void:
     var panel: Node3D = panels[panel_name] as Node3D
     panel.position = pos
     panel.rotation = Vector3(0.0, deg_to_rad(yaw_deg), 0.0)
-    panel.scale = Vector3.ONE * 0.88
+    panel.scale = Vector3.ONE * 0.62
 
 func _on_action(kind: String, value: String) -> void:
     if app and app.has_method("apply_console_action"):

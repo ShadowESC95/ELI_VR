@@ -5,6 +5,7 @@ const Manipulable3DClass = preload("res://scripts/world/manipulable_3d.gd")
 const CosmicFieldClass = preload("res://scripts/world/cosmic_field.gd")
 const ProceduralGeometryClass = preload("res://scripts/world/procedural_geometry.gd")
 const CinematicAssetsClass = preload("res://scripts/world/cinematic_assets.gd")
+const OrbitalCoreClass = preload("res://scripts/world/rooms/orbital_core.gd")
 
 var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 var theme: Dictionary = {}
@@ -37,7 +38,11 @@ func build(
 
     match environment_id:
         "core_station":
-            _build_core(parent)
+            # Rooms rebuilt as places of their own live in scripts/world/rooms/.
+            var room = OrbitalCoreClass.new()
+            room.name = "OrbitalCore"
+            parent.add_child(room)
+            room.build(theme, config)
         "memory_cathedral":
             _build_memory(parent)
         "workshop_bay":

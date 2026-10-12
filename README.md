@@ -4,7 +4,7 @@ A spatial workspace you can stand inside: fifteen 3D environments, a movable liv
 
 **Version 0.7.0** · Linux · Windows · macOS
 
-![ELI VR environment preview](ELI-VR-0.2-environment-preview.jpg)
+![The Core Room: an observation deck in orbit, Earth below and the Milky Way overhead](docs/images/core-room.jpg)
 
 ELI VR is part of the ELI family but does not need ELI to run. With ELI v3 running beside it, ELI is present in the rooms and you can talk to him. There is no account, no telemetry and nothing leaves the machine.
 
@@ -96,7 +96,15 @@ Nine ELI rooms, each with its own environment:
 
 Six more workspaces: Forest Sanctuary, Ocean Platform, Deep Space Observatory, Arctic Aurora, Desert Observatory and Underwater Research Lab.
 
-All of them are real 3D geometry and materials generated at runtime, not panoramic photos. Eight interface themes and four quality profiles (`low`, `medium`, `high`, `ultra`) apply to every room.
+All of them are real 3D places, not panoramic photos.
+
+The **Core Room** is the first one rebuilt to a higher standard: an open observation deck on a station in orbit. The sky is NASA's real star map, Earth below is NASA's Blue Marble with drifting cloud and city lights on the night side, the deck is scanned metal, and things move: the station's outer ring swings past, the hub turns, screens tick over. The theme sets the colour of every light in the room.
+
+| | |
+|---|---|
+| ![The Core Room from outside](docs/images/core-room-outside.jpg) | ![Looking towards the sun](docs/images/core-room-sun.jpg) |
+
+The other fourteen are still the simple generated versions and are next. Eight interface themes and four quality profiles (`low`, `medium`, `high`, `ultra`) apply to every room. Art sources and licences are in [assets/CREDITS.md](assets/CREDITS.md).
 
 ## Live desktop screen
 

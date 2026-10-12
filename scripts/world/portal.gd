@@ -3,6 +3,8 @@ extends "res://scripts/world/interactable_3d.gd"
 
 func setup_portal(name_text: String, target_room: String, accent: Color) -> void:
     setup(name_text, "room", target_room, accent, Vector2(1.45, 0.42))
+    if text_label:
+        text_label.no_depth_test = false
     var frame_mat := StandardMaterial3D.new()
     frame_mat.albedo_color = Color(0.02,0.025,0.03)
     frame_mat.metallic = 0.65
