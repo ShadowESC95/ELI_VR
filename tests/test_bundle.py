@@ -120,6 +120,9 @@ class Registering(Sandbox):
         self.assertEqual(record["command"], [str(app.resolve()), "--eli"])
         self.assertTrue(Path(record["command"][0]).exists())
         self.assertEqual((record["launch"], record["needs"]), ("", ["server"]))
+        # the icon is a copy of its own, still there once an AppImage has unmounted
+        self.assertTrue(Path(record["icon"]).is_file())
+        self.assertEqual(Path(record["icon"]).parent, bundle.config_dir())
         # installed into ELI v3's environment, with nothing named, the same copy is still found
         with mock.patch.object(bundle, "_beside", lambda: None):
             self.assertEqual(bundle.own_command(), [str(app.resolve()), "--eli"])

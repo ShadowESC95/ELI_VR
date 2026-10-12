@@ -416,9 +416,9 @@ Two more small files, only if you use them:
 
 | OS | Folder | Holds |
 |---|---|---|
-| Linux | `~/.config/eli-vr/` | `launch.conf` (your usual launcher options) and `location` (where ELI VR was when you registered it with ELI v3) |
-| Windows | `%APPDATA%\eli-vr\` | `location` |
-| macOS | `~/Library/Application Support/eli-vr/` | `location` |
+| Linux | `~/.config/eli-vr/` | `launch.conf` (your usual launcher options), and from registering with ELI v3: `location` (where ELI VR was) and its icon |
+| Windows | `%APPDATA%\eli-vr\` | `location` and the icon |
+| macOS | `~/Library/Application Support/eli-vr/` | `location` and the icon |
 
 ## Uninstall
 

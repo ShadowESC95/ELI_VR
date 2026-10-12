@@ -222,8 +222,11 @@ def v3_bundle_dirs() -> list[Path]:
 
 
 def record() -> dict[str, Any]:
-    """What a registration says: the description, with the command that starts this copy."""
-    return {**describe(), "command": own_command(), "launch": ""}
+    """What a registration says: the description, with the command that starts this copy.
+    The icon is one kept in ELI VR's own config folder, because the one beside this file is
+    gone again when the copy registering is an AppImage."""
+    kept = str(config_dir() / _ICON.name) if _ICON.is_file() else ""
+    return {**describe(), "command": own_command(), "launch": "", "icon": kept}
 
 
 def register(target: Path | None = None) -> Path:
@@ -235,9 +238,11 @@ def register(target: Path | None = None) -> Path:
     folder.mkdir(parents=True, exist_ok=True)
     path = folder / f"{BUNDLE_ID}.json"
     path.write_text(json.dumps(described, indent=2) + "\n", encoding="utf-8")
+    config_dir().mkdir(parents=True, exist_ok=True)
+    if described["icon"]:
+        shutil.copyfile(_ICON, described["icon"])
     where = app_file() if os.environ.get("ELI_VR_APP") else (home() or app_file())
     if where is not None:
-        config_dir().mkdir(parents=True, exist_ok=True)
         (config_dir() / "location").write_text(str(where) + "\n", encoding="utf-8")
     return path
 

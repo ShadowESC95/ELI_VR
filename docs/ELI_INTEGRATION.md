@@ -75,7 +75,7 @@ There are two ways ELI v3 can find ELI VR.
 | **Registered.** ELI VR is installed on its own: the AppImage, a release folder, a checkout. | `--register-eli` on the AppImage or `./launch/eli-vr.sh`, or `python3 tools/register_eli_bundle.py` | As its own program, started by ELI v3 |
 | **Installed beside ELI v3.** The Python package is in ELI v3's own environment. | `pip install -e /path/to/ELI_VR` in that environment | Started from inside ELI v3's process |
 
-Registering writes one file, `vr.json`, into the `bundles` folder of ELI v3's data, and notes in ELI VR's own config folder where this copy is. `--show` prints what would be written and writes nothing; `--remove` (or `--unregister-eli`) takes it back. The installed package advertises itself under the `eli.bundles` entry point and needs nothing written. If both are there, ELI v3 uses the installed one.
+Registering writes one file, `vr.json`, into the `bundles` folder of ELI v3's data, and keeps a note of where this copy is, and its icon, in ELI VR's own config folder. `--show` prints what would be written and writes nothing; `--remove` (or `--unregister-eli`) takes it back. The installed package advertises itself under the `eli.bundles` entry point and needs nothing written. If both are there, ELI v3 uses the installed one.
 
 ```bash
 python3 tools/register_eli_bundle.py            # register
