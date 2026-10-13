@@ -8,6 +8,7 @@ const CinematicAssetsClass = preload("res://scripts/world/cinematic_assets.gd")
 # Rooms rebuilt as places of their own. Each is a script in rooms/; anything
 # not listed here still comes from the older builders further down.
 const REBUILT := {
+    "eli_room": preload("res://scripts/world/rooms/own_room.gd"),
     "core_station": preload("res://scripts/world/rooms/orbital_core.gd"),
     "deep_space": preload("res://scripts/world/rooms/deep_space.gd"),
     "anomaly_void": preload("res://scripts/world/rooms/anomaly_void.gd"),

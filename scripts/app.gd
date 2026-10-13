@@ -8,6 +8,8 @@ const RuntimeOptimizerClass = preload("res://scripts/core/runtime_optimizer.gd")
 const EliLinkClass = preload("res://scripts/eli/eli_link.gd")
 const EliPresenceClass = preload("res://scripts/eli/eli_presence.gd")
 const EliVoiceClass = preload("res://scripts/eli/eli_voice.gd")
+const EliSensesClass = preload("res://scripts/eli/eli_senses.gd")
+const EliThingsClass = preload("res://scripts/eli/eli_things.gd")
 const XRBootstrapClass = preload("res://scripts/xr/xr_bootstrap.gd")
 const XRLocomotionClass = preload("res://scripts/xr/locomotion.gd")
 const XRPointerClass = preload("res://scripts/xr/xr_pointer.gd")
@@ -63,6 +65,13 @@ var _by_toggle_latched := false
 var eli_link
 var eli_presence
 var eli_voice
+var eli_senses
+var eli_things
+var _eli_mood: Dictionary = {}
+var _eli_notice := ""
+var _eli_notice_until_ms := 0
+var _eli_say_pending := false
+var _eli_mind: Dictionary = {}
 var _talk_latched := false
 var _exit_armed_until_ms := 0
 var _eli_called_until_ms := 0
@@ -98,6 +107,7 @@ func _ready() -> void:
     _apply_current_room()
 
     _setup_eli()
+    _setup_eli_say()
     _setup_shot()
     if OS.get_environment("ELI_VR_LOG_FPS") == "1":
         var ticker := Timer.new()
@@ -350,6 +360,10 @@ func _unhandled_key_input(event: InputEvent) -> void:
             if hud: hud.visible = not hud.visible
         KEY_F5:
             _apply_current_room()
+        KEY_B:
+            eli_build()
+        KEY_Z:
+            eli_undo()
         KEY_F6:
             if calibration_widget:
                 calibration_widget.toggle()
@@ -382,6 +396,13 @@ func apply_console_action(kind: String, value: String) -> void:
                     hud.visible = not hud.visible
                     config.set_value("ui.performance_hud", hud.visible)
                     config.save_runtime()
+        "eli_model":
+            eli_use_model(value)
+        "eli":
+            if value == "compose":
+                eli_build()
+            elif value == "undo":
+                eli_undo()
         "system":
             if value == "calibration" and calibration_widget:
                 calibration_widget.toggle()
@@ -475,6 +496,9 @@ func _apply_current_room() -> void:
     room_factory.build(room_root,env_id,theme,config)
     if ambient_audio: ambient_audio.play_environment(env_id)
     _build_portals()
+    _apply_eli_mood()
+    if eli_things:
+        eli_things.show_room(room_id)
     _refresh_eli_presence()
 
 func _build_portals() -> void:
@@ -507,6 +531,8 @@ func _rebuild_console() -> void:
     add_child(console)
     if console.has_method("set_desktop_workspace"):
         console.set_desktop_workspace(desktop_surface != null and desktop_surface.visible)
+    if not _eli_mind.is_empty():
+        _take_eli_mind(_eli_mind)
 
 func current_environment_id() -> String:
     var room = registry.room(str(config.get_value("world.room","core_room")))
@@ -554,12 +580,26 @@ func _setup_eli() -> void:
     add_child(eli_presence)
     eli_presence.setup(_theme_accent())
 
+    eli_things = EliThingsClass.new()
+    eli_things.name = "EliThings"
+    add_child(eli_things)
+    eli_things.show_room(_current_room_id())
+    eli_things.moved_by_hand.connect(_on_eli_thing_moved)
+
+    eli_senses = EliSensesClass.new()
+    eli_senses.name = "EliSenses"
+    add_child(eli_senses)
+    eli_senses.setup(self, eli_link, eli_presence, eli_things)
+
     if bool(config.get_value("eli_bridge.voice", true)):
         eli_voice = EliVoiceClass.new()
         eli_voice.name = "EliVoice"
         add_child(eli_voice)
         eli_voice.setup(eli_link, eli_presence)
         eli_voice.state_changed.connect(_on_eli_voice_state)
+        eli_voice.heard.connect(func(_text): eli_senses.report_now())
+        eli_voice.failed.connect(_on_eli_failed)
+        eli_voice.built.connect(_on_eli_built)
 
     eli_link.world_state_received.connect(_on_eli_world_state)
     eli_link.link_changed.connect(_on_eli_link_changed)
@@ -574,6 +614,10 @@ func _current_room_id() -> String:
 
 func _on_eli_link_changed(connected: bool) -> void:
     eli_presence.set_mode("idle" if connected else "dormant")
+    if connected and eli_link.can("mind") and _eli_mind.is_empty():
+        _settle_eli_mind()
+    elif not connected:
+        _eli_mind = {}
     if connected:
         eli_link.send_event("vr_session_started", "The user opened ELI VR", {"xr": xr_active})
         _tell_eli_where_we_are()
@@ -581,7 +625,137 @@ func _on_eli_link_changed(connected: bool) -> void:
 
 func _on_eli_world_state(state: Dictionary) -> void:
     eli_presence.apply_world_state(state)
+    eli_things.apply_world_state(state)
+    var spaces: Dictionary = state.get("spaces", {})
+    var own: Dictionary = spaces.get("own_room", {})
+    if own.has("mood"):
+        _eli_mood = own["mood"]
+        _apply_eli_mood()
     _refresh_eli_presence()
+
+# ELI's own room is drawn the way his world says he has made it.
+func _apply_eli_mood() -> void:
+    if _eli_mood.is_empty() or room_root == null:
+        return
+    for room in room_root.get_children():
+        if room.has_method("apply_mood") and not room.is_queued_for_deletion():
+            room.apply_mood(_eli_mood)
+
+func current_room_id() -> String:
+    return _current_room_id()
+
+# --- ELI's mind -----------------------------------------------------------------
+# No model is assumed. ELI says which he has; the one already loaded is used
+# as it is (opened from his window, that is the one he was using there). Only
+# when nothing is loaded yet is the model kept in ELI VR's settings asked for,
+# and a model named on the command line is always asked for.
+
+func _settle_eli_mind() -> void:
+    var result = await eli_link.mind()
+    if not result.ok:
+        return
+    _take_eli_mind(result.payload)
+    var asked := ""
+    for arg in OS.get_cmdline_user_args():
+        if arg.begins_with("--eli-model="):
+            asked = arg.trim_prefix("--eli-model=")     # this run only, never saved
+    var kept := str(config.get_value("eli_bridge.model", ""))
+    var loaded := bool(_eli_mind.get("loaded", false))
+    if not asked.is_empty():
+        await eli_use_model(asked, false)
+    elif not loaded and not kept.is_empty() and kept != str(_eli_mind.get("model", "")):
+        await eli_use_model(kept, false)
+
+func _take_eli_mind(mind: Dictionary) -> void:
+    _eli_mind = mind
+    print("ELI mind: %s%s, %d to choose from" % [
+        str(mind.get("model", "")) if not str(mind.get("model", "")).is_empty() else "none",
+        "" if bool(mind.get("loaded", false)) else " (not loaded yet)", (mind.get("models", []) as Array).size()])
+    if console and console.has_method("show_mind"):
+        console.show_mind(mind.get("models", []), str(mind.get("model", "")), bool(mind.get("loaded", false)))
+
+# Choose ELI's model from inside the room. He loads it before he answers.
+func eli_use_model(model_name: String, remember: bool = true) -> void:
+    if eli_link == null or not eli_link.can("mind"):
+        _eli_say_briefly("this ELI v3 cannot change model from here")
+        return
+    _eli_say_briefly("loading %s" % model_name.trim_suffix(".gguf"), 600.0)
+    var result = await eli_link.use_model(model_name)
+    if not result.ok:
+        _eli_say_briefly("%s%s" % [result.sentence(), "" if result.detail.is_empty() else ": " + result.detail.left(60)], 12.0)
+        return
+    _take_eli_mind(result.payload)
+    _eli_say_briefly("mind: %s" % model_name.trim_suffix(".gguf"))
+    if remember:
+        config.set_value("eli_bridge.model", model_name)
+        config.save_runtime()
+
+# The model he is using, for the status line: never a surprise.
+func eli_mind_name() -> String:
+    var model_name := str(_eli_mind.get("model", "")).trim_suffix(".gguf")
+    if model_name.is_empty():
+        return "NO MODEL CHOSEN" if not _eli_mind.is_empty() else ""
+    return model_name if bool(_eli_mind.get("loaded", false)) else "%s (NOT LOADED YET)" % model_name
+
+# --- ELI building ---------------------------------------------------------------
+
+# Something for the status line for a few seconds: what he made, or why not.
+func _eli_say_briefly(text: String, seconds: float = 7.0) -> void:
+    _eli_notice = text
+    _eli_notice_until_ms = Time.get_ticks_msec() + int(seconds * 1000.0)
+    if eli_presence:
+        eli_presence.note(text, seconds)
+
+func _on_eli_failed(result) -> void:
+    _eli_say_briefly(result.sentence())
+
+func _on_eli_built(reply: Dictionary) -> void:
+    var done := []
+    for result in reply.get("results", []):
+        if bool(result.get("ok", false)):
+            var what := str(result.get("name", ""))
+            done.append(what if not what.is_empty() else str(result.get("op", "")))
+    if not done.is_empty():
+        _eli_say_briefly("made: %s" % ", ".join(done))
+
+# ELI makes one thing in his own room, unasked.
+func eli_build() -> void:
+    if eli_link == null or not eli_link.can("building"):
+        _eli_say_briefly("ELI cannot build from here" if eli_link and eli_link.connected else "ELI is not running")
+        return
+    _eli_say_briefly("building...", 60.0)
+    eli_senses.report_now()
+    var result = await eli_link.compose()
+    if not result.ok:
+        _on_eli_failed(result)
+        return
+    var reply: Dictionary = result.payload
+    _on_eli_built(reply)
+    var words := str(reply.get("text", ""))
+    if not words.is_empty() and eli_voice != null and eli_voice.state == "idle":
+        var speech = await eli_link.speak(words)
+        if speech.ok:
+            eli_presence.set_mode("speaking")
+            await eli_presence.say(speech.payload)
+            eli_presence.set_mode("idle")
+
+func eli_undo() -> void:
+    if eli_link == null or not eli_link.can("undo"):
+        return
+    var result = await eli_link.undo()
+    if not result.ok:
+        _on_eli_failed(result)
+    else:
+        _eli_say_briefly("taken back" if bool(result.payload.get("ok", false)) else "nothing to take back")
+
+# The user moved one of ELI's things by hand: his world is told where it stands.
+func _on_eli_thing_moved(thing_id: String, at: Vector3) -> void:
+    var pos: Array = EliSensesClass.to_protocol(at)
+    var result = await eli_link.edit(
+        [{"op": "move", "id": thing_id, "at": [pos[0], pos[2]], "height": pos[1]}],
+        _current_room_id(), "The user moved it by hand")
+    if not result.ok:
+        _on_eli_failed(result)
 
 func _on_eli_voice_state(state: String) -> void:
     eli_presence.set_mode(state if eli_link.connected else "dormant")
@@ -592,6 +766,8 @@ func _on_eli_voice_state(state: String) -> void:
 func _tell_eli_where_we_are() -> void:
     if eli_link == null or not eli_link.connected:
         return
+    if eli_senses:
+        eli_senses.report_now()
     eli_link.send_event(
         "vr_room_entered",
         "The user entered the %s in ELI VR" % current_room_name(),
@@ -623,12 +799,17 @@ func _process_eli_talk() -> void:
 func eli_status() -> String:
     if eli_link == null or not eli_link.enabled:
         return ""
-    if not eli_link.connected:
-        return "ELI NOT RUNNING"
+    if Time.get_ticks_msec() < _eli_notice_until_ms:
+        return "ELI: %s" % _eli_notice.to_upper()
+    var trouble: String = eli_link.status()
+    if not trouble.is_empty():
+        return trouble.to_upper()
     if eli_voice != null and eli_voice.state != "idle":
         return "ELI %s" % eli_voice.state.to_upper()
+    var mind_name := eli_mind_name()
+    var with_mind := "" if mind_name.is_empty() else " · %s" % mind_name.to_upper()
     if eli_presence.eli_room == _current_room_id():
-        return "ELI HERE"
+        return "ELI HERE%s" % with_mind
     var room: Dictionary = registry.room(eli_presence.eli_room)
     return "ELI IN %s" % str(room.get("name", eli_presence.eli_room)).to_upper()
 
@@ -664,6 +845,41 @@ func quit_app() -> void:
 # looking at a room without putting the headset on. --eli-shot-clean leaves
 # out the control panels, portals and desktop screen.
 
+# --eli-say="..." sends one sentence to ELI as if it had been spoken, once the
+# link is up. For trying the link, and the building, without a microphone.
+func _setup_eli_say() -> void:
+    var said := ""
+    for arg in OS.get_cmdline_user_args():
+        if arg.begins_with("--eli-say="):
+            said = arg.trim_prefix("--eli-say=")
+    if said.is_empty() or eli_voice == null:
+        return
+    _eli_say_pending = true
+    var waited := 0.0
+    while not eli_link.connected or eli_link.protocol == 0:
+        await get_tree().create_timer(0.25).timeout
+        waited += 0.25
+        if waited > 30.0:
+            print("ELI: %s" % eli_link.status())
+            _eli_say_pending = false
+            return
+    eli_senses.report_now()
+    for sentence in said.split("|"):
+        sentence = sentence.strip_edges()
+        if sentence == "@build":            # what the ELI: BUILD button does
+            await eli_build()
+        elif sentence == "@undo":
+            await eli_undo()
+        elif sentence == "@wait":
+            await get_tree().create_timer(2.0).timeout
+        else:
+            eli_voice.heard.connect(func(text): print("ELI heard: %s" % text), CONNECT_ONE_SHOT)
+            eli_voice.replied.connect(func(text): print("ELI said: %s" % text), CONNECT_ONE_SHOT)
+            await eli_voice.converse_text(sentence)
+        await get_tree().create_timer(1.0).timeout
+    print("ELI say: done")
+    _eli_say_pending = false
+
 func _setup_shot() -> void:
     var path := ""
     var views := PackedStringArray()
@@ -688,6 +904,11 @@ func _setup_shot() -> void:
         views = PackedStringArray([""])
 
     await get_tree().create_timer(3.0).timeout
+    # with --eli-say, the picture is of what came of it
+    while _eli_say_pending:
+        await get_tree().create_timer(0.5).timeout
+    if "--eli-say=" in " ".join(OS.get_cmdline_user_args()):
+        await get_tree().create_timer(4.0).timeout
     for i in views.size():
         var v := views[i].split_floats(",")
         if v.size() >= 3:

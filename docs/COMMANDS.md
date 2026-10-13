@@ -40,6 +40,8 @@ Anything after `--` goes to the app and applies to that run only:
 | `--eli-desktop=on\|off` | The desktop screen |
 | `--eli-link=on\|off` | The link to ELI v3 |
 | `--eli-endpoint=<url>` | ELI v3's local server, if not the default. Loopback only |
+| `--eli-model=<name>` | Ask ELI to load this model of his, for this run. Names are the ones on the ELI'S MIND panel |
+| `--eli-say="..."` | Send a sentence to ELI as if spoken, once the link is up. Several separated by `\|`; `@build` and `@undo` do what those buttons do, `@wait` waits. For trying the link without a microphone |
 
 ## Settings
 
@@ -58,6 +60,7 @@ python3 tools/eli_vr.py quality high
 python3 tools/eli_vr.py xr auto
 python3 tools/eli_vr.py desktop on
 python3 tools/eli_vr.py eli on
+python3 tools/eli_vr.py model Some-Model-Q4.gguf   # asked for when ELI has nothing loaded; "any" clears it
 
 python3 tools/eli_vr.py set desktop.distance_m 4.5
 python3 tools/eli_vr.py set xr.move_speed 2.5
@@ -157,6 +160,7 @@ Grip + stick X       turn it
 B / Y                show or hide the spatial console
 Menu (left)          wrist menu
 Hold A / X           talk to ELI, with the link on
+Grip on ELI's thing  move what he built; he is told where you put it
 ```
 
 Hands not where the controllers are: hold both grips and both triggers for a second with the controllers together in front of your chest, or use CALIBRATE on the wrist menu. `F6` shows the calibration widget, `F7` calibrates at once.

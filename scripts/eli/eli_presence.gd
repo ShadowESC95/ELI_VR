@@ -34,6 +34,8 @@ var _label: Label3D
 var _voice_bus := -1
 var _level := 0.0
 var _clock := 0.0
+var _note := ""
+var _note_left := 0.0
 
 func setup(accent: Color) -> void:
     _base_tint = accent
@@ -125,6 +127,12 @@ func apply_world_state(state: Dictionary) -> void:
     _tint = tint
     _refresh_label()
 
+# A line under him for a few seconds: what he just made, or why he cannot answer.
+func note(text: String, seconds: float = 6.0) -> void:
+    _note = text
+    _note_left = seconds
+    _refresh_label()
+
 func say(stream: AudioStream) -> void:
     voice_player.stream = stream
     voice_player.play()
@@ -139,12 +147,19 @@ func _refresh_label() -> void:
         "listening": line = "listening"
         "thinking": line = "thinking"
         "speaking": line = "speaking"
+    if not _note.is_empty():
+        line = _note if line.is_empty() else "%s\n%s" % [line, _note]
     _label.text = "ELI" if line.is_empty() else "ELI\n%s" % line
 
 func _process(delta: float) -> void:
     if _body == null or not visible:
         return
     _clock += delta
+    if _note_left > 0.0:
+        _note_left -= delta
+        if _note_left <= 0.0:
+            _note = ""
+            _refresh_label()
     var m: Array = MODES[mode]
     var energy: float = m[0]
     var tint := _tint if mode != "dormant" else Color(0.45, 0.5, 0.55)

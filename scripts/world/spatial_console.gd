@@ -19,7 +19,8 @@ func setup(p_app: Node, registry, config) -> void:
     _build_panel("ROOMS", "RoomsPanel", Vector3(-2.35, 1.30, -3.10), -16.0, [
         ["CORE","room","core_room"],["WORKSHOP","room","workshop"],["REFLECT","room","reflection_chamber"],
         ["MEMORY","room","memory_archive"],["DEBUG","room","debug_basement"],["UPGRADE","room","upgrade_bay"],
-        ["SIM LAB","room","simulation_lab"],["ANOMALY","room","anomaly_room"],["EVIDENCE","room","evidence_wall"]
+        ["SIM LAB","room","simulation_lab"],["ANOMALY","room","anomaly_room"],["EVIDENCE","room","evidence_wall"],
+        ["ELI'S ROOM","room","own_room"],["ELI: BUILD","eli","compose"],["UNDO","eli","undo"]
     ], 3)
 
     _build_panel("ENVIRONMENTS", "EnvironmentsPanel", Vector3(0.0, 1.30, -3.30), 0.0, [
@@ -38,16 +39,34 @@ func setup(p_app: Node, registry, config) -> void:
         ["RESET UI","system","reset_workspace"],["EXIT","system","exit"]
     ], 4)
 
+# ELI's mind: the models he has, by his own list. The one in use is marked.
+# Pressing another has him load it. Nothing is listed until he has said.
+func show_mind(models: Array, current: String, loaded: bool) -> void:
+    if panels.has("MindPanel"):
+        panels["MindPanel"].queue_free()
+        panels.erase("MindPanel")
+    if models.is_empty():
+        return
+    var buttons := []
+    for model in models.slice(0, 8):
+        var model_name := str(model.get("name", ""))
+        var shown := model_name.trim_suffix(".gguf").left(30)
+        var mark := ("> " if loaded else "~ ") if model_name == current else ""
+        buttons.append(["%s%s  %.1f GB" % [mark, shown, float(model.get("size_gb", 0.0))], "eli_model", model_name])
+    _build_panel("ELI'S MIND", "MindPanel", Vector3(-3.6, 1.45, -1.3), 66.0, buttons, 1, 2.9)
+    set_desktop_workspace(desktop_workspace)
+
 func _build_panel(
     title: String,
     panel_name: String,
     pos: Vector3,
     yaw_deg: float,
     buttons: Array,
-    cols: int
+    cols: int,
+    cell: float = 1.06
 ) -> void:
     var rows: int = int(ceil(float(buttons.size()) / float(cols)))
-    var width: float = float(cols) * 1.06 + 0.32
+    var width: float = float(cols) * cell + 0.32
     var height: float = float(rows) * 0.40 + 0.76
 
     var panel = MovablePanelClass.new()
@@ -75,7 +94,7 @@ func _build_panel(
 
     var rail: MeshInstance3D = MeshInstance3D.new()
     var rail_mesh: BoxMesh = BoxMesh.new()
-    rail_mesh.size = Vector3(float(cols) * 1.06 + 0.08, 0.022, 0.028)
+    rail_mesh.size = Vector3(float(cols) * cell + 0.08, 0.022, 0.028)
     rail.mesh = rail_mesh
     rail.position = Vector3(0.0, 0.35, 0.125)
     var rail_mat: StandardMaterial3D = StandardMaterial3D.new()
@@ -112,10 +131,10 @@ func _build_panel(
             str(buttons[i][1]),
             str(buttons[i][2]),
             accent,
-            Vector2(0.96, 0.30)
+            Vector2(cell - 0.10, 0.30)
         )
         b.position = Vector3(
-            (float(col) - float(cols - 1) * 0.5) * 1.04,
+            (float(col) - float(cols - 1) * 0.5) * (cell - 0.02),
             -0.04 - float(row) * 0.39,
             0.15
         )
@@ -130,7 +149,9 @@ func set_desktop_workspace(enabled: bool) -> void:
         _place_panel("RoomsPanel", Vector3(-2.05, 1.20, -2.80), -18.0)
         _place_panel("EnvironmentsPanel", Vector3(0.0, 1.20, -2.95), 0.0)
         _place_panel("VisualPanel", Vector3(2.40, 1.20, -2.80), 18.0)
+        _place_panel("MindPanel", Vector3(-3.6, 1.20, -1.3), 66.0)
     else:
+        _place_panel("MindPanel", Vector3(-3.6, 1.45, -1.3), 66.0)
         _place_panel("RoomsPanel", Vector3(-2.05, 1.45, -3.10), -16.0)
         _place_panel("EnvironmentsPanel", Vector3(0.0, 1.45, -3.30), 0.0)
         _place_panel("VisualPanel", Vector3(2.40, 1.45, -3.10), 16.0)

@@ -2,7 +2,7 @@
 
 A spatial workspace you can stand inside: fifteen places from an orbiting station to a misty forest, a movable live desktop screen, and a control console, built on Godot 4.7 and OpenXR. It runs in a headset, and it runs on a plain monitor when there isn't one.
 
-**Version 0.8.0** · Linux · Windows · macOS
+**Version 0.9.0** · Linux · Windows · macOS
 
 ![The Core Room: an observation deck in orbit, Earth below and the Milky Way overhead](docs/images/core-room.jpg)
 
@@ -19,6 +19,7 @@ This is an early build. Be clear-eyed about what has and has not been tried:
 | Windows and macOS builds | Built by CI. Not yet run on real hardware. |
 | Valve Index, HTC Vive, Windows Mixed Reality, generic OpenXR controllers | Bound, not yet tested on hardware. |
 | The link to ELI v3 (presence, talking) | Tested against ELI v3's own routes without a headset. Not yet used in one. |
+| ELI building in the rooms, and his own room | Tested flat against ELI v3's real server and a real, very small model. His room was run in the headset; building has not yet been spoken into one. |
 | Opened from ELI v3 as a bundle | Tested with ELI v3's own launch code and a stand-in for the app. Not yet opened that way into a headset. |
 | Quest, Pico and other standalone headsets | No native app yet. Use them through a PC link (Link, Air Link, Virtual Desktop, ALVR, WiVRn). |
 | macOS in VR | No common OpenXR runtime exists there. Flat mode only. |
@@ -61,6 +62,8 @@ With `auto`, ELI VR uses a headset when an OpenXR runtime is active and falls ba
 | `F2` | Desktop screen |
 | `F3` | Performance HUD |
 | `F5` | Rebuild the current room |
+| Hold `T` | Talk to ELI (with the ELI link on) |
+| `B` / `Z` | ELI builds something of his own in his room / take the last change back |
 | `Esc` | Release the mouse |
 
 ### In the headset
@@ -135,13 +138,33 @@ Off by default. Switch the link on and, while ELI v3's local server is running o
 
 - ELI appears as a body of light in whichever room his own world has him in, and the status line says where he is when it is not yours.
 - Hold **A** / **X** on a controller, or **T** on the keyboard, to talk to him. He answers in his own voice from where he stands.
+- **He knows where he is.** ELI is told which room you are both in and what that place is, where you are standing, what you are looking at and what of his is near. Ask him "where are we" or "what am I looking at".
+- **He can build.** Ask him to make something, "build me a tall red pillar", "put a lamp to my left", "make the pillar green and bigger", "undo", and it rises out of the floor where you asked. You can grab what he made and move it. Everything he does goes through his world's own policy and is kept in its ledger.
+- **In any way he likes.** A thing is a shape by name, or anything at all made part by part: boxes, balls, cones, rings, a profile turned on a lathe, an outline pulled up into a solid, a tube along a path, text, each with its own place, turn, size, colour, metal, glow, clearness and motion. Nothing has to come from a list.
+- **He has a room of his own.** ELI'S ROOM on the console is open ground under an open sky with nothing in it but what he has made. The sky is his: one by name, or painted from two colours, stars and a sun wherever he puts it. So is the ground: any colour, flat or rising into hills.
+- **Of his own accord, from his own life.** Nothing is scheduled and nothing is chosen for him. When something happens in him (an insight forms, he takes on a goal or finishes one, he proposes an improvement to himself) that moment is kept in its own words. When he is free he may make something of it in his room, and what he makes is tied to the record it came from. ELI: BUILD asks him now.
+- **His records stand in his rooms.** The Memory Archive holds lights that are his real recent memories, each carrying its own words. The Upgrade Bay holds the goals he has now.
+
+![ELI's room: a sky he painted, and things made part by part](docs/images/eli-room-freeform.jpg)
 
 ```bash
 python3 tools/eli_vr.py eli on            # remembered
 ./launch/run-linux.sh -- --eli-link=on    # this run only
 ```
 
-ELI VR names no model: whichever one ELI v3 has loaded answers.
+### His mind
+
+ELI VR names no model and assumes none. Which GGUF is ELI's mind is your choice, three ways:
+
+- **Opened from ELI v3's window:** the model already loaded there is the one that answers. Nothing is chosen again and nothing is loaded twice.
+- **In the room:** the ELI'S MIND panel lists the models ELI has, by his own list. The one in use is marked. Press another and he loads it.
+- **Before starting:** `--eli-model=<name>` for that run, or `python3 tools/eli_vr.py model <name>` to keep it. A kept model is asked for only when ELI has nothing loaded yet.
+
+The status line always says which model he is using, and says so when it is only the one used last and nobody chose it.
+
+Building is held to an exact grammar and checked against what you plainly said, so it works with a very small model too. A model of three billion parameters or more is also offered everything: things made part by part and a sky painted his own way. A smaller one keeps to the named shapes, which it can manage.
+
+If something goes wrong the status line says which thing: ELI is not running, he has no model loaded, he did not catch that, his voice is not available, or this ELI v3 is too old for building. An ELI v3 from before the building (3.0.131 to 3.0.133) still gives presence and talking.
 
 ### Opened from ELI v3
 

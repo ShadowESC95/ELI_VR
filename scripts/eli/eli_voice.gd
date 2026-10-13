@@ -8,6 +8,8 @@ extends Node
 signal state_changed(state: String)   # idle | listening | thinking | speaking
 signal heard(text: String)
 signal replied(text: String)
+signal built(reply: Dictionary)       # he changed the room: what he did, edit by edit
+signal failed(result)                 # an EliResult saying which failure it was
 
 const MIN_SECONDS := 0.35
 const MAX_SECONDS := 30.0
@@ -42,7 +44,10 @@ func setup(p_link, p_presence) -> void:
     add_child(_mic)
 
 func start_listening() -> void:
-    if state != "idle" or link == null or not link.connected:
+    if state != "idle" or link == null:
+        return
+    if not link.connected:
+        failed.emit(EliResult.bad("unreachable", "", 0, true))
         return
     _frames.clear()
     _capture.clear_buffer()
@@ -75,22 +80,41 @@ func _drain() -> void:
 # One turn of conversation from a recorded clip. Also the way in for tests.
 func converse(wav: PackedByteArray) -> void:
     _set_state("thinking")
-    var text: String = await link.transcribe(wav)
-    if text.is_empty():
-        _set_state("idle")
+    var caught: EliResult = await link.transcribe(wav)
+    if not caught.ok:
+        _fail(caught)
         return
+    await converse_text(str(caught.payload))
+
+# The same from words already in hand.
+func converse_text(text: String) -> void:
+    _set_state("thinking")
     heard.emit(text)
 
-    var answer: String = await link.chat(text)
-    if answer.is_empty():
+    var answer: EliResult = await link.say(text)
+    if not answer.ok:
+        _fail(answer)
+        return
+    var reply: Dictionary = answer.payload
+    var words := str(reply.get("text", ""))
+    replied.emit(words)
+    if str(reply.get("kind", "")) == "build":
+        built.emit(reply)
+    if words.is_empty():
         _set_state("idle")
         return
-    replied.emit(answer)
 
-    var speech: AudioStreamWAV = await link.speak(answer)
-    if speech != null and presence != null:
+    var speech: EliResult = await link.speak(words)
+    if speech.ok and presence != null:
         _set_state("speaking")
-        await presence.say(speech)
+        await presence.say(speech.payload)
+    elif not speech.ok:
+        failed.emit(speech)         # he answered; the words are on the status line
+    _set_state("idle")
+
+func _fail(result: EliResult) -> void:
+    print("ELI: %s%s" % [result.sentence(), "" if result.detail.is_empty() else " (%s)" % result.detail])
+    failed.emit(result)
     _set_state("idle")
 
 func _set_state(value: String) -> void:

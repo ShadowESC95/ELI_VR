@@ -94,7 +94,8 @@
     "enabled": false,
     "endpoint": "http://127.0.0.1:8081",
     "token_env": "ELI_VR_TOKEN",
-    "voice": true
+    "voice": true,
+    "model": ""
   },
   "audio": {
     "enabled": true,

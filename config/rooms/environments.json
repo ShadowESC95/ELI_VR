@@ -3,90 +3,112 @@
     "name": "Orbital Core Station",
     "style": "core_station",
     "locomotion": "free_flight",
-    "world_scale": "large"
+    "world_scale": "large",
+    "seen_as": "An open deck on a station in orbit. Earth turns below, the Milky Way is overhead, and a ring of the station turns slowly outside."
   },
   "memory_cathedral": {
     "name": "Memory Cathedral",
     "style": "memory_cathedral",
     "locomotion": "free_flight",
-    "world_scale": "large"
+    "world_scale": "large",
+    "seen_as": "A marble hall open to the stars. Its walls are shelved with thousands of small lights, each keeping its own time."
   },
   "workshop_bay": {
     "name": "Engineering Workshop",
     "style": "workshop_bay",
     "locomotion": "free_flight",
-    "world_scale": "large"
+    "world_scale": "large",
+    "seen_as": "A repair bay with its door open to space. A welding arm works, a crane runs on its rails, and Earth goes by outside."
   },
   "mountain_observatory": {
     "name": "Mountain Observatory",
     "style": "mountain",
     "locomotion": "free_flight",
-    "world_scale": "large"
+    "world_scale": "large",
+    "seen_as": "A stone terrace on a mountain plateau at dawn, ringed by still water that holds the sky."
   },
   "debug_bunker": {
     "name": "Debug Bunker",
     "style": "debug_bunker",
     "locomotion": "free_flight",
-    "world_scale": "large"
+    "world_scale": "large",
+    "seen_as": "A dim concrete bunker of server racks and old terminals, with scrolling logs and one strip light flickering."
   },
   "fabrication_lab": {
     "name": "Fabrication Lab",
     "style": "fabrication_lab",
     "locomotion": "free_flight",
-    "world_scale": "large"
+    "world_scale": "large",
+    "seen_as": "A clean white lab where a printer builds a part and an arm sorts crates off a belt."
   },
   "digital_matrix": {
     "name": "Digital Matrix",
     "style": "digital_matrix",
     "locomotion": "free_flight",
-    "world_scale": "large"
+    "world_scale": "large",
+    "seen_as": "A world that is only being computed: a glowing grid, wire-frame hills, towers of falling data and a drawn sun."
   },
   "anomaly_void": {
     "name": "Anomaly Void",
     "style": "anomaly_void",
     "locomotion": "free_flight",
-    "world_scale": "large"
+    "world_scale": "large",
+    "seen_as": "A cracked deck drifting towards a black hole, its disc bright, debris spiralling in."
   },
   "evidence_studio": {
     "name": "Evidence Studio",
     "style": "evidence_studio",
     "locomotion": "free_flight",
-    "world_scale": "large"
+    "world_scale": "large",
+    "seen_as": "A dim studio with a long wall of pinned sheets strung together with red thread, a projector changing slides."
   },
   "forest_sanctuary": {
     "name": "Forest Sanctuary",
     "style": "forest",
     "locomotion": "free_flight",
-    "world_scale": "large"
+    "world_scale": "large",
+    "seen_as": "A timber deck among tall pines in morning mist, ferns moving at its edge."
   },
   "ocean_platform": {
     "name": "Ocean Platform",
     "style": "ocean",
     "locomotion": "free_flight",
-    "world_scale": "large"
+    "world_scale": "large",
+    "seen_as": "A rig at sea at sunset. The water moves and carries the colour of the sky."
   },
   "deep_space": {
     "name": "Deep Space Observatory",
     "style": "deep_space",
     "locomotion": "free_flight",
-    "world_scale": "large"
+    "world_scale": "large",
+    "seen_as": "A platform beside a ringed gas giant, with moons and tumbling rocks drifting past."
   },
   "arctic_aurora": {
     "name": "Arctic Aurora",
     "style": "arctic",
     "locomotion": "free_flight",
-    "world_scale": "large"
+    "world_scale": "large",
+    "seen_as": "A snowfield at night under the northern lights."
   },
   "desert_observatory": {
     "name": "Desert Observatory",
     "style": "desert",
     "locomotion": "free_flight",
-    "world_scale": "large"
+    "world_scale": "large",
+    "seen_as": "Dunes under the Milky Way, with an observatory dome and a dish turning."
   },
   "underwater_lab": {
     "name": "Underwater Research Lab",
     "style": "underwater",
     "locomotion": "free_flight",
-    "world_scale": "large"
+    "world_scale": "large",
+    "seen_as": "A glass dome on the seabed, with kelp, shoals of fish and shafts of light from above."
+  },
+  "eli_room": {
+    "name": "ELI's Room",
+    "style": "eli_room",
+    "locomotion": "free_flight",
+    "world_scale": "large",
+    "seen_as": "Open ground under an open sky. Nothing is here but what ELI has made; the sky, the ground and the light are his to choose."
   }
 }
