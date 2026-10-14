@@ -8,7 +8,7 @@
 #   ELI_VR-<v>-source.zip
 #   SHA256SUMS.txt
 #
-#   git tag v0.9.0 && git push origin v0.9.0
+#   git tag v0.9.1 && git push origin v0.9.1
 #
 # Run it by hand for a dry run: everything is built and kept as workflow
 # artifacts, and no Release is made.

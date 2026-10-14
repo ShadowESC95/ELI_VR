@@ -2,7 +2,7 @@
 
 A spatial workspace you can stand inside: fifteen places from an orbiting station to a misty forest, a movable live desktop screen, and a control console, built on Godot 4.7 and OpenXR. It runs in a headset, and it runs on a plain monitor when there isn't one.
 
-**Version 0.9.0** · Linux · Windows · macOS
+**Version 0.9.1** · Linux · Windows · macOS
 
 ![The Core Room: an observation deck in orbit, Earth below and the Milky Way overhead](docs/images/core-room.jpg)
 

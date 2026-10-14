@@ -30,7 +30,7 @@ python3 tools/make_release.py --check
 ## 3. Tag and push
 
 ```bash
-git tag v0.9.0 && git push origin v0.9.0
+git tag v0.9.1 && git push origin v0.9.1
 ```
 
 The `release` workflow does the rest. It fails early if the tag and the three version lines differ.
