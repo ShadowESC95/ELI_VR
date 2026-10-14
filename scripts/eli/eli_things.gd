@@ -1,9 +1,9 @@
 class_name EliThings
 extends Node3D
 
-# What ELI has put in the rooms. His world says what stands where and how it
+# What ELI has put in the rooms. Its world says what stands where and how it
 # looks; this draws the ones in the room you are in, brings a new one up out
-# of the floor, follows a change, and lets one go when he takes it away.
+# of the floor, follows a change, and lets one go when ELI takes it away.
 
 signal moved_by_hand(thing_id: String, position: Vector3)
 

@@ -39,8 +39,8 @@ func setup(p_app: Node, registry, config) -> void:
         ["RESET UI","system","reset_workspace"],["EXIT","system","exit"]
     ], 4)
 
-# ELI's mind: the models he has, by his own list. The one in use is marked.
-# Pressing another has him load it. Nothing is listed until he has said.
+# ELI's mind: the models it has, by its own list. The one in use is marked.
+# Pressing another has ELI load it. Nothing is listed until ELI has said.
 func show_mind(models: Array, current: String, loaded: bool) -> void:
     if panels.has("MindPanel"):
         panels["MindPanel"].queue_free()

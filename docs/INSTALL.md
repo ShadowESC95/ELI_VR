@@ -354,7 +354,7 @@ Frames only ever travel over `127.0.0.1:47831`. The helper refuses to listen on 
 
 ## With ELI v3
 
-Optional. ELI VR runs on its own; with ELI v3 on the same machine, ELI is present in the rooms and you can talk to him.
+Optional. ELI VR runs on its own; with ELI v3 on the same machine, ELI is present in the rooms and you can talk to ELI.
 
 1. Start ELI v3's local server (in ELI v3: `./scripts/eli_serve.sh`, or the server switch in its window).
 2. Start ELI VR with the link on:

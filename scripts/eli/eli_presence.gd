@@ -1,9 +1,9 @@
 class_name EliPresence
 extends Node3D
 
-# ELI in the room: a body of light, not a person. It shows which room he is
-# in, what he is doing, and whether he is listening, thinking or speaking.
-# His voice comes from here.
+# ELI in the room: a body of light, not a person. It shows which room it is
+# in, what it is doing, and whether it is listening, thinking or speaking.
+# Its voice comes from here.
 
 const VOICE_BUS := "EliVoice"
 const HOME := Vector3(-1.45, 1.5, -2.1)
@@ -113,7 +113,7 @@ func set_mode(value: String) -> void:
     mode = value if MODES.has(value) else "idle"
     _refresh_label()
 
-# What ELI's world says about him right now.
+# What ELI's world says about ELI right now.
 func apply_world_state(state: Dictionary) -> void:
     eli_room = str(state.get("room", "core_room"))
     var avatar: Dictionary = state.get("avatar", {})
@@ -127,7 +127,7 @@ func apply_world_state(state: Dictionary) -> void:
     _tint = tint
     _refresh_label()
 
-# A line under him for a few seconds: what he just made, or why he cannot answer.
+# A line under ELI for a few seconds: what it just made, or why it cannot answer.
 func note(text: String, seconds: float = 6.0) -> void:
     _note = text
     _note_left = seconds

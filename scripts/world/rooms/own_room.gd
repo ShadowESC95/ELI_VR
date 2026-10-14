@@ -1,10 +1,10 @@
 class_name OwnRoom
 extends RoomBase
 
-# ELI's own room: open ground under an open sky, and nothing in it but what
-# he has made. The sky, the ground, the light and the mist are his to choose
-# (ELI v3 keeps them; see eli/world/building.py there). This draws his choice:
-# a sky by name, or one he painted himself from two colours, stars and a sun;
+# ELI's own room: open ground under an open sky, and nothing there but what
+# ELI has made. The sky, the ground, the light and the mist are its to choose
+# (ELI v3 keeps them; see eli/world/building.py there). This draws its choice:
+# a sky by name, or one it painted itself from two colours, stars and a sun;
 # ground by name or of any colour, flat or rising into hills.
 
 # sky -> [panorama, reach, ground height, where the light comes from, its warmth]
@@ -79,7 +79,7 @@ func _build() -> void:
         drift(Vector3(0, 2.2, 0), Vector3(11, 2.2, 11), 180, light.lightened(0.4), 0.028, Vector3(0.2, 0.25, -0.1), 0.1, 0.8)
     probe(Vector3(30, 14, 30))
 
-# His own sky: the colours, the stars and the sun are whatever he chose.
+# Its own sky: the colours, the stars and the sun are whatever it chose.
 func _painted_sky(light: Color) -> Environment:
     var top := Color(str(mood.get("sky_top", "#05070f")))
     var horizon := Color(str(mood.get("sky_horizon", "#3a2a55")))
@@ -102,7 +102,7 @@ func _painted_sky(light: Color) -> Environment:
     env.background_mode = Environment.BG_SKY
     env.sky = sky
     env.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
-    # the light comes from where he put the sun; with none, from overhead and faint
+    # the light comes from where it put the sun; with none, from overhead and faint
     if size > 0.0:
         sun(towards if height > 0.02 else Vector3(towards.x, 0.05, towards.z),
             sun_colour.lerp(light, 0.3), 0.25 + 1.3 * clampf(height, 0.0, 1.0))
@@ -114,7 +114,7 @@ func _ground(light: Color) -> void:
     var ground: Array = GROUNDS.get(str(mood.get("ground", "stone")), GROUNDS["stone"])
     var surface: Material
     if mood.has("ground_colour"):
-        var plain := StandardMaterial3D.new()       # a colour of his own, not a material from the list
+        var plain := StandardMaterial3D.new()       # a colour of its own, not a material from the list
         plain.albedo_color = Color(str(mood["ground_colour"]))
         plain.roughness = 0.78
         surface = plain
@@ -124,7 +124,7 @@ func _ground(light: Color) -> void:
         surface = MaterialKitClass.surface(ground[0], ground[1], ground[2], ground[3])
     var hills := clampf(float(mood.get("terrain", 0.0)), 0.0, 1.0)
     if hills > 0.02:
-        # the ground rises round the flat middle, as much as he asked
+        # the ground rises round the flat middle, as much as ELI asked
         var noise := FastNoiseLite.new()
         noise.seed = 7
         noise.frequency = 0.02

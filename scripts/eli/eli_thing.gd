@@ -20,7 +20,7 @@ var size := 1.0
 var glow := 0.25
 var meaning := ""
 var made_by := ""
-var kind := ""                  # "built" for what he made; "memory", "goal" for his records
+var kind := ""                  # "built" for what it made; "memory", "goal" for its records
 var lamp: OmniLight3D
 
 var _body: Node3D
@@ -95,7 +95,7 @@ func end_grab() -> void:
     _held = false
     position.y = maxf(position.y, 0.0)
     _target = position
-    if kind != "memory" and kind != "goal":     # a record can be picked up; moving it changes nothing in him
+    if kind != "memory" and kind != "goal":     # a record can be picked up; moving one changes nothing in ELI
         let_go.emit(self)
 
 func _process(delta: float) -> void:

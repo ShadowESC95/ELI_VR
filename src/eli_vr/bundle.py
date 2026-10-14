@@ -6,7 +6,7 @@ point. Installed on its own (an AppImage, a download), ``eli-vr bundle register`
 where it is, and ELI v3 starts it as its own program.
 
 ELI VR is a Godot application, not a Python program, so it reaches ELI over ELI v3's local
-server: his world, his hearing and his voice. The description says so (``needs``), and ELI v3
+server: its world, its hearing and its voice. The description says so (``needs``), and ELI v3
 has the server answering before ELI VR starts. Launching then means starting the application
 with its link to ELI switched on and waiting for it to close.
 

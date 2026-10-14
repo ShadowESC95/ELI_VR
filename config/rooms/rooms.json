@@ -91,7 +91,7 @@
   },
   "own_room": {
     "name": "ELI's Room",
-    "purpose": "ELI's own space. Nothing is here but what he has made.",
+    "purpose": "ELI's own space. Nothing is here but what it has made.",
     "environment": "eli_room",
     "portals": [
       "core_room"

@@ -2,13 +2,13 @@ class_name EliVoice
 extends Node
 
 # Push to talk. While the button is held the microphone is recorded; on
-# release the clip goes to ELI, and his answer comes back as text and speech.
+# release the clip goes to ELI, and its answer comes back as text and speech.
 # The microphone is only open while the button is down.
 
 signal state_changed(state: String)   # idle | listening | thinking | speaking
 signal heard(text: String)
 signal replied(text: String)
-signal built(reply: Dictionary)       # he changed the room: what he did, edit by edit
+signal built(reply: Dictionary)       # ELI changed the room: what it did, edit by edit
 signal failed(result)                 # an EliResult saying which failure it was
 
 const MIN_SECONDS := 0.35
@@ -109,7 +109,7 @@ func converse_text(text: String) -> void:
         _set_state("speaking")
         await presence.say(speech.payload)
     elif not speech.ok:
-        failed.emit(speech)         # he answered; the words are on the status line
+        failed.emit(speech)         # ELI answered; the words are on the status line
     _set_state("idle")
 
 func _fail(result: EliResult) -> void:

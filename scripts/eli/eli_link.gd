@@ -4,7 +4,7 @@ extends Node
 # The link to a local ELI v3. Off unless asked for, and loopback only.
 # ELI's world state arrives over a WebSocket on v3's own server; speech,
 # conversation and building use the same server's HTTP routes. Nothing here
-# starts or installs ELI: if he is not running, the link keeps quiet and
+# starts or installs ELI: if it is not running, the link keeps quiet and
 # tries again.
 #
 # Versions are agreed, not assumed. On connecting, this says which versions
@@ -184,7 +184,7 @@ func transcribe(wav: PackedByteArray) -> EliResult:
         return EliResult.bad("not_heard", str(data.get("error", "")), r.status, true)
     return EliResult.good(text)
 
-# One sentence to ELI from inside the room. He answers, or he builds. The
+# One sentence to ELI from inside the room. It answers, or it builds. The
 # payload is {"kind": "chat" | "build", "text": ..., "results": [...]}.
 func say(message: String) -> EliResult:
     if not can("say"):
@@ -242,22 +242,22 @@ func undo() -> EliResult:
         return EliResult.bad("unsupported")
     return await _answer(await _post("/v1/world/undo", PackedByteArray(), "application/json", 20.0))
 
-# ELI making one thing in his own room, unasked.
+# ELI making one thing in its own room, unasked.
 func compose() -> EliResult:
     if not can("building"):
         return EliResult.bad("unsupported")
     return await _answer(await _post("/v1/world/compose", PackedByteArray(), "application/json", 300.0))
 
-# --- his mind ---------------------------------------------------------------------
+# --- its mind ---------------------------------------------------------------------
 
-# Which model is ELI's mind now, and which ones he could use. No model is
+# Which model is ELI's mind now, and which ones ELI could use. No model is
 # assumed here: the payload is ELI's own list, by name.
 func mind() -> EliResult:
     if not can("mind"):
         return EliResult.bad("unsupported")
     return await _answer(await _request(HTTPClient.METHOD_GET, "/v1/world/mind", PackedByteArray(), "application/json", 15.0))
 
-# Have ELI load this model. It is loaded before he answers, which can take a while.
+# Have ELI load this model. The model is loaded before ELI answers, which can take a while.
 func use_model(model_name: String) -> EliResult:
     if not can("mind"):
         return EliResult.bad("unsupported")

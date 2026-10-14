@@ -2,14 +2,14 @@ class_name EliResult
 extends RefCounted
 
 # What came of asking ELI for something: the answer, or what kind of failure
-# it was. A failure is never an empty string: "he did not catch that", "he is
-# not running" and "he has no model loaded" are different things to tell the
-# user, and each has its own sentence here.
+# it was. A failure is never an empty string: "ELI did not catch that", "ELI
+# is not running" and "ELI has no model loaded" are different things to tell
+# the user, and each has its own sentence here.
 
 var ok := false
 var kind := ""          # empty when ok, else one of the kinds in SENTENCES
 var status := 0         # HTTP status; 0 when the request never got an answer
-var detail := ""        # ELI's own words about it, when he gave any
+var detail := ""        # ELI's own words about the failure, when it gave any
 var retryable := false
 var payload = null
 
@@ -27,7 +27,7 @@ const SENTENCES := {
     "bad_request": "ELI could not make sense of the request",
     "server_error": "ELI ran into a problem",
     "bad_reply": "ELI's answer could not be read",
-    "no_voice": "ELI answered, but his voice is not available",
+    "no_voice": "ELI answered, but its voice is not available",
 }
 
 static func good(value = null) -> EliResult:

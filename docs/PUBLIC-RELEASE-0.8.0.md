@@ -54,7 +54,7 @@ See [docs/ELI_INTEGRATION.md](https://github.com/ShadowESC95/ELI_VR/blob/main/do
 - The indoor rooms are shapes built in code with scanned surfaces. They have no modelled props yet.
 - The forest's near trees are bare trunks; the foliage is in the photograph behind them.
 - The downloads are larger than 0.7.0: the art is real now.
-- ELI's world objects arrive but are not drawn, ELI cannot build or change rooms, and his presence is a light, not a figure.
+- ELI's world objects arrive but are not drawn, ELI cannot build or change rooms, and its presence is a light, not a figure.
 - Talking has not yet been tried with a real microphone in the headset.
 - Clean shutdown of the VR runtime is Linux only.
 - No native app for standalone headsets, no VR on macOS, builds are not code-signed.

@@ -83,7 +83,7 @@ def main():
     p=sub.add_parser("xr"); p.add_argument("mode",choices=["auto","on","off"])
     p=sub.add_parser("desktop"); p.add_argument("mode",choices=["on","off"])
     p=sub.add_parser("eli"); p.add_argument("mode",choices=["on","off"])
-    p=sub.add_parser("model"); p.add_argument("name",help="a model ELI has, by name, or 'any' for whichever he has loaded")
+    p=sub.add_parser("model"); p.add_argument("name",help="a model ELI has, by name, or 'any' for whichever it has loaded")
     p=sub.add_parser("set"); p.add_argument("path"); p.add_argument("value")
 
     p=sub.add_parser("launch")

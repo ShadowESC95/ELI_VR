@@ -633,7 +633,7 @@ func _on_eli_world_state(state: Dictionary) -> void:
         _apply_eli_mood()
     _refresh_eli_presence()
 
-# ELI's own room is drawn the way his world says he has made it.
+# ELI's own room is drawn the way ELI's world says ELI made it.
 func _apply_eli_mood() -> void:
     if _eli_mood.is_empty() or room_root == null:
         return
@@ -645,8 +645,8 @@ func current_room_id() -> String:
     return _current_room_id()
 
 # --- ELI's mind -----------------------------------------------------------------
-# No model is assumed. ELI says which he has; the one already loaded is used
-# as it is (opened from his window, that is the one he was using there). Only
+# No model is assumed. ELI says which models it has; the one already loaded is
+# used as it is (opened from ELI's window, that is the one in use there). Only
 # when nothing is loaded yet is the model kept in ELI VR's settings asked for,
 # and a model named on the command line is always asked for.
 
@@ -674,7 +674,7 @@ func _take_eli_mind(mind: Dictionary) -> void:
     if console and console.has_method("show_mind"):
         console.show_mind(mind.get("models", []), str(mind.get("model", "")), bool(mind.get("loaded", false)))
 
-# Choose ELI's model from inside the room. He loads it before he answers.
+# Choose ELI's model from inside the room. ELI loads it before answering.
 func eli_use_model(model_name: String, remember: bool = true) -> void:
     if eli_link == null or not eli_link.can("mind"):
         _eli_say_briefly("this ELI v3 cannot change model from here")
@@ -690,7 +690,7 @@ func eli_use_model(model_name: String, remember: bool = true) -> void:
         config.set_value("eli_bridge.model", model_name)
         config.save_runtime()
 
-# The model he is using, for the status line: never a surprise.
+# The model ELI is using, for the status line: never a surprise.
 func eli_mind_name() -> String:
     var model_name := str(_eli_mind.get("model", "")).trim_suffix(".gguf")
     if model_name.is_empty():
@@ -699,7 +699,7 @@ func eli_mind_name() -> String:
 
 # --- ELI building ---------------------------------------------------------------
 
-# Something for the status line for a few seconds: what he made, or why not.
+# Something for the status line for a few seconds: what ELI made, or why not.
 func _eli_say_briefly(text: String, seconds: float = 7.0) -> void:
     _eli_notice = text
     _eli_notice_until_ms = Time.get_ticks_msec() + int(seconds * 1000.0)
@@ -718,7 +718,7 @@ func _on_eli_built(reply: Dictionary) -> void:
     if not done.is_empty():
         _eli_say_briefly("made: %s" % ", ".join(done))
 
-# ELI makes one thing in his own room, unasked.
+# ELI makes one thing in its own room, unasked.
 func eli_build() -> void:
     if eli_link == null or not eli_link.can("building"):
         _eli_say_briefly("ELI cannot build from here" if eli_link and eli_link.connected else "ELI is not running")
@@ -748,7 +748,7 @@ func eli_undo() -> void:
     else:
         _eli_say_briefly("taken back" if bool(result.payload.get("ok", false)) else "nothing to take back")
 
-# The user moved one of ELI's things by hand: his world is told where it stands.
+# The user moved one of ELI's things by hand: ELI's world is told where the thing stands.
 func _on_eli_thing_moved(thing_id: String, at: Vector3) -> void:
     var pos: Array = EliSensesClass.to_protocol(at)
     var result = await eli_link.edit(
@@ -774,8 +774,8 @@ func _tell_eli_where_we_are() -> void:
         {"room": _current_room_id()}
     )
 
-# ELI is shown in the room his own world puts him in. Speaking to him brings
-# him to you for a minute.
+# ELI is shown in the room its own world puts it in. Speaking to it brings
+# it to you for a minute.
 func _refresh_eli_presence() -> void:
     if eli_presence == null:
         return

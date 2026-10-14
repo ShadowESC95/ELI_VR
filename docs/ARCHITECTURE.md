@@ -75,9 +75,9 @@ The app never captures anything itself. It reads frames from a helper on the sam
 | `eli_senses.gd` | Tells ELI the scene: where you are, what you look at, what is near |
 | `eli_things.gd`, `eli_thing.gd` | Draws what ELI has built in the room you are in |
 
-`scripts/world/rooms/own_room.gd` is ELI's own room, drawn with the sky, ground and light his world says he chose.
+`scripts/world/rooms/own_room.gd` is ELI's own room, drawn with the sky, ground and light ELI's world says ELI chose.
 
-ELI v3 publishes his room and state; ELI VR draws them. ELI's reasoning, memory and model stay in ELI v3, and ELI VR stays a renderer that also runs alone. See [ELI_INTEGRATION.md](ELI_INTEGRATION.md).
+ELI v3 publishes its room and state; ELI VR draws them. ELI's reasoning, memory and model stay in ELI v3, and ELI VR stays a renderer that also runs alone. See [ELI_INTEGRATION.md](ELI_INTEGRATION.md).
 
 ## ELI v3 bundle
 

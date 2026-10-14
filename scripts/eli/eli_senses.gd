@@ -1,14 +1,14 @@
 class_name EliSenses
 extends Node
 
-# What ELI can know of the room while you are in it with him. Every few
-# seconds, and just before you speak, this tells ELI v3 where you are standing,
-# what the place is, what you are looking at, whether he is there with you and
-# what of his is near. ELI keeps it only while it is fresh, and it is how he
-# can answer "where are we" or "what am I looking at".
+# What ELI can know of the room while you are both in it. Every few seconds,
+# and just before you speak, this tells ELI v3 where you are standing, what
+# the place is, what you are looking at, whether ELI is there with you and
+# which of its things are near. ELI keeps the scene only while it is fresh,
+# and that is how ELI can answer "where are we" or "what am I looking at".
 #
 # Positions go out as [right, up, forward] in metres from the middle of the
-# room's floor, the same way round as the things he builds.
+# room's floor, the same way round as the things ELI builds.
 
 const EVERY_SECONDS := 5.0
 const LOOK_DEGREES := 14.0

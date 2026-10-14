@@ -2,9 +2,9 @@
 
 ELI VR runs on its own. Nothing in it starts, installs or needs ELI.
 
-When ELI v3 is running on the same machine and the link is switched on, ELI is present in the rooms: you can see which room he is in, how he is, and talk to him. Everything stays on `127.0.0.1`.
+When ELI v3 is running on the same machine and the link is switched on, ELI is present in the rooms: you can see which room ELI is in and how it is, and talk to ELI. Everything stays on `127.0.0.1`.
 
-Needs an ELI v3 that has the world feed (`/v1/world/*` on its local server): 3.0.131 or newer for presence and talking, and one that speaks world protocol 2 (newer than 3.0.133) for building, his own room, his mind and his knowing where he is.
+Needs an ELI v3 that has the world feed (`/v1/world/*` on its local server): 3.0.131 or newer for presence and talking, and 3.0.134 or newer, which speaks world protocol 2, for building, ELI's own room, ELI's mind and ELI knowing where it is.
 
 ELI VR names no model and ships none. Whichever model ELI v3 has loaded answers, and speech goes through ELI v3's own recognition and voice.
 
@@ -23,19 +23,19 @@ Off again with `python3 tools/eli_vr.py eli off`. If ELI is not running, ELI VR 
 
 ## What you get
 
-**ELI's presence.** A body of light in the room ELI's own world puts him in. ELI v3 decides that from his state: unsure of his evidence, he goes to the Anomaly Room; repairing, to the Debug Basement; using tools, to the Workshop; building, to the room he is building in. When he is in another room the status line says where. Doubt warms the light, repair work reddens it.
+**ELI's presence.** A body of light in the room ELI's own world puts it in. ELI v3 decides that from its state: unsure of its evidence, it goes to the Anomaly Room; repairing, to the Debug Basement; using tools, to the Workshop; building, to the room it is building in. When it is in another room the status line says where. Doubt warms the light, repair work reddens it.
 
-**Talking to him.** Hold **A** or **X** on a controller, or **T** on the keyboard, speak, and let go. Your words go to ELI's own speech-to-text, his reply comes back as text and as his voice from where he stands, and he comes to your room for a minute. The microphone is only open while the button is held.
+**Talking to ELI.** Hold **A** or **X** on a controller, or **T** on the keyboard, speak, and let go. Your words go to ELI's own speech-to-text, its reply comes back as text and as its voice from where it stands, and it comes to your room for a minute. The microphone is only open while the button is held.
 
-**He knows where he is.** Every few seconds, and just before you speak, ELI VR tells ELI the scene: the room and what that place is, where you are standing and which way you face, what you are looking at (him, one of his things, the desktop screen), whether he is in the room and how far away, and what of his is near. ELI keeps that in memory only while it is fresh, and while it is, his prompt carries a few plain lines saying so. Nothing of it is written down, and it stops when you leave.
+**ELI knows where it is.** Every few seconds, and just before you speak, ELI VR tells ELI the scene: the room and what that place is, where you are standing and which way you face, what you are looking at (ELI, one of its things, the desktop screen), whether ELI is in the room and how far away, and which of its things are near. ELI keeps that in memory only while it is fresh, and while it is, its prompt carries a few plain lines saying so. Nothing of it is written down, and it stops when you leave.
 
-**He can build.** A sentence that asks for the place to be changed is his to carry out: make a thing, move it, change its colour, size or glow, take it away, undo. What he makes comes up out of the floor. You can grab it and move it, and ELI is told where you put it.
+**ELI can build.** A sentence that asks for the place to be changed is ELI's to carry out: make a thing, move it, change its colour, size or glow, take it away, undo. What ELI makes comes up out of the floor. You can grab a thing and move it, and ELI is told where you put it.
 
-**He has a room of his own.** ELI'S ROOM on the console. Open ground under an open sky, with nothing in it but what he has made. There he may also change the sky (stars, dawn, mist, sunset, void), the ground (stone, marble, wood, sand, snow, moss, metal, dark), the colour of the light and the mist. ELI: BUILD on the console (or `B`) has him make one thing there of his own accord, with a meaning he gives it; UNDO (or `Z`) takes the last change back.
+**ELI has a room of its own.** ELI'S ROOM on the console. Open ground under an open sky, with nothing there but what ELI has made. There ELI may also change the sky (stars, dawn, mist, sunset, void), the ground (stone, marble, wood, sand, snow, moss, metal, dark), the colour of the light and the mist. ELI: BUILD on the console (or `B`) has ELI make one thing there of its own accord, with a meaning ELI gives it; UNDO (or `Z`) takes the last change back.
 
-## His mind
+## ELI's mind
 
-No model is assumed anywhere. ELI v3 says which model is loaded, which would be used if none is, and which he has; ELI VR shows that and lets you choose.
+No model is assumed anywhere. ELI v3 says which model is loaded, which would be used if none is, and which ones ELI has; ELI VR shows that and lets you choose.
 
 | How ELI VR was started | Which model answers |
 |---|---|
@@ -44,40 +44,40 @@ No model is assumed anywhere. ELI v3 says which model is loaded, which would be 
 | The same, and nothing is loaded yet | The model kept in ELI VR's settings (`eli_bridge.model`), if you kept one; otherwise whichever ELI v3 used last, and the status line says nobody chose it |
 | With `--eli-model=<name>` | That one, for this run |
 
-In the room, the **ELI'S MIND** panel lists his models with their sizes; `>` marks the one loaded, `~` the one that would be used. Pressing another has him load it and keeps it as ELI VR's choice. Choosing a model here is choosing ELI's model: it is the same setting his own window changes. Names are shown, never the folders they are in.
+In the room, the **ELI'S MIND** panel lists ELI's models with their sizes; `>` marks the one loaded, `~` the one that would be used. Pressing another has ELI load it and keeps that as ELI VR's choice. Choosing a model here is choosing ELI's model: the same setting ELI's own window changes. Names are shown, never the folders they are in.
 
-How well he fits the model beside VR is ELI v3's own loader's work; if it does not load, the status line says why.
+How well the model fits beside VR is ELI v3's own loader's work; if the model does not load, the status line says why.
 
-## Anything at all, and of his own accord
+## Anything at all, and of its own accord
 
 **A thing need not come from a list.** Beside the sixteen named shapes, a thing can be made part by part, up to twenty-four parts: box, ball, cylinder, cone, torus, capsule, prism, a lathe (a profile of `[radius, height]` points turned round), an extrude (an outline pulled up into a solid), a tube (along a path of points), text. Each part has its own place, turn, size, colour, metal, roughness, glow, clearness, and may spin, bob or pulse.
 
-**Nor need the room.** In his own room the sky can be one by name or painted: `sky_top`, `sky_horizon`, `stars`, and a `sun` with a height, a bearing, a colour and a size. The ground can be any colour, and `terrain` raises it into hills round the flat middle.
+**Nor need the room.** In ELI's own room the sky can be one by name or painted: `sky_top`, `sky_horizon`, `stars`, and a `sun` with a height, a bearing, a colour and a size. The ground can be any colour, and `terrain` raises it into hills round the flat middle.
 
 A model of three billion parameters or more is offered all of this. A smaller one is held to the named shapes: it can manage those, and free parts from a very small model are noise. `ELI_WORLD_FREEFORM=1` or `0` on ELI v3 overrides the judgement.
 
-**What he makes unasked comes from him.** Nothing runs on a timer of its own and nothing picks for him.
+**What ELI makes unasked comes from ELI.** Nothing runs on a timer of its own and nothing picks for ELI.
 
-1. When something happens in ELI that has words (an insight is synthesised, a goal is taken on or closed, he proposes an improvement to himself) the event already passes through his world. It is kept there as an *urge*: the moment, in its own words, with where it came from.
-2. When he is free (a model already in memory, nobody waiting on him, your mood not asking him to hold back) ELI v3's own background loop lets him answer one. A model is never loaded for this.
-3. He is given what is truly on his mind, from his records: his persona in his own words, his latest insight, his goals, his recent memories, his tone, his own measures of himself. Then the moment. What he makes of it is his: a thing, a change, a new sky, or nothing.
-4. What he makes is linked to the record it came from and written in his world's journal with the reason. If he gives no meaning of his own, the moment's words are the meaning.
+1. When something happens in ELI that has words (an insight is synthesised, a goal is taken on or closed, ELI proposes an improvement to itself) the event already passes through ELI's world. The event is kept there as an *urge*: the moment, in its own words, with where it came from.
+2. When ELI is free (a model already in memory, nobody waiting, your mood not asking for restraint) ELI v3's own background loop lets ELI answer one. A model is never loaded for this.
+3. ELI is given what is truly on its mind, from its records: its persona in its own words, its latest insight, its goals, its recent memories, its tone, its own measures of itself. Then the moment. What ELI makes of the moment is up to ELI: a thing, a change, a new sky, or nothing.
+4. What ELI makes is linked to the record the moment came from and written in ELI's world journal with the reason. If ELI gives no meaning of its own, the moment's words are the meaning.
 
-ELI: BUILD asks him now: the oldest urge if one is waiting, otherwise simply what is on his mind. He may make nothing.
+ELI: BUILD asks now: the oldest urge if one is waiting, otherwise simply what is on ELI's mind. ELI may make nothing.
 
-**His records in his rooms.** The Memory Archive carries his real recent memories as lights, each with its words; the Upgrade Bay carries the goals he holds now. They are read from his memory and goal store, refreshed every half minute. You can pick one up; moving it changes nothing in him.
+**ELI's records in its rooms.** The Memory Archive carries ELI's real recent memories as lights, each with its words; the Upgrade Bay carries the goals ELI holds now. They are read from ELI's memory and goal store, refreshed every half minute. You can pick one up; moving one changes nothing in ELI.
 
 ## How building works
 
-ELI VR draws; ELI v3 decides and remembers. The split is the same as for his presence.
+ELI VR draws; ELI v3 decides and remembers. The split is the same as for ELI's presence.
 
 1. Your sentence goes to `POST /v1/world/say`. If it reads as a request about the place, ELI v3 composes edits; otherwise it is an ordinary turn of conversation.
-2. One call to whichever GGUF is loaded gives what he says and the edits. The model is held to that exact shape by a grammar, so it cannot invent an operation, name a shape that does not exist or change a thing that is not there. Nothing depends on a model's own tool-calling format.
+2. One call to whichever GGUF is loaded gives what ELI says and the edits. The model is held to that exact shape by a grammar, so the model cannot invent an operation, name a shape that does not exist or change a thing that is not there. Nothing depends on a model's own tool-calling format.
 3. What you plainly said is not left to the model: "undo" is done directly; a colour, shape or size you named is what the thing gets; "behind me", "to my left", "next to the lantern" are worked out from where you and the things actually are; and "the orb" when there is no orb is answered "There is no orb here."
-4. Each edit becomes one of his world's own actions, judged by its policy and kept in its provenance ledger with who asked. It is applied to his world state.
+4. Each edit becomes one of ELI's world's own actions, judged by that world's policy and kept in its provenance ledger with who asked. The edit is applied to ELI's world state.
 5. The world feed carries the result to ELI VR, which draws it.
 
-If nothing changed, he says so, whatever the model claimed.
+If nothing changed, ELI says so, whatever the model claimed.
 
 **With a very small model** (tried with a 0.6B one) every plain request in the list above does the right thing. Its spoken sentences are clumsy, its names are plain, and what it makes unasked is simple. A larger model is better at all three; the building itself is the same.
 
@@ -89,8 +89,8 @@ The world protocol has versions and they are agreed, not assumed. On connecting,
 
 | Version | What it carries |
 |---|---|
-| 1 | His room, avatar state, awareness and world objects; you entering a room. Presence and talking |
-| 2 | All of 1, and: how each thing looks and where it stands, his own room and its sky and ground, the last things he did and why; the scene; sentences; edits by hand; undo |
+| 1 | ELI's room, avatar state, awareness and world objects; you entering a room. Presence and talking |
+| 2 | All of 1, and: how each thing looks and where it stands, ELI's own room with its sky and ground, the last things ELI did and why; the scene; sentences; edits by hand; undo |
 
 | Direction | Route on ELI v3 | What | Version |
 |---|---|---|---|
@@ -98,13 +98,13 @@ The world protocol has versions and they are agreed, not assumed. On connecting,
 | VR → ELI | same socket | `hello` with versions and capabilities; `vr_session_started`, `vr_room_entered` | 1 |
 | VR → ELI | `POST /v1/voice/stt` | The clip you recorded while holding the talk button | 1 |
 | VR → ELI | `POST /v1/chat` | What you said, as text, when ELI v3 only has version 1 | 1 |
-| ELI → VR | `POST /v1/voice/tts` | His answer, as speech | 1 |
-| VR → ELI | `POST /v1/world/scene` | What you and he can see now | 2 |
-| VR → ELI | `POST /v1/world/say` | What you said: he answers, or builds | 2 |
+| ELI → VR | `POST /v1/voice/tts` | ELI's answer, as speech | 1 |
+| VR → ELI | `POST /v1/world/scene` | What you and ELI can see now | 2 |
+| VR → ELI | `POST /v1/world/say` | What you said: ELI answers, or builds | 2 |
 | VR → ELI | `POST /v1/world/edit` | A thing you moved by hand | 2 |
 | VR → ELI | `POST /v1/world/compose` | ELI: BUILD | 2 |
 | VR → ELI | `POST /v1/world/undo` | UNDO | 2 |
-| ELI → VR | `GET /v1/world/mind` | Which model is loaded, and which he has, by name | 2 |
+| ELI → VR | `GET /v1/world/mind` | Which model is loaded, and which ones ELI has, by name | 2 |
 | VR → ELI | `POST /v1/world/mind` | The model you chose | 2 |
 
 A turn is the owner's. ELI VR is a surface of yours, not another user: it sends a session id and its surface name, never a user of its own, so what you say in a headset is in the same conversation and memory as what you say anywhere else.
@@ -136,14 +136,14 @@ A failure has a kind, and the status line and the line under ELI say which:
 
 | Shown | Meaning |
 |---|---|
-| ELI is not running | Nothing answers on his port |
-| ELI refused the token | He wants a token, or the one in `ELI_VR_TOKEN` is wrong |
+| ELI is not running | Nothing answers on ELI's port |
+| ELI refused the token | ELI wants a token, or the one in `ELI_VR_TOKEN` is wrong |
 | ELI has no model loaded | The server is up but no GGUF is |
 | ELI did not catch that | Speech-to-text heard nothing it could use |
 | ELI took too long to answer | The request timed out |
-| ELI answered, but his voice is not available | The reply came; text-to-speech did not |
+| ELI answered, but its voice is not available | The reply came; text-to-speech did not |
 | This ELI v3 is older: presence and talking only | Version 1 was agreed, so no building |
-| This ELI speaks world protocol …; the client offered … | No version in common, in his own words |
+| This ELI speaks world protocol …; the client offered … | No version in common, in ELI's own words |
 
 ## Settings
 
@@ -152,7 +152,7 @@ A failure has a kind, and the status line and the line under ELI say which:
 | `eli_bridge.enabled` | `false` | The link |
 | `eli_bridge.endpoint` | `http://127.0.0.1:8081` | ELI v3's local server. 8081 is ELI's default port; if you moved it in ELI's settings, change this to match, or set `ELI_API_PORT`. Only loopback addresses are accepted. |
 | `eli_bridge.voice` | `true` | Push to talk |
-| `eli_bridge.model` | empty | A model of ELI's, by name, to ask for when he has nothing loaded yet. Empty: whichever he has |
+| `eli_bridge.model` | empty | A model of ELI's, by name, to ask for when ELI has nothing loaded yet. Empty: whichever ELI has |
 | `eli_bridge.token_env` | `ELI_VR_TOKEN` | Name of an environment variable holding ELI's API token, if you set one |
 
 ## Opened from ELI v3: ELI VR as a bundle
@@ -178,7 +178,7 @@ eli-vr where                                    # which copy would be started, a
 
 ### What happens when ELI v3 opens it
 
-ELI Legal runs inside ELI v3 and calls the model directly. ELI VR is a Godot application and cannot, so it reaches ELI over his local server. Its description says `"needs": ["server"]`, and ELI v3 then:
+ELI Legal runs inside ELI v3 and calls the model directly. ELI VR is a Godot application and cannot, so it reaches ELI over ELI's local server. ELI VR's description says `"needs": ["server"]`, and ELI v3 then:
 
 1. uses its local server if it is already running, or starts one on `127.0.0.1` for as long as ELI VR is open;
 2. tells ELI VR the port (`ELI_API_PORT`);
@@ -204,16 +204,16 @@ Without them it uses the folder the package came with (`pip install -e`), then t
 
 ### In ELI v3
 
-ELI v3 carries an edition pack for ELI VR (`eli/editions/vr/`), the same shape as ELI Legal's: a manifest and policy hooks. It is a scaffold. Nothing in ELI VR depends on it; it is where what ELI can do in his rooms will go.
+ELI v3 carries an edition pack for ELI VR (`eli/editions/vr/`), the same shape as ELI Legal's: a manifest and policy hooks. It is a scaffold. Nothing in ELI VR depends on it; it is where what ELI can do in its rooms will go.
 
 ## Not there yet
 
 - ELI is a light, not a figure.
-- He builds from parts and colours, not yet from textures or pictures of his own, and only his own room can be given a new sky.
+- ELI builds from parts and colours, not yet from textures or pictures of its own, and only ELI's own room can be given a new sky.
 - A very small model keeps to the named shapes, says little worth hearing about what it made, and unasked often makes nothing. That is the model, not a rule.
 - Free parts and a painted sky have been drawn from edits sent by hand. No model large enough to be offered them has been tried yet.
-- His building of his own accord has been tested with ELI v3's own engine and a stand-in for the model, not yet left running over days.
-- The Evidence Wall does not yet show his real claims, nor the Anomaly Room his open contradictions.
+- ELI building of its own accord has been tested with ELI v3's own engine and a stand-in for the model, not yet left running over days.
+- The Evidence Wall does not yet show ELI's real claims, nor the Anomaly Room ELI's open contradictions.
 - Talking and building have been tried flat against ELI v3's real server, not yet with a real microphone in the headset.
 - Opening ELI VR from ELI v3 has been tested with ELI v3's own launch code and a stand-in for the app, not yet into a headset.
 - Licences do not carry editions yet, so ELI v3 allows every bundle.

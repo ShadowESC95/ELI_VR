@@ -6,7 +6,7 @@ A spatial workspace you can stand inside: fifteen places from an orbiting statio
 
 ![The Core Room: an observation deck in orbit, Earth below and the Milky Way overhead](docs/images/core-room.jpg)
 
-ELI VR is part of the ELI family but does not need ELI to run. With ELI v3 running beside it, ELI is present in the rooms and you can talk to him, and ELI v3 can open ELI VR itself as one of its bundles. There is no account, no telemetry and nothing leaves the machine.
+ELI VR is part of the ELI family but does not need ELI to run. With ELI v3 running beside it, ELI is present in the rooms and you can talk to ELI, and ELI v3 can open ELI VR itself as one of its bundles. There is no account, no telemetry and nothing leaves the machine.
 
 ## Status
 
@@ -19,7 +19,7 @@ This is an early build. Be clear-eyed about what has and has not been tried:
 | Windows and macOS builds | Built by CI. Not yet run on real hardware. |
 | Valve Index, HTC Vive, Windows Mixed Reality, generic OpenXR controllers | Bound, not yet tested on hardware. |
 | The link to ELI v3 (presence, talking) | Tested against ELI v3's own routes without a headset. Not yet used in one. |
-| ELI building in the rooms, and his own room | Tested flat against ELI v3's real server and a real, very small model. His room was run in the headset; building has not yet been spoken into one. |
+| ELI building in the rooms, and ELI's own room | Tested flat against ELI v3's real server and a real, very small model. ELI's room was run in the headset; building has not yet been spoken into one. |
 | Opened from ELI v3 as a bundle | Tested with ELI v3's own launch code and a stand-in for the app. Not yet opened that way into a headset. |
 | Quest, Pico and other standalone headsets | No native app yet. Use them through a PC link (Link, Air Link, Virtual Desktop, ALVR, WiVRn). |
 | macOS in VR | No common OpenXR runtime exists there. Flat mode only. |
@@ -63,7 +63,7 @@ With `auto`, ELI VR uses a headset when an OpenXR runtime is active and falls ba
 | `F3` | Performance HUD |
 | `F5` | Rebuild the current room |
 | Hold `T` | Talk to ELI (with the ELI link on) |
-| `B` / `Z` | ELI builds something of his own in his room / take the last change back |
+| `B` / `Z` | ELI builds something of its own in its room / take the last change back |
 | `Esc` | Release the mouse |
 
 ### In the headset
@@ -136,35 +136,35 @@ The screen is view-only for now: you can move, resize and rotate it, but not cli
 
 Off by default. Switch the link on and, while ELI v3's local server is running on the same machine:
 
-- ELI appears as a body of light in whichever room his own world has him in, and the status line says where he is when it is not yours.
-- Hold **A** / **X** on a controller, or **T** on the keyboard, to talk to him. He answers in his own voice from where he stands.
-- **He knows where he is.** ELI is told which room you are both in and what that place is, where you are standing, what you are looking at and what of his is near. Ask him "where are we" or "what am I looking at".
-- **He can build.** Ask him to make something, "build me a tall red pillar", "put a lamp to my left", "make the pillar green and bigger", "undo", and it rises out of the floor where you asked. You can grab what he made and move it. Everything he does goes through his world's own policy and is kept in its ledger.
-- **In any way he likes.** A thing is a shape by name, or anything at all made part by part: boxes, balls, cones, rings, a profile turned on a lathe, an outline pulled up into a solid, a tube along a path, text, each with its own place, turn, size, colour, metal, glow, clearness and motion. Nothing has to come from a list.
-- **He has a room of his own.** ELI'S ROOM on the console is open ground under an open sky with nothing in it but what he has made. The sky is his: one by name, or painted from two colours, stars and a sun wherever he puts it. So is the ground: any colour, flat or rising into hills.
-- **Of his own accord, from his own life.** Nothing is scheduled and nothing is chosen for him. When something happens in him (an insight forms, he takes on a goal or finishes one, he proposes an improvement to himself) that moment is kept in its own words. When he is free he may make something of it in his room, and what he makes is tied to the record it came from. ELI: BUILD asks him now.
-- **His records stand in his rooms.** The Memory Archive holds lights that are his real recent memories, each carrying its own words. The Upgrade Bay holds the goals he has now.
+- ELI appears as a body of light in whichever room its own world has it in, and the status line says where ELI is when that room is not yours.
+- Hold **A** / **X** on a controller, or **T** on the keyboard, to talk to ELI. It answers in its own voice from where it stands.
+- **ELI knows where it is.** ELI is told which room you are both in and what that place is, where you are standing, what you are looking at and which of its things are near. Ask "where are we" or "what am I looking at".
+- **ELI can build.** Ask for something, "build me a tall red pillar", "put a lamp to my left", "make the pillar green and bigger", "undo", and the thing rises out of the floor where you asked. You can grab what ELI made and move it. Everything ELI does goes through its world's own policy and is kept in that world's ledger.
+- **In any way ELI likes.** A thing is a shape by name, or anything at all made part by part: boxes, balls, cones, rings, a profile turned on a lathe, an outline pulled up into a solid, a tube along a path, text, each with its own place, turn, size, colour, metal, glow, clearness and motion. Nothing has to come from a list.
+- **ELI has a room of its own.** ELI'S ROOM on the console is open ground under an open sky with nothing there but what ELI has made. The sky is ELI's to choose: one by name, or painted from two colours, stars and a sun placed wherever ELI likes. So is the ground: any colour, flat or rising into hills.
+- **Of its own accord, from its own life.** Nothing is scheduled and nothing is chosen for ELI. When something happens in ELI (an insight forms, a goal is taken on or finished, an improvement to itself is proposed) that moment is kept in its own words. When ELI is free it may make something of that moment in its room, and what ELI makes is tied to the record the moment came from. ELI: BUILD asks now.
+- **ELI's records stand in its rooms.** The Memory Archive holds lights that are ELI's real recent memories, each carrying its own words. The Upgrade Bay holds the goals ELI has now.
 
-![ELI's room: a sky he painted, and things made part by part](docs/images/eli-room-freeform.jpg)
+![ELI's room: a sky ELI painted, and things made part by part](docs/images/eli-room-freeform.jpg)
 
 ```bash
 python3 tools/eli_vr.py eli on            # remembered
 ./launch/run-linux.sh -- --eli-link=on    # this run only
 ```
 
-### His mind
+### ELI's mind
 
 ELI VR names no model and assumes none. Which GGUF is ELI's mind is your choice, three ways:
 
 - **Opened from ELI v3's window:** the model already loaded there is the one that answers. Nothing is chosen again and nothing is loaded twice.
-- **In the room:** the ELI'S MIND panel lists the models ELI has, by his own list. The one in use is marked. Press another and he loads it.
+- **In the room:** the ELI'S MIND panel lists the models ELI has, by its own list. The one in use is marked. Press another and ELI loads it.
 - **Before starting:** `--eli-model=<name>` for that run, or `python3 tools/eli_vr.py model <name>` to keep it. A kept model is asked for only when ELI has nothing loaded yet.
 
-The status line always says which model he is using, and says so when it is only the one used last and nobody chose it.
+The status line always says which model ELI is using, and says so when that is only the one used last and nobody chose it.
 
-Building is held to an exact grammar and checked against what you plainly said, so it works with a very small model too. A model of three billion parameters or more is also offered everything: things made part by part and a sky painted his own way. A smaller one keeps to the named shapes, which it can manage.
+Building is held to an exact grammar and checked against what you plainly said, so it works with a very small model too. A model of three billion parameters or more is also offered everything: things made part by part and a sky painted its own way. A smaller one keeps to the named shapes, which it can manage.
 
-If something goes wrong the status line says which thing: ELI is not running, he has no model loaded, he did not catch that, his voice is not available, or this ELI v3 is too old for building. An ELI v3 from before the building (3.0.131 to 3.0.133) still gives presence and talking.
+If something goes wrong the status line says which thing: ELI is not running, ELI has no model loaded, ELI did not catch that, ELI's voice is not available, or this ELI v3 is too old for building. Building, ELI's room, ELI's mind and ELI knowing where it is need ELI v3 3.0.134 or newer. An older one (3.0.131 to 3.0.133) still gives presence and talking.
 
 ### Opened from ELI v3
 
