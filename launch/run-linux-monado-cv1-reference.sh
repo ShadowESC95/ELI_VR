@@ -120,6 +120,54 @@ fi
 rm -f "$IPC" "$FIFO" 2>/dev/null || true
 vr_snapshot
 
+# Desktop capture adapter. Wayland uses the XDG ScreenCast portal + PipeWire
+# provider so permission is session-oriented instead of screenshot polling.
+if [[ "${XDG_SESSION_TYPE:-}" == "wayland" && "${ELI_VR_DESKTOP_CAPTURE:-1}" != "0" ]]; then
+  PORTAL_BRIDGE="$ROOT/native/desktop_portal_bridge/eli_portal_bridge.py"
+  if python3 -c 'import dbus, gi; gi.require_version("Gst","1.0"); from gi.repository import Gst; Gst.init(None); assert Gst.ElementFactory.find("pipewiresrc")' >/dev/null 2>&1; then
+    say "Starting XDG Portal + PipeWire desktop capture"
+    PYTHONUNBUFFERED=1 python3 "$PORTAL_BRIDGE" \
+      --width "${ELI_VR_CAPTURE_WIDTH:-1280}" \
+      --fps "${ELI_VR_CAPTURE_FPS:-18}" \
+      --token-file "$STATE/portal-restore-token" \
+      >"$BRIDGE_LOG" 2>&1 &
+    BRIDGE_PID=$!
+
+    bridge_ready=0
+    for _ in $(seq 1 40); do
+      if ! kill -0 "$BRIDGE_PID" 2>/dev/null; then
+        break
+      fi
+      if command -v ss >/dev/null 2>&1 && ss -H -ltn 2>/dev/null | grep -q '127.0.0.1:47831'; then
+        bridge_ready=1
+        break
+      fi
+      sleep 0.1
+    done
+    if [[ "$bridge_ready" -eq 1 ]]; then
+      desktop_share_wait "$BRIDGE_LOG" "$BRIDGE_PID"
+      tail -n 8 "$BRIDGE_LOG" 2>/dev/null || true
+    else
+      warn "Desktop capture adapter did not open 127.0.0.1:47831."
+      tail -n 40 "$BRIDGE_LOG" 2>/dev/null || true
+    fi
+  else
+    warn "Wayland desktop capture dependencies are missing."
+    warn "Run: ./tools/install-linux-wayland-capture-deps.sh"
+  fi
+elif [[ "${ELI_VR_START_DESKTOP_BRIDGE:-0}" == "1" ]]; then
+  BRIDGE="$ROOT/native/desktop_bridge/target/release/eli-vr-desktop-bridge"
+  if [[ -x "$BRIDGE" ]]; then
+    say "Starting legacy/X11 desktop bridge"
+    "$BRIDGE" --fps "${ELI_VR_CAPTURE_FPS:-15}" --width "${ELI_VR_CAPTURE_WIDTH:-1280}" --quality "${ELI_VR_CAPTURE_QUALITY:-72}" >"$BRIDGE_LOG" 2>&1 &
+    BRIDGE_PID=$!
+  else
+    warn "Legacy desktop bridge requested but binary is not built."
+  fi
+else
+  say "Desktop capture provider not started; XR desktop surface remains available"
+fi
+
 # The pinned native Monado build epolls stdin when not socket-activated.
 # A FIFO avoids the /dev/null -> epoll_ctl failure seen on this CV1 stack.
 mkfifo "$FIFO"
@@ -160,53 +208,6 @@ fi
 say "Monado ready"
 grep -E 'Opened [0-9]+ Rift Sensor cameras|Opened Rift Sensor|HMD|vblank|ERROR|WARN' \
   "$MONADO_LOG" 2>/dev/null | tail -n 40 || true
-
-# Desktop capture adapter. Wayland uses the XDG ScreenCast portal + PipeWire
-# provider so permission is session-oriented instead of screenshot polling.
-if [[ "${XDG_SESSION_TYPE:-}" == "wayland" && "${ELI_VR_DESKTOP_CAPTURE:-1}" != "0" ]]; then
-  PORTAL_BRIDGE="$ROOT/native/desktop_portal_bridge/eli_portal_bridge.py"
-  if python3 -c 'import dbus, gi; gi.require_version("Gst","1.0"); from gi.repository import Gst; Gst.init(None); assert Gst.ElementFactory.find("pipewiresrc")' >/dev/null 2>&1; then
-    say "Starting XDG Portal + PipeWire desktop capture"
-    PYTHONUNBUFFERED=1 python3 "$PORTAL_BRIDGE" \
-      --width "${ELI_VR_CAPTURE_WIDTH:-1280}" \
-      --fps "${ELI_VR_CAPTURE_FPS:-18}" \
-      >"$BRIDGE_LOG" 2>&1 &
-    BRIDGE_PID=$!
-
-    bridge_ready=0
-    for _ in $(seq 1 40); do
-      if ! kill -0 "$BRIDGE_PID" 2>/dev/null; then
-        break
-      fi
-      if command -v ss >/dev/null 2>&1 && ss -H -ltn 2>/dev/null | grep -q '127.0.0.1:47831'; then
-        bridge_ready=1
-        break
-      fi
-      sleep 0.1
-    done
-    if [[ "$bridge_ready" -eq 1 ]]; then
-      say "Desktop capture adapter listening; choose a screen/window if GNOME asks"
-      tail -n 8 "$BRIDGE_LOG" 2>/dev/null || true
-    else
-      warn "Desktop capture adapter did not open 127.0.0.1:47831."
-      tail -n 40 "$BRIDGE_LOG" 2>/dev/null || true
-    fi
-  else
-    warn "Wayland desktop capture dependencies are missing."
-    warn "Run: ./tools/install-linux-wayland-capture-deps.sh"
-  fi
-elif [[ "${ELI_VR_START_DESKTOP_BRIDGE:-0}" == "1" ]]; then
-  BRIDGE="$ROOT/native/desktop_bridge/target/release/eli-vr-desktop-bridge"
-  if [[ -x "$BRIDGE" ]]; then
-    say "Starting legacy/X11 desktop bridge"
-    "$BRIDGE" --fps "${ELI_VR_CAPTURE_FPS:-15}" --width "${ELI_VR_CAPTURE_WIDTH:-1280}" --quality "${ELI_VR_CAPTURE_QUALITY:-72}" >"$BRIDGE_LOG" 2>&1 &
-    BRIDGE_PID=$!
-  else
-    warn "Legacy desktop bridge requested but binary is not built."
-  fi
-else
-  say "Desktop capture provider not started; XR desktop surface remains available"
-fi
 
 say "Starting ELI VR on native Monado OpenXR"
 say "Godot log: $GODOT_LOG"

@@ -116,8 +116,10 @@ desktop_helper_start(){
       return 0
     fi
     PYTHONUNBUFFERED=1 python3 "$ROOT/native/desktop_portal_bridge/eli_portal_bridge.py" \
-      --width "${ELI_VR_CAPTURE_WIDTH:-1280}" --fps "${ELI_VR_CAPTURE_FPS:-18}" >"$log" 2>&1 &
+      --width "${ELI_VR_CAPTURE_WIDTH:-1280}" --fps "${ELI_VR_CAPTURE_FPS:-18}" \
+      --token-file "$(eli_state_dir)/portal-restore-token" >"$log" 2>&1 &
     HELPER_PID=$!
+    desktop_share_wait "$log" "$HELPER_PID"
   else
     local bin="$ROOT/native/desktop_bridge/target/release/eli-vr-desktop-bridge"
     if [[ ! -x "$bin" ]]; then
@@ -128,6 +130,22 @@ desktop_helper_start(){
       --quality "${ELI_VR_CAPTURE_QUALITY:-72}" >"$log" 2>&1 &
     HELPER_PID=$!
   fi
+}
+
+# The first time, the desktop asks which screen to share. Wait for that answer
+# before the headset starts, so the question is not left unseen on the monitor.
+# The choice is remembered, and later sessions start sharing without asking.
+desktop_share_wait(){
+  local log="$1" pid="$2" limit=8
+  if [[ ! -s "$(eli_state_dir)/portal-restore-token" ]]; then
+    limit="${ELI_VR_SHARE_WAIT:-120}"
+    printf '\n==> Choose the screen to show in VR in the dialog on your monitor (asked once).\n'
+  fi
+  for _ in $(seq 1 "$((limit * 5))"); do
+    kill -0 "$pid" 2>/dev/null || return 0
+    grep -qE 'capture streaming|rejected|cancelled|no PipeWire|fatal|GStreamer error' "$log" 2>/dev/null && return 0
+    sleep 0.2
+  done
 }
 
 desktop_helper_stop(){

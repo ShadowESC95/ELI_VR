@@ -265,13 +265,13 @@ Quest, Pico and similar headsets work as PC headsets through Link, Air Link, Ste
 
 ## Live desktop screen
 
-The screen in each room shows your desktop through a small helper that runs beside ELI VR. Start the helper first, then ELI VR. If the screen says it is waiting for the capture adapter, the helper is not running.
+The screen in each room shows your desktop through a small helper that runs beside ELI VR on the same computer. It needs no network connection. ELI VR's launcher (and the AppImage) starts the helper itself; started any other way, start the helper first. If the screen says the helper is not running, it was not started.
 
 Release builds ship the helper inside the same folder, at the same paths used below. From source you build it once.
 
 ### Linux on Wayland
 
-Uses the desktop's own screen-sharing portal, so the desktop asks which monitor to share the first time and remembers the answer.
+Uses the desktop's own screen-sharing portal, so the desktop asks which monitor to share the first time and remembers the answer. The launcher waits for that answer before the headset starts, so the question is answered at the monitor.
 
 1. Install the pieces it needs:
 
@@ -440,7 +440,7 @@ If you put ELI VR on ELI v3's list, take it off first (`--unregister-eli`, or `t
 
 **No controllers, or the rays are missing.** Wake both controllers before starting. If the buttons work but movement does not, the controller is on the simple profile; see [Controllers](#controllers).
 
-**The desktop screen says it is waiting.** Start the capture helper. On Wayland, check that the share prompt was answered.
+**The desktop screen says it is waiting.** On Wayland, the share dialog on the monitor was not answered: take the headset off, choose a screen, and it is remembered from then on. If it says the helper is not running, start ELI VR with its launcher.
 
 **Wayland never asks which screen to share.** Remove `~/.local/state/eli-vr-standalone/portal-restore-token` and start the helper again.
 

@@ -238,14 +238,16 @@ func _refresh_placeholder() -> void:
     var state: String = bridge.status_text() if bridge != null else "off"
     if state == "connected":
         placeholder_label.text = (
-            "Capture link connected. Waiting for first frame.\n"
-            + "If GNOME shows a share dialog, choose the monitor/window to capture."
+            "Waiting for the screen to be shared.\n"
+            + "If a share dialog is open on your monitor, choose a screen there. It is asked once."
         )
+    elif state == "connecting":
+        placeholder_label.text = "Connecting to the desktop helper on this computer."
     else:
         placeholder_label.text = (
-            "Capture backend: %s  •  bridge: %s\n"
-            + "Waiting for the local capture adapter."
-        ) % [capture_backend, state]
+            "The desktop helper on this computer is not running.\n"
+            + "No network is needed. Start ELI VR with its launcher to start the helper."
+        )
 
 func reset_workspace_transform() -> void:
     position = Vector3(0.0, 2.55, -5.60)
