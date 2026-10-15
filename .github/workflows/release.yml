@@ -142,18 +142,24 @@ jobs:
           test -s build/macos/ELI-VR.zip
           unzip -l build/macos/ELI-VR.zip | head -20
 
-      - name: The Linux build starts and reaches a room
+      # The helper that checks the licence isn't beside it yet, so it must refuse. The packaged
+      # build is opened with a licence further on.
+      - name: The Linux build starts and won't open a room without its licence check
         run: |
           chmod +x build/linux/ELI-VR.x86_64
-          timeout 180 build/linux/ELI-VR.x86_64 --headless --xr-mode off --quit-after 240 2>&1 | tee "$RUNNER_TEMP/run.log"
+          timeout 180 build/linux/ELI-VR.x86_64 --headless --xr-mode off --quit-after 240 2>&1 | tee "$RUNNER_TEMP/run.log" || true
           if grep -Eq 'SCRIPT ERROR:|Parse Error:|Failed to load' "$RUNNER_TEMP/run.log"; then
             echo "::error::The exported build reported errors on start."
             exit 1
           fi
-          grep -q 'ELI VR ready' "$RUNNER_TEMP/run.log" || {
-            echo "::error::The exported build never reported 'ELI VR ready'."
+          grep -q 'ELI VR needs a licence: this copy of ELI VR is missing its licence check' "$RUNNER_TEMP/run.log" || {
+            echo "::error::The exported build didn't refuse without its licence check."
             exit 1
           }
+          if grep -q 'ELI VR ready' "$RUNNER_TEMP/run.log"; then
+            echo "::error::The exported build opened a room without a licence check."
+            exit 1
+          fi
 
       - uses: actions/upload-artifact@v4
         with:
