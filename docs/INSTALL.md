@@ -8,6 +8,7 @@ Guides for Linux, Windows and macOS. Pick your OS, then pick one of two routes:
 A headset is optional everywhere. Without one, ELI VR opens as a normal 3D window.
 
 - [What you need](#what-you-need)
+- [Your licence](#your-licence)
 - [Linux](#linux)
 - [Windows](#windows)
 - [macOS](#macos)
@@ -34,6 +35,28 @@ Running from source also needs **Godot 4.7.2** (standard build, not .NET) from <
 Python 3.10 or newer is only needed for the helper tools in `tools/` and for putting ELI VR on ELI v3's list of bundles. The app itself does not use it.
 
 What has actually been tested is listed in the [README](../README.md#status). Linux with a Rift CV1 is the reference setup; Windows and macOS builds come out of CI and have not been run on real machines yet.
+
+## Your licence
+
+A release build opens its rooms only with a licence: an ELI VR key, or an ELI v3 key that includes ELI VR. Without one it opens a window that asks for the key; paste it and press **Activate**. The key is checked on your machine. Nothing is sent anywhere.
+
+Keys are kept in a folder every ELI product shares, so a key already activated in ELI v3 or ELI Legal counts here, and one activated here counts there:
+
+| OS | Folder |
+|---|---|
+| Linux | `~/.config/eli-keys/` |
+| Windows | `%APPDATA%\ELI Keys\` |
+| macOS | `~/Library/Application Support/ELI Keys/` |
+
+From a terminal, the desktop helper in the release folder does the same:
+
+```bash
+native/desktop_bridge/target/release/eli-vr-desktop-bridge licence                     # is this copy licensed
+native/desktop_bridge/target/release/eli-vr-desktop-bridge licence activate YOUR-KEY
+native/desktop_bridge/target/release/eli-vr-desktop-bridge licence remove
+```
+
+Buy one: ko-fi.com/shadowesc95 · jaybridgeman0095@gmail.com
 
 ---
 
@@ -422,7 +445,7 @@ Two more small files, only if you use them:
 
 ## Uninstall
 
-If you put ELI VR on ELI v3's list, take it off first (`--unregister-eli`, or `tools/register_eli_bundle.py --remove`). Then delete the ELI VR folder and the settings folders above. Nothing else is installed: no services, no registry entries, no system files.
+If you put ELI VR on ELI v3's list, take it off first (`--unregister-eli`, or `tools/register_eli_bundle.py --remove`). Then delete the ELI VR folder and the settings folders above. The key folder from [Your licence](#your-licence) is shared with ELI's other products; delete your ELI VR key with `licence remove` instead, unless nothing else of ELI's is installed. Nothing else is installed: no services, no registry entries, no system files.
 
 ## Troubleshooting
 

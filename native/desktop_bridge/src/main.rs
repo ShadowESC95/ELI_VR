@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Context, Result};
-use clap::Parser;
+use clap::{Parser, Subcommand};
 use image::{
     codecs::jpeg::JpegEncoder,
     imageops::FilterType,
@@ -13,8 +13,42 @@ use std::{
 };
 use xcap::Monitor;
 
-#[derive(Parser, Debug, Clone)]
-#[command(name = "eli-vr-desktop-bridge")]
+mod licence;
+
+#[derive(Parser, Debug)]
+#[command(name = "eli-vr-desktop-bridge", args_conflicts_with_subcommands = true)]
+struct Cli {
+    #[command(subcommand)]
+    command: Option<Command>,
+
+    #[command(flatten)]
+    stream: Args,
+}
+
+#[derive(Subcommand, Debug)]
+enum Command {
+    /// Whether this copy of ELI VR is licensed, as JSON. Exits 0 if it is, 3 if not.
+    #[command(alias = "license")]
+    Licence {
+        /// The ELI VR release asking, so a key for an earlier line is not enough.
+        #[arg(long = "for-release", global = true)]
+        release: Option<String>,
+
+        #[command(subcommand)]
+        action: Option<LicenceAction>,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+enum LicenceAction {
+    /// Keep a key in the folder every ELI product shares. Exits 2 if it isn't a valid key, 3 if
+    /// it is one but doesn't license ELI VR (an ELI v3 key without it is still kept, for ELI v3).
+    Activate { key: String },
+    /// Forget ELI VR's own key.
+    Remove,
+}
+
+#[derive(clap::Args, Debug, Clone)]
 struct Args {
     /// Bind address for the local frame stream.
     #[arg(long, default_value = "127.0.0.1:47831")]
@@ -97,8 +131,39 @@ fn send_loop(mut stream: TcpStream, monitor: &Monitor, args: &Args) -> Result<()
     }
 }
 
+fn run_licence(release: Option<&str>, action: Option<&LicenceAction>) -> i32 {
+    let store = licence::KeyStore::shared();
+    let public = licence::eli_public_key();
+    let status = |store: &licence::KeyStore| store.entitlement(licence::PRODUCT, &public, release);
+    let (shown, code) = match action {
+        None => {
+            let got = status(&store);
+            (licence::report(&store, &got), if got.granted { 0 } else { 3 })
+        }
+        Some(LicenceAction::Activate { key }) => match store.add(key, &public) {
+            Err(err) => (serde_json::json!({ "licensed": false, "error": err.0 }), 2),
+            Ok(_) => {
+                let got = status(&store);
+                (licence::report(&store, &got), if got.granted { 0 } else { 3 })
+            }
+        },
+        Some(LicenceAction::Remove) => {
+            let removed = store.remove(licence::PRODUCT);
+            let mut shown = licence::report(&store, &status(&store));
+            shown["removed"] = removed.into();
+            (shown, 0)
+        }
+    };
+    println!("{shown}");
+    code
+}
+
 fn main() -> Result<()> {
-    let args = Args::parse();
+    let cli = Cli::parse();
+    if let Some(Command::Licence { release, action }) = &cli.command {
+        std::process::exit(run_licence(release.as_deref(), action.as_ref()));
+    }
+    let args = cli.stream;
 
     let bind_addr: SocketAddr = args
         .bind

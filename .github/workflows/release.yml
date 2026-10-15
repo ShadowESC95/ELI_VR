@@ -192,6 +192,10 @@ jobs:
           sudo apt-get install -y pkg-config libclang-dev libxcb1-dev libxrandr-dev \
             libdbus-1-dev libpipewire-0.3-dev libwayland-dev libegl-dev libgbm-dev
 
+      - name: Licence check reads keys as every ELI product does
+        working-directory: native/desktop_bridge
+        run: cargo test --release --locked
+
       - name: Build
         if: matrix.name != 'macos'
         working-directory: native/desktop_bridge
@@ -301,9 +305,41 @@ jobs:
           (cd dist && sha256sum ELI_VR-* > SHA256SUMS.txt && cat SHA256SUMS.txt)
           ls -la dist
 
-      - name: The AppImage starts, reaches a room and shuts down clean
+      - name: The AppImage will not open a room without a licence
         run: |
-          export XDG_STATE_HOME="$RUNNER_TEMP/state" APPIMAGE_EXTRACT_AND_RUN=1
+          export XDG_STATE_HOME="$RUNNER_TEMP/state-unlicensed" APPIMAGE_EXTRACT_AND_RUN=1 ELI_KEYS_DIR="$RUNNER_TEMP/no-keys"
+          LOG="$RUNNER_TEMP/unlicensed.log"
+          timeout 180 "dist/ELI_VR-$VERSION-x86_64.AppImage" --flat --no-desktop --headless --quit-after 240 > "$LOG" 2>&1 || true
+          cat "$XDG_STATE_HOME/eli-vr-standalone/session.log" >> "$LOG" 2>/dev/null || true
+          cat "$LOG"
+          if grep -Eq 'SCRIPT ERROR:|Parse Error:|Failed to load' "$LOG"; then
+            echo "::error::The AppImage reported errors on start."
+            exit 1
+          fi
+          grep -q 'ELI VR needs a licence' "$LOG" || {
+            echo "::error::The AppImage never asked for a licence."
+            exit 1
+          }
+          if grep -q 'ELI VR ready' "$LOG"; then
+            echo "::error::The AppImage opened a room without a licence."
+            exit 1
+          fi
+
+      # ELI_VR_CI_KEY is an ELI VR key kept as a repository secret, for this check only.
+      - name: With a licence, the AppImage reaches a room and shuts down clean
+        env:
+          ELI_VR_CI_KEY: ${{ secrets.ELI_VR_CI_KEY }}
+        run: |
+          if [[ -z "$ELI_VR_CI_KEY" ]]; then
+            echo "::warning::No ELI_VR_CI_KEY secret, so the AppImage was not opened with a licence."
+            exit 0
+          fi
+          export XDG_STATE_HOME="$RUNNER_TEMP/state" APPIMAGE_EXTRACT_AND_RUN=1 ELI_KEYS_DIR="$RUNNER_TEMP/keys"
+          "ELI_VR-$VERSION-linux-x86_64/native/desktop_bridge/target/release/eli-vr-desktop-bridge" \
+            licence --for-release "$VERSION" activate -- "$ELI_VR_CI_KEY" > /dev/null || {
+            echo "::error::ELI_VR_CI_KEY does not license ELI VR $VERSION."
+            exit 1
+          }
           timeout 180 "dist/ELI_VR-$VERSION-x86_64.AppImage" --flat --no-desktop --headless --quit-after 240 2>&1 | tee "$RUNNER_TEMP/appimage.log"
           cat "$XDG_STATE_HOME/eli-vr-standalone/session.log" >> "$RUNNER_TEMP/appimage.log" 2>/dev/null || true
           if grep -Eq 'SCRIPT ERROR:|Parse Error:|Failed to load' "$RUNNER_TEMP/appimage.log"; then

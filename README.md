@@ -252,3 +252,5 @@ It is licensed only under the ELI End User Licence Agreement and the ELI VR Prod
 in full in [LICENSE](LICENSE) and shipped in every package: a licence to ELI VR bought on its own, or
 an ELI v3 licence that includes it. The schedule includes VR's health and safety terms. Third-party
 components, including the Godot Engine and your OpenXR runtime, keep their own licences.
+
+A release build asks for your key the first time it opens: see [Your licence](docs/INSTALL.md#your-licence).

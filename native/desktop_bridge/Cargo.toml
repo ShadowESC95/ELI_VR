@@ -3,11 +3,16 @@ name = "eli-vr-desktop-bridge"
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.85"
-description = "Cross-platform localhost desktop-frame bridge for ELI VR"
-license = "MIT"
+description = "ELI VR's desktop-frame bridge and licence check"
+license-file = "../../LICENSE"
+publish = false
 
 [dependencies]
 anyhow = "1.0"
+base64 = "0.22"
+chrono = { version = "0.4.45", default-features = false, features = ["now"] }
 clap = { version = "4.5", features = ["derive"] }
+ed25519-dalek = "2"
 image = { version = "0.25", default-features = true, features = ["jpeg"] }
+serde_json = "1"
 xcap = "=0.9.8"

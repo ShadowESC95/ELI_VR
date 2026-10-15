@@ -37,9 +37,10 @@ KEEP = {"build/.gitkeep"}
 GENERIC_NAMES = {"user", "username", "you", "yourname", "name", "me", "path", "public", "shared"}
 GENERIC_HOSTS = {"localhost", "localdomain", "ubuntu", "debian", "fedora", "desktop", "pc", "home"}
 
-# Files whose e-mail addresses are published on purpose: the licence names who to contact for a
-# licence. Only the e-mail rule stands down there; paths, user and host names are still findings.
-CONTACT_FILES = {"LICENSE"}
+# Files whose e-mail addresses are published on purpose: the licence, the licence window and the
+# install guide name who to contact for a licence. Only the e-mail rule stands down there; paths,
+# user and host names are still findings.
+CONTACT_FILES = {"LICENSE", "scripts/core/licence.gd", "docs/INSTALL.md"}
 
 HOME_PATH = re.compile(r"(?:/home/|/Users/|[A-Za-z]:\\+Users\\+)([A-Za-z0-9._-]+)")
 RULES = [

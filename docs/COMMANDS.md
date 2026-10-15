@@ -106,6 +106,16 @@ Building the native one:
 ./native/desktop_bridge/target/release/eli-vr-desktop-bridge --fps 20 --width 1920 --quality 78 --monitor 1
 ```
 
+It also checks the licence, for the app and for you. Each prints JSON:
+
+```bash
+eli-vr-desktop-bridge licence                       # exits 0 if licensed, 3 if not
+eli-vr-desktop-bridge licence activate YOUR-KEY     # 2 if it isn't a key, 3 if it doesn't cover ELI VR
+eli-vr-desktop-bridge licence remove
+```
+
+A release build won't open a room without one. Running from source in Godot doesn't ask unless `ELI_VR_REQUIRE_LICENCE=1` is set.
+
 ## A picture of a room without a headset
 
 ```bash

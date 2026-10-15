@@ -29,6 +29,8 @@ const AmbientAudioManagerClass = preload("res://scripts/world/ambient_audio.gd")
 const DesktopSurfaceClass = preload("res://scripts/desktop/desktop_surface.gd")
 const ControlDockClass = preload("res://scripts/ui/control_dock.gd")
 const PerformanceHudClass = preload("res://scripts/ui/performance_hud.gd")
+const LicenceClass = preload("res://scripts/core/licence.gd")
+const LicenceScreenClass = preload("res://scripts/ui/licence_screen.gd")
 
 var config
 var registry
@@ -77,6 +79,8 @@ var _exit_armed_until_ms := 0
 var _eli_called_until_ms := 0
 
 func _ready() -> void:
+    if not _licensed():
+        return
     config = AppConfigClass.new()
     config.load_all()
 
@@ -118,6 +122,26 @@ func _ready() -> void:
 
     print("ELI VR ready")
     print(JSON.stringify(capabilities, "\t"))
+
+## An installed copy opens its rooms only with a licence; without one it asks for a key.
+func _licensed() -> bool:
+    if not LicenceClass.required():
+        return true
+    var got := LicenceClass.status()
+    if LicenceClass.granted(got):
+        return true
+    print("ELI VR needs a licence: %s" % got.get("reason", ""))
+    set_process(false)
+    set_process_unhandled_key_input(false)
+    if DisplayServer.get_name() == "headless":
+        get_tree().quit(3)
+        return false
+    var screen = LicenceScreenClass.new()
+    screen.name = "Licence"
+    add_child(screen)
+    screen.setup(got)
+    screen.licensed.connect(func(): get_tree().reload_current_scene())
+    return false
 
 func _apply_adaptive_hardware_profile() -> void:
     if not bool(config.get_value("graphics.auto_quality", true)):

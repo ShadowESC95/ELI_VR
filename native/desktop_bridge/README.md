@@ -13,6 +13,10 @@ The bridge uses `xcap 0.9.8`, which provides a common monitor-capture API on Win
 
 This alpha deliberately uses compressed frames over localhost because it is simple and portable. The production path should add zero-copy GPU/shared-texture adapters per OS while preserving this protocol as a fallback.
 
+## Licence check
+
+The same program decides whether a copy of ELI VR may run, since Godot can't verify Ed25519 signatures. `eli-vr-desktop-bridge licence` reads the keys in the folder every ELI product shares and checks them offline against ELI's public key (`eli.pub`), by the rules the ELI SDK sets out. `tests/vectors.json` is the SDK's conformance set, and `cargo test` reads every key in it the way ELI does.
+
 ## Build
 
 ```bash
