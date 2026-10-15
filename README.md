@@ -244,3 +244,11 @@ python3 tools/make_release.py --check
 ```
 
 The last one scans what would be published for personal data and machine paths.
+
+## Licence
+
+ELI VR is proprietary commercial software, © 2026 Jason Fitzgibbon Bridgeman, all rights reserved.
+It is licensed only under the ELI End User Licence Agreement and the ELI VR Product Schedule, set out
+in full in [LICENSE](LICENSE) and shipped in every package: a licence to ELI VR bought on its own, or
+an ELI v3 licence that includes it. The schedule includes VR's health and safety terms. Third-party
+components, including the Godot Engine and your OpenXR runtime, keep their own licences.

@@ -1,0 +1,421 @@
+ELI VR
+Copyright © 2026 Jason Fitzgibbon Bridgeman. All rights reserved.
+
+PROPRIETARY COMMERCIAL SOFTWARE — NOT OPEN SOURCE, NOT SOURCE-AVAILABLE
+
+ELI VR is licensed, not sold. The only licence to install, run, copy or
+modify it is the one granted by the ELI End User Licence Agreement together
+with the ELI VR Product Schedule, both set out in full below: for a
+licence to ELI VR you have purchased, or an ELI v3 licence that includes
+ELI VR. Having a copy of the software or its source code, from a download,
+an installer, a repository or anyone else, does not by itself give you a
+licence to use it.
+
+Third-party components, including the Godot Engine and the OpenXR runtime
+you use, keep their own licences, which this notice does not change.
+
+Licensing and purchasing: Jason Fitzgibbon Bridgeman <jaybridgeman0095@gmail.com>
+
+These are the same terms ELI v3 ships, reproduced so that ELI VR carries its
+own. Where the agreement names a file (the tier supplements in docs/eula/,
+THIRD_PARTY_NOTICES.md, models/MODEL_LICENSES.md), it means the one that
+accompanies the ELI Product concerned; the tier supplements are in the appendix
+below.
+
+===============================================================================
+
+# ELI End User Licence Agreement
+
+**Copyright © 2026 Jason Fitzgibbon Bridgeman. All rights reserved.**
+
+> **Status: draft for solicitor review.** These are the intended terms for ELI v3 and the official
+> ELI bundles. The binding version is the one presented at purchase. Purchase date and receipt govern
+> your grant.
+>
+> **Open items before launch** (marked **[to confirm]** below): governing law and courts (§17), the
+> security-support window after the next major version (§4.4), and review of the warranty and
+> liability wording for each country ELI is sold in (§§13–14).
+
+---
+
+## Plain-English summary
+
+This summary is here to help you. It is not part of the legal terms; the numbered sections are.
+
+- **You pay once.** There is no subscription. The version you bought keeps working for as long as you
+  want to use it.
+- **Every 3.x update is included.** Buying ELI v3 covers every 3.x release. ELI v4 will be a
+  separate, paid upgrade. You keep the right to use v3 after v4 comes out.
+- **No internet needed to keep using it.** Your licence key is checked on your own machine. ELI does
+  not contact a licence server when it starts, and it never sends us your conversations, memories or
+  files.
+- **If we disappear, your copy still works.** There is no licence server for your copy to depend on.
+- **Reinstalling is fine.** You can reinstall, and you can move your licence to a replacement machine.
+- **How many machines:** the number on your receipt for your tier (see the tier supplements in
+  `docs/eula/`).
+- **Your data is yours.** We claim no rights in anything you create or store with ELI.
+- **Bundles are separate products.** ELI Legal, ELI VR and the other official bundles are bought
+  separately, each with its own price and its own schedule of terms, unless your ELI v3 licence
+  includes them (your receipt says so).
+- **You may not** share your key, resell or redistribute ELI, or run it as a service for other
+  people unless your licence says you can.
+
+---
+
+## 1. Definitions
+
+- **"We", "us", "the Licensor":** Jason Fitzgibbon Bridgeman.
+- **"You":** the person or organisation that purchased the licence, or that is using a trial.
+- **"ELI Product":** ELI v3 and each official ELI bundle or add-on we publish, such as ELI Legal,
+  ELI VR, ELI Healthcare, ELI Finance and ELI Creation Station. Each one is a separate ELI Product.
+- **"Software":** the ELI Product you have licensed, in the form we supply it, including updates we
+  provide under §4 and its documentation.
+- **"Licence Key":** the signed key we issue for a purchase. It identifies the ELI Product, its
+  major version, your tier and your number of machines or seats.
+- **"Major Version Line":** all releases that share a major version number, for example ELI v3.0
+  through 3.x. For an ELI Product whose releases are numbered below 1.0, the releases before 1.0
+  belong to its 1.x line.
+- **"Tier Supplement":** the terms for your licence tier (Personal, Pro, Enterprise, Trial) in
+  `docs/eula/`.
+- **"Product Schedule":** the additional terms for one official bundle in `docs/eula/bundles/`.
+- **"Your Data":** everything you put into the Software or produce with it, including files,
+  conversations, memories, generated documents, settings and models you supply.
+- **"Marketplace Package":** a plugin, MCP server, bundle, integration or other package published by
+  someone other than us, whether or not it is listed on the ELI marketplace.
+
+## 2. How these terms fit together
+
+Your licence for an ELI Product is made up of:
+
+1. this agreement;
+2. the Tier Supplement for the tier you bought; and
+3. for an official bundle, that bundle's Product Schedule.
+
+Your order or receipt states the ELI Product, tier and number of machines or seats, and any
+official bundles your ELI v3 licence includes. If documents conflict, the Product Schedule prevails
+for its own product, then the Tier Supplement, then this agreement.
+
+## 3. Licence grant
+
+3.1 **Grant.** When you have paid for an ELI Product, we grant you a non-exclusive, perpetual licence
+to install and use the Software for that product's Major Version Line, on the number of machines or
+seats stated in your Licence Key and receipt, for the uses your Tier Supplement permits.
+
+3.2 **Perpetual.** Your licence does not expire because time passes or because any billing
+relationship ends. It ends only as described in §12.
+
+3.3 **Licensed, not sold.** The Software is licensed to you, not sold. We keep all rights we do not
+expressly grant, including copyright and all other intellectual property in the Software.
+
+3.4 **Modification.** You may modify the Software for your own use on your licensed machines. That
+includes changes ELI makes to its own code at your request. You may not distribute modified copies.
+
+3.5 **Machines and seats.** The limit on machines or seats is part of your licence even where the
+Software does not enforce it technically. Replacing a machine and moving the licence to the new one
+is not an extra machine.
+
+3.6 **Transfer.** You may transfer your whole licence to another person or organisation only with our
+written consent, which we will not unreasonably withhold. After a transfer you must stop using the
+Software and give the Licence Key to the new holder.
+
+3.7 **Trials.** A trial licence lasts for the period in the Trial supplement. It is for evaluation
+only and ends automatically at the end of that period.
+
+3.8 **Included bundles.** Where your ELI v3 licence includes an official bundle, you also receive the
+licence in §3.1 for that bundle, for the version line your Licence Key states, under its Product
+Schedule. It is part of your ELI v3 licence: it is not transferred separately from it.
+
+## 4. Versions, updates and support
+
+4.1 **Included updates.** Every maintenance and minor release in your Major Version Line is included
+in your licence at no extra cost. For ELI v3 that is every 3.x release.
+
+4.2 **Next major version.** The next major version (for example ELI v4) is a separate product and may
+be sold as a paid upgrade. We may offer existing customers an upgrade discount.
+
+4.3 **What you keep.** You may keep using any version you have received under your licence, for as
+long as you want to, including after a later major version is released.
+
+4.4 **Security fixes.** We will publish the support status of each Major Version Line. After the first
+release of the next major version, we will continue to issue fixes for serious security
+vulnerabilities in the previous line for at least **[to confirm: 12 months]**.
+
+4.5 **Bundle compatibility.** Within a Major Version Line of ELI v3 we will aim to keep the bundle
+and plugin interfaces compatible, and to announce any unavoidable change in advance.
+
+4.6 **Support.** Support is as described in your Tier Supplement.
+
+## 5. Activation and offline use
+
+5.1 **Activation.** The Software may require you to enter a Licence Key. The key is checked on your
+machine against a signature built into the Software. No connection to us is needed to activate it or
+to keep using it.
+
+5.2 **No continuous connection.** Ordinary use of the Software never requires a connection to us or
+to any licence server.
+
+5.3 **Reinstallation and recovery.** You may reinstall the Software and re-activate it after
+reinstalling, after a hardware change or after replacing a machine. If you lose your Licence Key, or
+it stops working on a machine you are entitled to use, contact us and we will help you recover access.
+
+5.4 **No remote disablement.** We will not remotely disable or degrade a validly purchased ELI Product,
+whether because time has passed, because a billing relationship has ended or for any other reason
+outside §12. Withdrawing a Marketplace Package for security reasons (§10) is separate and does not
+affect your ELI Product licence.
+
+5.5 **Licence controls.** You may not bypass, disable or tamper with the Software's licence checks,
+or use a Licence Key that was not issued to you.
+
+## 6. Backups
+
+You may make backup and archival copies of the Software and of Your Data. A backup copy may only be
+used to restore a licensed installation.
+
+## 7. Restrictions
+
+Except as this agreement or your Tier Supplement expressly permits, you may not:
+
+- copy, distribute, sell, rent, lend, lease or sublicense the Software, or any modified version of it;
+- share, publish, sell or transfer your Licence Key, except as §3.6 allows;
+- make the Software, or a service built on it, available to people outside your licence (for example
+  as a hosted or multi-user service for third parties) unless your Tier Supplement, Product Schedule
+  or a separate written agreement with us permits it;
+- remove or alter copyright, licence or attribution notices; or
+- use the Software to build a competing product offered to third parties.
+
+**Reverse engineering.** You may not decompile, disassemble or reverse-engineer the Software, except
+to the extent the law where you live gives you a right to do so that cannot be excluded by contract
+(for example for interoperability). Nothing in this agreement removes such a right.
+
+## 8. Your data and privacy
+
+8.1 **Ownership.** You own or control Your Data. We claim no ownership of it and no licence to it.
+Buying ELI does not give us any right in your memory database, documents or anything else you create.
+
+8.2 **Local first.** The Software processes Your Data on your own machines. It contains no telemetry
+and does not send Your Data to us. If a future feature would send any data to us, it will be off
+unless you turn it on, and we will describe exactly what it sends.
+
+8.3 **Purchase data.** For purchases we collect only what we need to take payment, issue and recover
+Licence Keys, provide support, prevent fraud and meet legal obligations.
+
+8.4 **Your responsibility.** You are responsible for keeping backups of Your Data and for the lawful
+use of any personal data you process with the Software.
+
+## 9. Third-party components and models
+
+9.1 The Software includes third-party components under their own licences, listed in
+`THIRD_PARTY_NOTICES.md`. Those licences govern those components, and nothing in this agreement
+limits your rights under them.
+
+9.2 AI models that you download or supply, including any suggested by the Software, are licensed by
+their own authors under their own terms (see `models/MODEL_LICENSES.md`). You are responsible for
+complying with them.
+
+## 10. The marketplace and third-party packages
+
+10.1 Marketplace Packages are not ELI Products. Each is licensed to you by its own publisher under the
+publisher's own terms, and any purchase of one is between you and that publisher.
+
+10.2 Review of a package by the ELI marketplace is a security review of that exact version. It is not
+a warranty, a certification that the package is fit for any purpose, or proof of who the publisher is.
+
+10.3 We may withdraw marketplace approval for a package, or warn about it or quarantine it, if we
+find malicious behaviour, undisclosed permissions, infringement or a serious vulnerability. Where we
+do, we will tell you why. We will not silently delete your files.
+
+## 11. AI output
+
+The Software produces output using AI models. Output can be incomplete, inaccurate or out of date.
+It is not professional advice. You are responsible for checking output before relying on it and for
+how you use it. A Product Schedule may add terms for its field.
+
+## 12. Termination
+
+12.1 We may end your licence only if you materially breach this agreement. If the breach can be put
+right, we will first give you written notice and 30 days to put it right.
+
+12.2 You may end your licence at any time by uninstalling the Software and deleting your copies.
+
+12.3 When your licence ends you must stop using the Software and delete your copies. Sections 1, 3.3,
+7, 8, 9 and 11–17 continue to apply.
+
+## 13. Warranty
+
+13.1 Nothing in this agreement limits rights you have as a consumer that cannot be excluded by law.
+
+13.2 Subject to §13.1, the Software is provided "as is", without warranties of any kind, express or
+implied, including merchantability, fitness for a particular purpose and non-infringement.
+**[to confirm by solicitor for each target jurisdiction]**
+
+## 14. Limitation of liability
+
+14.1 Nothing in this agreement limits liability for death or personal injury caused by negligence,
+for fraud, or for anything else that cannot be limited by law.
+
+14.2 Subject to §14.1, we are not liable for indirect, incidental, special or consequential loss, or
+for loss of data, profits or business, arising from the Software.
+
+14.3 Subject to §14.1, our total liability to you for an ELI Product is limited to the amount you paid
+for that product's licence. **[to confirm by solicitor for each target jurisdiction]**
+
+## 15. Changes to these terms
+
+We may update these terms for future purchases. An update does not reduce the rights you already have
+for a version you have already purchased, unless you agree to it.
+
+## 16. Whole agreement
+
+This agreement, your Tier Supplement, any applicable Product Schedule and your order or receipt are
+the whole agreement between you and us about the ELI Product. If any part is found unenforceable, the
+rest continues to apply.
+
+## 17. Governing law
+
+**[to confirm: governing law and courts.]** If you are a consumer, you also keep the protection of
+the mandatory laws of the country where you live.
+
+## 18. Purchasing and contact
+
+- Store and fulfilment: [docs/STORE.md](docs/STORE.md) · Ko-fi:
+  [ko-fi.com/shadowesc95](https://ko-fi.com/shadowesc95). Until automated checkout is live, keys are
+  issued manually after payment.
+- Licences, Pro or Enterprise, hosting rights, or a lost key:
+  [jaybridgeman0095@gmail.com](mailto:jaybridgeman0095@gmail.com)
+- Reports of unauthorised resale or redistribution: the same address, with a link.
+
+---
+
+*This draft is published so buyers can see what a paid licence includes. It is not legal advice.*
+
+===============================================================================
+
+# ELI VR — Product Schedule
+
+**Schedule to the ELI End User Licence Agreement (above)** · draft for
+solicitor review
+
+| | |
+|---|---|
+| **Product** | ELI VR, an official ELI bundle: a spatial workspace for a headset or a monitor |
+| **Product id on the Licence Key** | `vr` |
+| **Price** | Set at checkout and shown on your receipt |
+| **Licence** | Perpetual, one-time purchase (master terms §3) |
+| **Version line covered** | ELI VR 1.x. Releases before 1.0 belong to the 1.x line |
+| **Machines / seats** | As stated on your Licence Key and receipt |
+| **Updates** | Every release in the version line (master terms §4) |
+| **With ELI v3** | ELI's presence in the rooms, and opening ELI VR from ELI v3, also need an ELI v3 licence. ELI VR also runs on its own |
+| **Support** | **[to confirm]** |
+
+## 1. Grant
+
+On purchase, you receive the licence in §3 of the master terms for ELI VR, for the version line and
+number of machines or seats above. ELI VR is a separate ELI Product: an ELI v3 licence does not
+include it, and its licence does not include ELI v3.
+
+## 2. Health and safety
+
+2.1 Virtual reality can cause motion sickness, eye strain, disorientation and loss of balance. Stop
+using it if you feel unwell, and take regular breaks.
+
+2.2 Some people can have seizures or blackouts triggered by light patterns. If you or anyone in your
+family has a history of epilepsy or seizures, consult a doctor before using ELI VR.
+
+2.3 Use ELI VR in a clear, safe space. While wearing a headset you cannot see your surroundings.
+
+2.4 Follow your headset manufacturer's safety instructions and age guidance. Those instructions
+apply in addition to this schedule.
+
+## 3. Hardware and third-party runtimes
+
+3.1 ELI VR runs through OpenXR runtimes and headset software made by third parties, such as
+SteamVR, Monado and headset vendors' own software. Each is licensed by its maker under its own terms.
+
+3.2 ELI VR's documentation lists the hardware it has been tested on. We do not promise that it works
+with any particular headset, controller or runtime.
+
+## 4. Privacy
+
+ELI VR has no accounts and no telemetry, and sends nothing to us. Anything it shows of your desktop
+or your rooms stays on your machine.
+
+## 5. Changes to the master terms
+
+None.
+
+===============================================================================
+
+# Appendix: Tier Supplements
+
+# ELI v3 — Personal tier (supplement to COMMERCIAL_EULA.md)
+
+**Tier:** Personal · **Seats:** 1 machine · **Updates:** every 3.x release · **Support:** email
+
+## Grant
+
+Non-exclusive license to install and run ELI v3 on **one (1) machine** for **personal,
+non-commercial** use.
+
+## You may
+
+- Run ELI for yourself (home, hobby, learning)
+- Modify the Software for your own use on the licensed machine
+- Keep your data local under your control
+
+## You may not
+
+- Use in a business or for client work (upgrade to **Pro**)
+- Install on more than one machine without an additional license
+- Redistribute, publish, or resell the Software or your license key
+
+---
+
+# ELI v3 — Pro tier (supplement to COMMERCIAL_EULA.md)
+
+**Tier:** Pro · **Seats:** up to 3 machines · **Updates:** every 3.x release · **Support:** priority email
+
+## Grant
+
+Non-exclusive license to install and run ELI v3 on up to **three (3) machines** for
+**commercial and professional** use by the licensee (individual or sole trader / small team
+named on the order).
+
+## You may
+
+- Use ELI in your business, freelance work, and client-facing workflows on licensed machines
+- Modify the Software for your own licensed deployment
+- Bind one key across your allowed seats (deactivate old hardware before moving seats)
+
+## You may not
+
+- Exceed the seat count on your receipt
+- Offer ELI as a hosted multi-tenant service to third parties
+- Redistribute, publish, or resell the Software or keys
+
+---
+
+# ELI v3 — Enterprise tier (supplement to COMMERCIAL_EULA.md)
+
+**Tier:** Enterprise · **Seats:** per order · **Updates & support:** per contract
+
+## Grant
+
+Non-exclusive license for organisational use on the **seat count and term** in your signed order
+or invoice. May include SLA, escrow, and custom deployment options.
+
+Contact **jaybridgeman0095@gmail.com** for quotes, invoicing, and data-processing addenda.
+
+---
+
+# ELI v3 — Trial tier (supplement to COMMERCIAL_EULA.md)
+
+**Tier:** Trial · **Seats:** 1 machine · **Term:** 7 days (unless stated on receipt)
+
+You may evaluate a **paid build** of ELI v3 with full features for the trial period. This is not
+a license to redistribute, resell, or use after expiry.
+
+Each installation receives its own trial, identified by a unique trial reference
+(`ELI-TRIAL-…`), granted once per machine and bound to that machine. A trial that has run its
+term is revoked and cannot be restarted on the same machine.
+
+At expiry you must purchase Personal, Pro, or Enterprise, or stop using the Software.

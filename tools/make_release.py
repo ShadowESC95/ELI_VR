@@ -7,7 +7,9 @@
 Local-only material (Godot caches, build logs, compiled binaries, personal
 overrides, backups) is left out. The remaining files are scanned for home
 directory paths, the current user and host name, e-mail addresses, Steam IDs
-and device serial numbers. Any finding stops the release.
+and device serial numbers. Any finding stops the release. The one exception is
+an e-mail address in a file that exists to publish one (CONTACT_FILES): the
+licence names who to contact for a licence.
 """
 from __future__ import annotations
 
@@ -34,6 +36,10 @@ KEEP = {"build/.gitkeep"}
 # Placeholder names that are fine to publish in docs and examples.
 GENERIC_NAMES = {"user", "username", "you", "yourname", "name", "me", "path", "public", "shared"}
 GENERIC_HOSTS = {"localhost", "localdomain", "ubuntu", "debian", "fedora", "desktop", "pc", "home"}
+
+# Files whose e-mail addresses are published on purpose: the licence names who to contact for a
+# licence. Only the e-mail rule stands down there; paths, user and host names are still findings.
+CONTACT_FILES = {"LICENSE"}
 
 HOME_PATH = re.compile(r"(?:/home/|/Users/|[A-Za-z]:\\+Users\\+)([A-Za-z0-9._-]+)")
 RULES = [
@@ -102,6 +108,8 @@ def scan(files: list[Path]) -> list[str]:
                 if match.group(1).lower() not in GENERIC_NAMES:
                     findings.append(f"{rel}:{line_no}: home directory path '{match.group(0)}'")
             for label, pattern in RULES + identity:
+                if label == "e-mail address" and rel in CONTACT_FILES:
+                    continue
                 match = pattern.search(line)
                 if match:
                     findings.append(f"{rel}:{line_no}: {label} '{match.group(0)}'")

@@ -257,7 +257,7 @@ jobs:
           # Each package keeps the repo's layout, so the launchers and
           # docs/INSTALL.md work the same from a download as from a clone.
           common() {
-            cp README.md VERSION icon.svg pyproject.toml "$1/"
+            cp README.md LICENSE VERSION icon.svg pyproject.toml "$1/"
             cp -r docs "$1/docs"
             # the Python side: how ELI v3 finds this copy and starts it
             mkdir -p "$1/tools" "$1/src"
