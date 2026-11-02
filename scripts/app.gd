@@ -7,6 +7,7 @@ const NetworkPolicyClass = preload("res://scripts/core/network_policy.gd")
 const RuntimeOptimizerClass = preload("res://scripts/core/runtime_optimizer.gd")
 const EliLinkClass = preload("res://scripts/eli/eli_link.gd")
 const EliBundleClass = preload("res://scripts/eli/eli_bundle.gd")
+const EliAtmosphereClass = preload("res://scripts/eli/eli_atmosphere.gd")
 const EliPresenceClass = preload("res://scripts/eli/eli_presence.gd")
 const EliVoiceClass = preload("res://scripts/eli/eli_voice.gd")
 const EliSensesClass = preload("res://scripts/eli/eli_senses.gd")
@@ -606,6 +607,11 @@ func _setup_eli() -> void:
     eli_presence.name = "EliPresence"
     add_child(eli_presence)
     eli_presence.setup(_theme_accent())
+
+    var atmosphere = EliAtmosphereClass.new()
+    atmosphere.name = "EliAtmosphere"
+    add_child(atmosphere)
+    atmosphere.setup(self, eli_presence)
 
     eli_things = EliThingsClass.new()
     eli_things.name = "EliThings"
