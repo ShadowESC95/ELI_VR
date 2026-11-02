@@ -187,6 +187,20 @@ class SelfRegistering(Sandbox):
                          "off unless asked for, a double-clicked ELI VR had ELI dormant in every room")
 
 
+class Feelings(unittest.TestCase):
+    def test_every_expression_eli_v3_sends_has_a_colour(self) -> None:
+        """ELI v3's world gives ELI one of these expressions (its tone palette, and its own state:
+        concerned, cautious, reflective). One without a colour here would show as neutral."""
+        import re
+        source = (ROOT / "scripts" / "eli" / "eli_presence.gd").read_text(encoding="utf-8")
+        table = source[source.index("const FEELINGS"):source.index("const FEEL_RATE")]
+        have = set(re.findall(r'"([a-z_]+)": \[', table))
+        sent = {"angry", "beaming", "confident", "curious", "downcast", "ecstatic", "flat", "focused",
+                "frowning", "gentle", "grinning", "intense", "kind", "manic", "neutral", "puzzled", "serene",
+                "smiling", "smirking", "concerned", "cautious", "reflective"}
+        self.assertEqual(sent - have, set())
+
+
 class Launching(Sandbox):
     def run_launch(self, argv, host):
         seen = self.tmp / "seen.json"
