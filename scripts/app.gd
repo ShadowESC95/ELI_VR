@@ -8,6 +8,9 @@ const RuntimeOptimizerClass = preload("res://scripts/core/runtime_optimizer.gd")
 const EliLinkClass = preload("res://scripts/eli/eli_link.gd")
 const EliBundleClass = preload("res://scripts/eli/eli_bundle.gd")
 const EliRoomLightClass = preload("res://scripts/eli/eli_room_light.gd")
+const EliMotionClass = preload("res://scripts/eli/eli_motion.gd")
+const EliThoughtsClass = preload("res://scripts/eli/eli_thoughts.gd")
+const EliInitiativeClass = preload("res://scripts/eli/eli_initiative.gd")
 const EliPresenceClass = preload("res://scripts/eli/eli_presence.gd")
 const EliVoiceClass = preload("res://scripts/eli/eli_voice.gd")
 const EliSensesClass = preload("res://scripts/eli/eli_senses.gd")
@@ -68,6 +71,9 @@ var _by_toggle_latched := false
 
 var eli_link
 var eli_room_light
+var eli_motion
+var eli_thoughts
+var eli_initiative
 var eli_presence
 var eli_voice
 var eli_senses
@@ -619,6 +625,19 @@ func _setup_eli() -> void:
     add_child(eli_things)
     eli_things.show_room(_current_room_id())
     eli_things.moved_by_hand.connect(_on_eli_thing_moved)
+    eli_motion = EliMotionClass.new()
+    eli_motion.name = "EliMotion"
+    add_child(eli_motion)
+    eli_motion.setup(self, eli_presence, eli_things)
+    eli_room_light.relit.connect(eli_motion.relit)
+    eli_thoughts = EliThoughtsClass.new()
+    eli_thoughts.name = "EliThoughts"
+    add_child(eli_thoughts)
+    eli_thoughts.setup(eli_presence)
+    eli_initiative = EliInitiativeClass.new()
+    eli_initiative.name = "EliInitiative"
+    add_child(eli_initiative)
+    eli_initiative.setup(self, eli_presence)
 
     eli_senses = EliSensesClass.new()
     eli_senses.name = "EliSenses"
@@ -660,6 +679,8 @@ func _on_eli_link_changed(connected: bool) -> void:
 func _on_eli_world_state(state: Dictionary) -> void:
     eli_presence.apply_world_state(state)
     eli_room_light.apply_world_state(state)
+    eli_thoughts.apply_world_state(state)
+    eli_initiative.apply_world_state(state)
     eli_things.apply_world_state(state)
     var spaces: Dictionary = state.get("spaces", {})
     var own: Dictionary = spaces.get("own_room", {})
@@ -816,7 +837,11 @@ func _refresh_eli_presence() -> void:
         return
     eli_presence.set_accent(_theme_accent())
     var called := Time.get_ticks_msec() < _eli_called_until_ms
-    eli_presence.visible = called or eli_presence.eli_room == _current_room_id()
+    var here: bool = called or eli_presence.eli_room == _current_room_id()
+    if eli_motion != null:
+        eli_motion.set_here(here, _current_room_id(), str(registry.room(eli_presence.eli_room).get("name", "")))
+    else:
+        eli_presence.visible = here
 
 # Hold A/X on a controller, or T on the keyboard, to talk.
 func _process_eli_talk() -> void:

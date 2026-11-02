@@ -1,6 +1,9 @@
 class_name EliRoomLight
 extends Node
 
+# ELI gave the room you are in a new light: ELI goes up and does it where you can see.
+signal relit
+
 # A room ELI has relit. ELI's world keeps the light ELI chose for each room of the house (eli/world/
 # building.py in ELI v3); that colour is the room's own from then on, worn by its glowing fixtures:
 # the trims, strips, screens and points of light it was built with. Nothing else changes: not the
@@ -48,7 +51,10 @@ func _refresh() -> void:
     if _app == null:
         return
     var mood: Dictionary = _moods.get(str(_app.call("current_room_id")), {})
+    var before := _worn
     _wear(str(mood.get("light", "")))
+    if _room != null and _worn != before:
+        relit.emit()
 
 func _collect() -> void:
     _glows.clear()

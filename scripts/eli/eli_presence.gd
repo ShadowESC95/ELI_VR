@@ -75,6 +75,11 @@ var _level := 0.0
 var _clock := 0.0
 var _note := ""
 var _note_left := 0.0
+var _attend := Vector3.INF          # what the nucleus turns to; INF: whoever is looking
+var _pour := Vector3.INF            # where ELI's light streams to while it makes something
+var _stream_root: Node3D
+var _stream: MeshInstance3D
+var _stream_mat: ShaderMaterial
 
 func setup(accent: Color) -> void:
     _base_tint = accent
@@ -161,6 +166,27 @@ func setup(accent: Color) -> void:
     voice_player.unit_size = 6.0
     add_child(voice_player)
 
+    # the stream ELI pours into what it is making: a thin cylinder laid along -Z of its root
+    _stream_root = Node3D.new()
+    _stream_root.name = "Stream"
+    _stream_root.top_level = true
+    add_child(_stream_root)
+    var thread := CylinderMesh.new()
+    thread.top_radius = 0.03
+    thread.bottom_radius = 0.06
+    thread.height = 1.0
+    thread.radial_segments = 10
+    thread.rings = 1
+    _stream_mat = ShaderMaterial.new()
+    _stream_mat.shader = load("res://assets/shaders/eli_stream.gdshader")
+    _stream = MeshInstance3D.new()
+    _stream.mesh = thread
+    _stream.material_override = _stream_mat
+    _stream.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    _stream.rotation.x = -PI / 2.0
+    _stream_root.add_child(_stream)
+    _stream_root.visible = false
+
     set_mode("dormant")
 
 # Motes of light around ELI: more and quicker as it is stirred, in its colour.
@@ -246,6 +272,18 @@ func apply_world_state(state: Dictionary) -> void:
     _target_arousal = clampf(float(felt[1]) + 0.3 * float(awareness.get("curiosity", 0.0)) + 0.25 * busy - 0.15, 0.0, 1.0)
     _refresh_label()
 
+## How ELI's light is coloured now (it moves smoothly between feelings).
+func tint_now() -> Color:
+    return _tint
+
+## Turn the bright point inside toward `point` (Vector3.INF: toward whoever is looking).
+func look_toward(point: Vector3) -> void:
+    _attend = point
+
+## Stream ELI's light into `point` while it makes something there (Vector3.INF: stop).
+func pour_into(point: Vector3) -> void:
+    _pour = point
+
 # A line under ELI for a few seconds: what it just made, or why it cannot answer.
 func note(text: String, seconds: float = 6.0) -> void:
     _note = text
@@ -310,7 +348,9 @@ func _process(delta: float) -> void:
     _nucleus_mat.albedo_color = tint.lightened(0.45) * (0.8 + 0.6 * energy + _level)
     var camera := get_viewport().get_camera_3d() if is_inside_tree() else null
     var toward := Vector3.ZERO
-    if camera != null:
+    if _attend.is_finite():
+        toward = (_attend - _body.global_position).normalized() * 0.07
+    elif camera != null:
         toward = (camera.global_position - _body.global_position).normalized() * 0.07
     _nucleus.position = _nucleus.position.lerp(toward, clampf(delta * 3.0, 0.0, 1.0))
     _motes_mat.color = tint.lightened(0.3)
@@ -322,4 +362,15 @@ func _process(delta: float) -> void:
     _shell_mat.set_shader_parameter("activity", float(m[2]))
     _light.light_color = tint
     _light.light_energy = 0.5 * energy * (1.0 + _level)
+    var from := _body.global_position
+    var pouring := _pour.is_finite() and from.distance_to(_pour) > 0.2
+    _stream_root.visible = pouring
+    if pouring:
+        var length := from.distance_to(_pour)
+        _stream_root.global_position = from
+        _stream_root.look_at(_pour, Vector3.UP if absf((_pour - from).normalized().y) < 0.98 else Vector3.RIGHT)
+        _stream.position = Vector3(0, 0, -length * 0.5)
+        _stream.scale = Vector3(1.0, length, 1.0)
+        _stream_mat.set_shader_parameter("tint", Vector3(tint.r, tint.g, tint.b))
+        _stream_mat.set_shader_parameter("energy", 2.2 + stir)
     _label.modulate = tint.lightened(0.5)

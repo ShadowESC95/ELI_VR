@@ -1,0 +1,57 @@
+"""ELI moving in its rooms and acting of its own accord, driven headless through Godot with the real
+scripts (tests/gd/eli_alive_check.gd prints one line per check)."""
+from __future__ import annotations
+
+import os
+import shutil
+import subprocess
+import unittest
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+class Alive(unittest.TestCase):
+    lines: dict = {}
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        godot = os.environ.get("GODOT_BIN") or shutil.which("godot") or shutil.which("godot4")
+        if not godot:
+            raise unittest.SkipTest("Godot is not installed here")
+        env = {k: v for k, v in os.environ.items() if k not in ("DISPLAY", "WAYLAND_DISPLAY")}
+        out = subprocess.run([godot, "--headless", "--xr-mode", "off", "--path", str(ROOT),
+                              "--script", str(ROOT / "tests" / "gd" / "eli_alive_check.gd")],
+                             env=env, capture_output=True, text=True, timeout=300).stdout
+        for line in out.splitlines():
+            if line.startswith(("PASS ", "FAIL ")):
+                name = line.split(" ", 1)[1].split(":", 1)[0]
+                cls.lines[name] = line
+
+    def check(self, name: str) -> None:
+        line = self.lines.get(name, f"FAIL {name}: the check never ran")
+        self.assertTrue(line.startswith("PASS"), line)
+
+    def test_eli_is_there_when_you_come_into_its_room(self) -> None:
+        self.check("there_when_you_come_in")
+
+    def test_eli_goes_to_what_it_is_making(self) -> None:
+        self.check("goes_to_what_it_makes")
+
+    def test_eli_acts_on_a_waiting_moment_only_when_free(self) -> None:
+        self.check("not_when_not_free")
+        self.check("acts_when_free")
+
+    def test_eli_does_not_act_while_you_talk(self) -> None:
+        self.check("not_while_you_talk")
+
+    def test_the_next_act_is_paced_by_how_long_the_last_took(self) -> None:
+        self.check("paced_by_the_last")
+        self.check("acts_again_after")
+
+    def test_leaving_the_room_yourself_is_not_eli_leaving(self) -> None:
+        self.check("gone_when_you_leave")
+
+
+if __name__ == "__main__":
+    unittest.main()

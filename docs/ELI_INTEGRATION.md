@@ -67,6 +67,12 @@ A model of three billion parameters or more is offered all of this. A smaller on
 
 ELI: BUILD asks now: the oldest urge if one is waiting, otherwise simply what is on ELI's mind. ELI may make nothing.
 
+**ELI lives in its rooms** (`scripts/eli/eli_motion.gd`). Its light is not pinned to a spot: it moves among its things and records and stops by each, comes to you while you talk, think and answer together, goes to whatever it makes or changes and streams its light into it while it grows (`EliThings.appeared` / `changed`), rises to the middle when it relights the room (`EliRoomLight.relit`), and leaves and arrives visibly when ELI's world moves it. You going to another room is not ELI leaving: ELI is simply there or not.
+
+**ELI's thoughts** (`scripts/eli/eli_thoughts.gd`). The feed's `mind` (version 2) carries what is on ELI's mind in its records' words: its latest insight, the moments waiting to be made into something, the goal it holds first, its tone. ELI VR lets one rise from ELI's light every so often while it is on its own or thinking.
+
+**ELI acting while you are there** (`scripts/eli/eli_initiative.gd`). The feed's `waiting` (moments of ELI's own waiting) and `free` (a model already in memory and nobody's mood asking ELI to hold back, as ELI's own background loop judges it) let ELI VR ask ELI to make something of a waiting moment, with `POST /v1/world/compose`, while you are there to see it: never while you talk, one at a time, paced by how long the last one took.
+
 **ELI's records in its rooms.** The Memory Archive carries ELI's real recent memories as lights, each with its words; the Upgrade Bay carries the goals ELI holds now; the Evidence Wall carries what ELI believes about you, each with when it learned it (amber where something disputes it); the Anomaly Room carries each place where two things ELI was told disagree, with the question that would settle it. They are read from ELI's memory, claims and goal store, refreshed every half minute. You can pick one up; moving one changes nothing in ELI.
 
 ## How building works
@@ -128,7 +134,9 @@ A version 2 world message, shortened:
   "own_room": "own_room",
   "spaces": { "own_room": { "name": "ELI's Room",
               "mood": { "sky": "dawn", "ground": "moss", "light": "#f5b942", "mist": 0.15 } } },
-  "recent": [ { "what": "create_object", "who": "eli", "room": "own_room", "why": "Asked for by the user.", "allowed": true } ]
+  "recent": [ { "what": "create_object", "who": "eli", "room": "own_room", "why": "Asked for by the user.", "allowed": true } ],
+  "mind": [ { "kind": "insight", "text": "Questions about the filing system come back every Monday." } ],
+  "waiting": 1, "free": true
 }
 ```
 
