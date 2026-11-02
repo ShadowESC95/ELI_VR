@@ -50,7 +50,6 @@ const FEEL_RATE := 2.2
 
 var mode := "dormant"
 var feeling := "neutral"
-var awareness: Dictionary = {}
 var eli_room := "core_room"
 var activity := ""
 var voice_player: AudioStreamPlayer3D
@@ -222,18 +221,6 @@ func _make_motes() -> GPUParticles3D:
 func set_accent(accent: Color) -> void:
     _base_tint = accent
 
-## How ELI feels now, as the light shows it (moving smoothly between feelings).
-func tint_now() -> Color:
-    return _tint
-
-## How stirred ELI is now, 0..1.
-func stir_now() -> float:
-    return _arousal
-
-## How loud ELI's voice is this moment, 0..1.
-func voice_level() -> float:
-    return _level
-
 func set_mode(value: String) -> void:
     mode = value if MODES.has(value) else "idle"
     _refresh_label()
@@ -242,7 +229,7 @@ func set_mode(value: String) -> void:
 func apply_world_state(state: Dictionary) -> void:
     eli_room = str(state.get("room", "core_room"))
     var avatar: Dictionary = state.get("avatar", {})
-    awareness = state.get("awareness", {})
+    var awareness: Dictionary = state.get("awareness", {})
     activity = str(avatar.get("activity", "")).replace("_", " ")
 
     feeling = str(avatar.get("expression", "neutral"))

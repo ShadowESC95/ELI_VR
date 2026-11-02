@@ -33,6 +33,8 @@ Off again with `python3 tools/eli_vr.py eli off`. If ELI is not running, ELI VR 
 
 **ELI has a room of its own.** ELI'S ROOM on the console. Open ground under an open sky, with nothing there but what ELI has made. There ELI may also change the sky (stars, dawn, mist, sunset, void), the ground (stone, marble, wood, sand, snow, moss, metal, dark), the colour of the light and the mist. ELI: BUILD on the console (or `B`) has ELI make one thing there of its own accord, with a meaning ELI gives it; UNDO (or `Z`) takes the last change back.
 
+**Every room is ELI's to relight.** In any room of the house ELI may change the colour of its lights: say "make the lighting warmer", or ELI does it of its own accord when something in it asks to be made into something (an insight, a goal, a failure in its own words), choosing the room. The room's glowing trims, strips, screens and points of light wear the colour ELI chose; nothing else changes. ELI's world sends each relit room in `spaces` beside ELI's own, with only `light`. The rooms of the house keep their own sky, ground and air.
+
 ## ELI's mind
 
 No model is assumed anywhere. ELI v3 says which model is loaded, which would be used if none is, and which ones ELI has; ELI VR shows that and lets you choose.
@@ -209,7 +211,7 @@ ELI v3 carries an edition pack for ELI VR (`eli/editions/vr/`), the same shape a
 ## Not there yet
 
 - ELI is a light, not a figure.
-- ELI builds from parts and colours, not yet from textures or pictures of its own, and only ELI's own room can be given a new sky.
+- ELI builds from parts and colours, not yet from textures or pictures of its own. Only ELI's own room can be given a new sky, ground or mist; the rooms of the house take ELI's light, and what they were built with cannot be moved or changed.
 - A very small model keeps to the named shapes, says little worth hearing about what it made, and unasked often makes nothing. That is the model, not a rule.
 - Free parts and a painted sky have been drawn from edits sent by hand. No model large enough to be offered them has been tried yet.
 - ELI building of its own accord has been tested with ELI v3's own engine and a stand-in for the model, not yet left running over days.

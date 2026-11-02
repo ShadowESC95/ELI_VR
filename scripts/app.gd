@@ -7,7 +7,7 @@ const NetworkPolicyClass = preload("res://scripts/core/network_policy.gd")
 const RuntimeOptimizerClass = preload("res://scripts/core/runtime_optimizer.gd")
 const EliLinkClass = preload("res://scripts/eli/eli_link.gd")
 const EliBundleClass = preload("res://scripts/eli/eli_bundle.gd")
-const EliAtmosphereClass = preload("res://scripts/eli/eli_atmosphere.gd")
+const EliRoomLightClass = preload("res://scripts/eli/eli_room_light.gd")
 const EliPresenceClass = preload("res://scripts/eli/eli_presence.gd")
 const EliVoiceClass = preload("res://scripts/eli/eli_voice.gd")
 const EliSensesClass = preload("res://scripts/eli/eli_senses.gd")
@@ -67,6 +67,7 @@ var calibration_widget
 var _by_toggle_latched := false
 
 var eli_link
+var eli_room_light
 var eli_presence
 var eli_voice
 var eli_senses
@@ -608,10 +609,10 @@ func _setup_eli() -> void:
     add_child(eli_presence)
     eli_presence.setup(_theme_accent())
 
-    var atmosphere = EliAtmosphereClass.new()
-    atmosphere.name = "EliAtmosphere"
-    add_child(atmosphere)
-    atmosphere.setup(self, eli_presence)
+    eli_room_light = EliRoomLightClass.new()
+    eli_room_light.name = "EliRoomLight"
+    add_child(eli_room_light)
+    eli_room_light.setup(self)
 
     eli_things = EliThingsClass.new()
     eli_things.name = "EliThings"
@@ -658,6 +659,7 @@ func _on_eli_link_changed(connected: bool) -> void:
 
 func _on_eli_world_state(state: Dictionary) -> void:
     eli_presence.apply_world_state(state)
+    eli_room_light.apply_world_state(state)
     eli_things.apply_world_state(state)
     var spaces: Dictionary = state.get("spaces", {})
     var own: Dictionary = spaces.get("own_room", {})
