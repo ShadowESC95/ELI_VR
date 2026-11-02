@@ -1,0 +1,321 @@
+{
+ "SchoolChair_01": {
+  "name": "School Chair 01",
+  "authors": [
+   "Ethan Place"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "SchoolChair_01",
+  "triangles": 5072
+ },
+ "Television_01": {
+  "name": "Television 01",
+  "authors": [
+   "Gabriel Radi\u0107"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "Television_01",
+  "triangles": 1918
+ },
+ "WoodenChair_01": {
+  "name": "Wooden Chair 01",
+  "authors": [
+   "Jake Mobley"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "WoodenChair_01",
+  "triangles": 19992
+ },
+ "bench_vice_01": {
+  "name": "Bench Vice 01",
+  "authors": [
+   "Antanas Kep",
+   "Yann Kervran"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "bench_vice_01",
+  "triangles": 2864
+ },
+ "caged_hanging_light": {
+  "name": "Caged Hanging Light",
+  "authors": [
+   "Ulan Cabanilla"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "caged_hanging_light",
+  "triangles": 22893
+ },
+ "ceiling_fan": {
+  "name": "Ceiling Fan",
+  "authors": [
+   "Ulan Cabanilla"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "ceiling_fan",
+  "triangles": 16356
+ },
+ "circuit_board": {
+  "name": "Circuit Board",
+  "authors": [
+   "Benny Weimer"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "circuit_board",
+  "triangles": 14430
+ },
+ "classic_laptop": {
+  "name": "Classic Laptop",
+  "authors": [
+   "Arrangemonk"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "classic_laptop",
+  "triangles": 14450
+ },
+ "clipboard": {
+  "name": "Clipboard",
+  "authors": [
+   "ProgrammerOnCoffee"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "clipboard",
+  "triangles": 6176
+ },
+ "desk_lamp_arm_01": {
+  "name": "Desk Lamp Arm 01",
+  "authors": [
+   "Kuutti Siitonen",
+   "Yann Kervran"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "desk_lamp_arm_01",
+  "triangles": 25710
+ },
+ "drill_press_01": {
+  "name": "Drill Press 01",
+  "authors": [
+   "Viktor"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "drill_press_01",
+  "triangles": 58526
+ },
+ "filmstrip_projector_8mm": {
+  "name": "Filmstrip Projector 8mm",
+  "authors": [
+   "PeterM"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "filmstrip_projector_8mm",
+  "triangles": 32697
+ },
+ "hanging_industrial_lamp": {
+  "name": "Hanging Industrial Lamp",
+  "authors": [
+   "Kuutti Siitonen"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "hanging_industrial_lamp",
+  "triangles": 9530
+ },
+ "industrial_microscope": {
+  "name": "Industrial Microscope",
+  "authors": [
+   "Lukas Walzer"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "industrial_microscope",
+  "triangles": 16598
+ },
+ "industrial_storage_cart": {
+  "name": "Industrial Storage Cart",
+  "authors": [
+   "Jule Bielitz"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "industrial_storage_cart",
+  "triangles": 18902
+ },
+ "industrial_wall_lamp": {
+  "name": "Industrial Wall Lamp",
+  "authors": [
+   "Kuutti Siitonen"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "industrial_wall_lamp",
+  "triangles": 4446
+ },
+ "industrial_wall_sconce": {
+  "name": "Industrial Wall Sconce",
+  "authors": [
+   "Ulan Cabanilla"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "industrial_wall_sconce",
+  "triangles": 9826
+ },
+ "magnifying_glass_01": {
+  "name": "Magnifying Glass 01",
+  "authors": [
+   "Nazar Borodavka"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "magnifying_glass_01",
+  "triangles": 7240
+ },
+ "metal_office_desk": {
+  "name": "Metal Office Desk",
+  "authors": [
+   "Ulan Cabanilla"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "metal_office_desk",
+  "triangles": 6898
+ },
+ "metal_tool_chest": {
+  "name": "Metal Tool Chest",
+  "authors": [
+   "John Hutcheson",
+   "Yann Kervran"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "metal_tool_chest",
+  "triangles": 14576
+ },
+ "metal_toolbox": {
+  "name": "Metal Toolbox",
+  "authors": [
+   "Mateusz Sadek"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "metal_toolbox",
+  "triangles": 14228
+ },
+ "modular_electric_cables": {
+  "name": "Modular Electric Cables",
+  "authors": [
+   "Kuutti Siitonen"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "modular_electric_cables",
+  "triangles": 42078
+ },
+ "mounted_fluorescent_lights": {
+  "name": "Mounted Fluorescent Lights",
+  "authors": [
+   "Ulan Cabanilla"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "mounted_fluorescent_lights",
+  "triangles": 17820
+ },
+ "office_notepads": {
+  "name": "Office Notepads",
+  "authors": [
+   "Ulan Cabanilla"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "office_notepads",
+  "triangles": 666
+ },
+ "plastic_crate_01": {
+  "name": "Plastic Crate 01",
+  "authors": [
+   "PierreB3D"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "plastic_crate_01",
+  "triangles": 18320
+ },
+ "plastic_crate_02": {
+  "name": "Plastic Crate 02",
+  "authors": [
+   "Fabi_G"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "plastic_crate_02",
+  "triangles": 5840
+ },
+ "portable_welding_cart": {
+  "name": "Portable Welding Cart",
+  "authors": [
+   "Georgii Gorbunov"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "portable_welding_cart",
+  "triangles": 29418
+ },
+ "power_box_01": {
+  "name": "Power Box 01",
+  "authors": [
+   "Rico Cilliers",
+   "Yann Kervran"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "power_box_01",
+  "triangles": 21272
+ },
+ "retro_multimeter": {
+  "name": "Retro Multimeter",
+  "authors": [
+   "elli moeller"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "retro_multimeter",
+  "triangles": 13356
+ },
+ "steel_frame_shelves_01": {
+  "name": "Steel Frame Shelves 01",
+  "authors": [
+   "James Ray Cock"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "steel_frame_shelves_01",
+  "triangles": 4348
+ },
+ "steel_frame_shelves_02": {
+  "name": "Steel Frame Shelves 02",
+  "authors": [
+   "James Ray Cock"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "steel_frame_shelves_02",
+  "triangles": 4348
+ },
+ "television_02": {
+  "name": "Television 02",
+  "authors": [
+   "Benny Weimer"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "television_02",
+  "triangles": 2310
+ },
+ "tool_cart": {
+  "name": "Tool Cart",
+  "authors": [
+   "Savva Zakharov"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "tool_cart",
+  "triangles": 29394
+ },
+ "vintage_cabinet_01": {
+  "name": "Vintage Cabinet 01",
+  "authors": [
+   "Rico Cilliers"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "vintage_cabinet_01",
+  "triangles": 61096
+ },
+ "worn_metal_rack": {
+  "name": "Worn Metal Rack",
+  "authors": [
+   "Luca B"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "worn_metal_rack",
+  "triangles": 6372
+ }
+}

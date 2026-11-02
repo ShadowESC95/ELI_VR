@@ -36,6 +36,7 @@ func _build() -> void:
     _belt_and_arm()
     _plan_table()
     _glass_screens()
+    _equipment()
     probe(Vector3(28, 6.4, 28), Vector3(0, 3.2, 0), true)
 
 func _printer() -> void:
@@ -129,6 +130,27 @@ func _plan_table() -> void:
     plan.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
     spin(plan, Vector3(0.2, 1.0, 0.1), 0.4)
     glow(at + Vector3(0, 2.2, 0), accent, 2.6, 0.5, 0.2)
+
+# The working kit: shelves of parts along the back, a test bench with its
+# microscope, a storage cart, and the welding cart by the arm.
+func _equipment() -> void:
+    for bearing in [165.0, 195.0]:
+        var a := deg_to_rad(bearing)
+        var at := Vector3(sin(a), 0.0, -cos(a)) * 13.3
+        var facing := rad_to_deg(atan2(-at.x, -at.z))
+        prop("steel_frame_shelves_02", at, facing)
+        prop("plastic_crate_02", at * 0.9, facing + 12.0)
+    var bench := Node3D.new()
+    bench.position = Vector3(0, 0, 6.6)
+    bench.rotation.y = PI
+    add_child(bench)
+    prop("metal_office_desk", Vector3.ZERO, 0.0, 1.0, bench)
+    prop("industrial_microscope", Vector3(-0.4, 0.79, -0.1), 15.0, 1.0, bench)
+    prop("circuit_board", Vector3(0.5, 0.79, 0.05), -10.0, 1.0, bench)
+    prop("SchoolChair_01", Vector3(0.0, 0, 0.7), 180.0, 1.0, bench)
+    prop("industrial_storage_cart", Vector3(3.0, 0, 6.2), 200.0)
+    prop("portable_welding_cart", Vector3(-9.6, 0, -3.4), 120.0)
+    lamp(Vector3(0, 3.0, 6.3), Color(0.95, 0.98, 1.0), 1.2, 6.0)
 
 func _glass_screens() -> void:
     var pane := MaterialKitClass.glass(Color(0.7, 0.9, 1.0), 0.12)

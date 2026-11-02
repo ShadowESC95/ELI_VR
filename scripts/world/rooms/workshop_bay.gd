@@ -21,6 +21,7 @@ func _build() -> void:
     _earth_outside()
     _shell()
     _benches()
+    _stores()
     _welding_arm()
     _crane_and_load()
     _rover_on_lift()
@@ -68,8 +69,8 @@ func _shell() -> void:
         box(Vector3(30.0, 0.5, 0.35), steel, Vector3(0, 8.4, z))
     var warm := Color(1.0, 0.86, 0.66)
     for at in [Vector3(-7, 7.9, -13), Vector3(7, 7.9, -13), Vector3(-7, 7.9, -3), Vector3(7, 7.9, -3), Vector3(-7, 7.9, 7), Vector3(7, 7.9, 7)]:
-        rod(0.02, 0.9, steel, at + Vector3(0, 0.45, 0))
-        glow(at, warm, 1.4, 1.2, 0.8)
+        prop("hanging_industrial_lamp", at - Vector3(0, 0.15, 0), 0.0, 1.0)
+        glow(at - Vector3(0, 0.2, 0), warm, 1.0, 1.2, 0.8)
         spot(at, at * Vector3(1, 0, 1), warm, 12.0, 16.0, 62.0)
     # the bay's own working light, high up
     for at in [Vector3(-6, 6.5, -14), Vector3(6, 6.5, -14), Vector3(-6, 6.5, 2), Vector3(6, 6.5, 2)]:
@@ -102,10 +103,26 @@ func _benches() -> void:
                 var tool := box(Vector3(0.05, rng.randf_range(0.25, 0.8), rng.randf_range(0.06, 0.22)), top,
                     Vector3(0.82 * side, rng.randf_range(1.6, 3.0), -1.9 + 0.48 * t), bench)
                 tool.rotation.x = rng.randf_range(-0.3, 0.3)
-            # things left out on the bench
-            for t in 4:
+            # a vice at one end, a toolbox left out on every other bench, and a box or two
+            prop("bench_vice_01", Vector3(-0.3 * side, 0.99, -1.7), 90.0 * side, 1.0, bench)
+            if int(z) % 2 == 0:
+                prop("metal_toolbox", Vector3(0, 0.99, 0.6), 90.0 * side + rng.randf_range(-15.0, 15.0), 1.0, bench)
+            for t in 2:
                 box(Vector3(rng.randf_range(0.2, 0.5), rng.randf_range(0.1, 0.3), rng.randf_range(0.2, 0.5)), frame if t % 2 == 0 else wood,
-                    Vector3(rng.randf_range(-0.4, 0.4), 1.1, -1.6 + 1.05 * t), bench)
+                    Vector3(rng.randf_range(-0.4, 0.4), 1.1, -0.4 + 1.6 * t), bench)
+
+# Behind where you stand, the stores: a row of shelves of crates with the tool
+# chest, the drill press and a cart in front of them, under their own light.
+func _stores() -> void:
+    for x in [-4.4, -2.2, 2.2, 4.4]:
+        prop("steel_frame_shelves_01", Vector3(x, 0, 9.4), 180.0)
+        prop("plastic_crate_01" if x < 0.0 else "plastic_crate_02", Vector3(x + 0.5, 0, 8.4), 165.0 + 4.0 * x)
+    prop("metal_tool_chest", Vector3(-1.1, 0, 7.4), 170.0)
+    prop("drill_press_01", Vector3(1.2, 0, 7.6), 195.0)
+    prop("tool_cart", Vector3(3.4, 0, 6.4), 215.0)
+    var warm := Color(1.0, 0.86, 0.66)
+    spot(Vector3(0, 6.0, 4.5), Vector3(0, 0.8, 8.6), warm, 10.0, 12.0, 52.0)
+    lamp(Vector3(0, 3.2, 7.0), warm, 1.6, 9.0)
 
 func _welding_arm() -> void:
     var paint := StandardMaterial3D.new()

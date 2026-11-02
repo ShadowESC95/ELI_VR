@@ -94,13 +94,13 @@ The nine ELI rooms:
 |---|---|---|
 | Core Room | An open deck on a station in orbit, Earth below, the real Milky Way overhead | The station's outer ring, the hub, a projected globe, Earth's cloud |
 | Memory Archive | A marble hall open to the stars, walls shelved with small lights | Every light keeps its own time; some drift loose and rise; rings turn overhead |
-| Workshop | A repair bay with its door open to space | A welding arm, a crane on its rails, a beacon, Earth going by outside |
+| Workshop | A repair bay with its door open to space: benches with vices and toolboxes, and behind you the stores (shelves of crates, a tool chest, a drill press, a cart) under their own light | A welding arm, a crane on its rails, a beacon, Earth going by outside |
 | Reflection Chamber | A stone terrace on a mountain plateau at dawn, ringed by still water | Birds, dust in the first light |
-| Debug Basement | A concrete bunker of racks and old terminals | Status lamps, scrolling logs, a roof fan, one strip light on its way out |
-| Upgrade Bay | A clean white lab | A printer building a part, crates on a belt, an arm sorting them |
+| Debug Basement | A concrete bunker of racks and old terminals: desks with CRT monitors, a laptop, meters and boards under test, power boxes and cables on the walls, caged lamps from the beams | Status lamps, scrolling logs, a roof fan, one strip light on its way out |
+| Upgrade Bay | A clean white lab, with a test bench and its microscope, shelves of parts, a storage cart and a welding cart | A printer building a part, crates on a belt, an arm sorting them |
 | Simulation Lab | A world that is only being computed: grid, wire hills, towers of data | Everything |
 | Anomaly Room | A cracked deck drifting towards a black hole | The disc of the hole, arcs between pylons, debris spiralling in |
-| Evidence Wall | A dim studio with a long wall of pinned sheets strung with thread | A fan, a projector changing slides, dust in the lamps |
+| Evidence Wall | A dim studio with a long wall of pinned sheets strung with thread; behind you a desk under its lamp, a cabinet of files between racks of boxes, lamps on the walls | A fan, a projector changing slides, dust in the lamps |
 
 Six more workspaces:
 

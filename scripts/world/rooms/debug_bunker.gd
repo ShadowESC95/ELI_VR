@@ -3,13 +3,15 @@ extends RoomBase
 
 # The Debug Basement: a concrete bunker under everything, where faults are
 # run to ground. Racks of machines blink in rows, logs scroll on old
-# terminals, a fan turns in the roof, and one strip light is on its way out.
+# terminals among the meters and boards being tested, cables run along the
+# walls, caged lamps hang from the beams, a fan turns in the roof, and one
+# strip light is on its way out.
 
 var _tube: MeshInstance3D
 var _tube_light: OmniLight3D
 
 func _build() -> void:
-    var env := environment(Color(0.16, 0.19, 0.19), 1.0)
+    var env := environment(Color(0.16, 0.19, 0.19), 1.3)
     env.background_mode = Environment.BG_COLOR
     env.background_color = Color(0.005, 0.006, 0.008)
     env.fog_enabled = true
@@ -24,6 +26,7 @@ func _build() -> void:
     _racks()
     _terminals()
     _roof(wall)
+    _wiring()
     if motes:
         drift(Vector3(0, 2.4, 0), Vector3(12, 2.4, 12), 200, Color(0.8, 0.9, 0.8), 0.025)
     probe(Vector3(30, 5.2, 30), Vector3(0, 2.6, 0), true)
@@ -46,31 +49,37 @@ func _racks() -> void:
                 "tint": rgb(green), "cells": Vector2(16.0, 44.0), "lit": 0.42, "alarm": 0.07, "pace": 2.4,
                 "seed": float(bearing) + row * 7.0, "energy": 1.5, "roundness": 1.0,
             }), Vector3(0, 1.8, 0.51), rack)
-    lamp(Vector3(9.5, 2.4, 3.0), green, 0.5, 9.0)
-    lamp(Vector3(-9.5, 2.4, 3.0), green, 0.5, 9.0)
-    lamp(Vector3(0, 2.4, 10.0), green, 0.5, 9.0)
+    lamp(Vector3(9.5, 2.4, 3.0), green, 1.2, 9.0)
+    lamp(Vector3(-9.5, 2.4, 3.0), green, 1.2, 9.0)
+    lamp(Vector3(0, 2.4, 10.0), green, 1.2, 9.0)
 
 func _terminals() -> void:
-    var casing := MaterialKitClass.metal("brushed_metal", 0.5, Color(0.3, 0.3, 0.28), 0.9)
     var amber := Color(1.0, 0.7, 0.2)
     var screen := QuadMesh.new()
-    screen.size = Vector2(0.92, 0.66)
-    for bearing in [-52.0, -38.0, 38.0, 52.0]:
-        var a := deg_to_rad(float(bearing))
+    screen.size = Vector2(0.4, 0.3)
+    # each desk faces the middle of the room: its operator sits on that side
+    var on_desk := [["classic_laptop", "retro_multimeter"], ["circuit_board"], ["retro_multimeter", "circuit_board"], ["classic_laptop"]]
+    var bearings := [-52.0, -38.0, 38.0, 52.0]
+    for i in bearings.size():
+        var a := deg_to_rad(float(bearings[i]))
         var desk := Node3D.new()
         desk.position = Vector3(sin(a), 0.0, -cos(a)) * 8.6
         desk.rotation.y = -a
         add_child(desk)
-        box(Vector3(1.5, 0.06, 0.8), casing, Vector3(0, 0.78, 0), desk)
-        for leg in [-0.68, 0.68]:
-            box(Vector3(0.06, 0.78, 0.7), casing, Vector3(leg, 0.39, 0), desk)
-        box(Vector3(1.0, 0.82, 0.7), casing, Vector3(0, 1.22, -0.05), desk)
+        prop("metal_office_desk", Vector3.ZERO, 0.0, 1.0, desk)
+        var top := 0.79
+        prop("Television_01" if i % 2 == 0 else "television_02", Vector3(0, top, -0.15), 0.0, 1.0, desk)
+        var tint := amber if i % 2 == 0 else Color(0.3, 1.0, 0.5)
         add(screen, MaterialKitClass.shader("res://assets/shaders/code_rain.gdshader", {
-            "tint": rgb(amber if int(bearing) % 3 == 0 else Color(0.3, 1.0, 0.5)), "seed": float(bearing),
-            "cells": Vector2(26.0, 18.0), "energy": 1.4, "base": Vector3(0.01, 0.015, 0.01),
-        }), Vector3(0, 1.24, 0.31), desk)
-    lamp(Vector3(-6.0, 1.6, -6.0), amber, 0.5, 5.0)
-    lamp(Vector3(6.0, 1.6, -6.0), Color(0.3, 1.0, 0.5), 0.5, 5.0)
+            "tint": rgb(tint), "seed": float(bearings[i]),
+            "cells": Vector2(18.0, 13.0), "energy": 1.4, "base": Vector3(0.01, 0.015, 0.01),
+        }), Vector3(0, top + 0.24, 0.09), desk)
+        var side := -0.6
+        for thing in on_desk[i]:
+            prop(thing, Vector3(side, top, 0.1), 20.0 * side, 1.0, desk)
+            side += 1.1
+        prop("SchoolChair_01", Vector3(0.1, 0, 0.75), 180.0 + 15.0 * (i - 1.5), 1.0, desk)
+        lamp(Vector3(0, top + 0.5, 0.4), tint, 0.9, 3.5, desk)
 
 func _roof(concrete: Material) -> void:
     var steel := MaterialKitClass.metal("brushed_metal", 0.6, Color(0.35, 0.36, 0.38), 0.8)
@@ -111,6 +120,22 @@ func _roof(concrete: Material) -> void:
     _tube_light = lamp(Vector3(-4.6, 4.3, -6.4), Color(0.85, 1.0, 0.92), 1.6, 9.0)
     box(Vector3(2.2, 0.07, 0.14), MaterialKitClass.light(Color(0.9, 1.0, 0.95), 3.0), Vector3(4.6, 4.6, -6.4))
     lamp(Vector3(4.6, 4.3, -6.4), Color(0.85, 1.0, 0.92), 1.6, 9.0)
+
+# Power boxes on the walls with cables running away along them, and caged lamps
+# hanging from the beams.
+func _wiring() -> void:
+    for degrees in [12.0, -12.0, 180.0]:
+        var a := deg_to_rad(degrees)
+        var on_wall := Vector3(sin(a), 0.0, -cos(a)) * 14.75
+        var facing := rad_to_deg(atan2(-on_wall.x, -on_wall.z))
+        prop("power_box_01", on_wall + Vector3(0, 1.3, 0), facing)
+        prop("modular_electric_cables", on_wall * 0.995 + Vector3(0, 2.6, 0), facing)
+    var cold := Color(0.85, 1.0, 0.92)
+    for i in 4:
+        var angle := TAU * float(i) / 4.0 + PI / 4.0
+        var at := Vector3(cos(angle) * 3.6, 4.7, sin(angle) * 3.6)
+        prop("caged_hanging_light", at - Vector3(0, 0.75, 0), rad_to_deg(angle))
+        lamp(at - Vector3(0, 0.9, 0), cold, 1.4, 8.0)
 
 func _animate(_delta: float) -> void:
     var on := sin(_clock * 23.0) * sin(_clock * 7.3) > -0.55 or fmod(_clock, 6.0) > 1.2
