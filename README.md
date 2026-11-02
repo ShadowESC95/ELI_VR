@@ -145,7 +145,7 @@ Off by default. Switch the link on and, while ELI v3's local server is running o
 - **In any way ELI likes.** A thing is a shape by name, or anything at all made part by part: boxes, balls, cones, rings, a profile turned on a lathe, an outline pulled up into a solid, a tube along a path, text, each with its own place, turn, size, colour, metal, glow, clearness and motion. Nothing has to come from a list.
 - **ELI has a room of its own.** ELI'S ROOM on the console is open ground under an open sky with nothing there but what ELI has made. The sky is ELI's to choose: one by name, or painted from two colours, stars and a sun placed wherever ELI likes. So is the ground: any colour, flat or rising into hills.
 - **Of its own accord, from its own life.** Nothing is scheduled and nothing is chosen for ELI. When something happens in ELI (an insight forms, a goal is taken on or finished, an improvement to itself is proposed) that moment is kept in its own words. When ELI is free it may make something of that moment in its room, and what ELI makes is tied to the record the moment came from. ELI: BUILD asks now.
-- **ELI's records stand in its rooms.** The Memory Archive holds lights that are ELI's real recent memories, each carrying its own words. The Upgrade Bay holds the goals ELI has now.
+- **ELI's records stand in its rooms.** The Memory Archive holds lights that are ELI's real recent memories, each carrying its own words. The Upgrade Bay holds the goals ELI has now. The Evidence Wall holds what ELI believes about you, each with when it learned it, and the Anomaly Room each thing ELI was told two ways, with the question that would settle it.
 
 ![ELI's room: a sky ELI painted, and things made part by part](docs/images/eli-room-freeform.jpg)
 

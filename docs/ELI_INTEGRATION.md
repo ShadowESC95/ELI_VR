@@ -67,7 +67,7 @@ A model of three billion parameters or more is offered all of this. A smaller on
 
 ELI: BUILD asks now: the oldest urge if one is waiting, otherwise simply what is on ELI's mind. ELI may make nothing.
 
-**ELI's records in its rooms.** The Memory Archive carries ELI's real recent memories as lights, each with its words; the Upgrade Bay carries the goals ELI holds now. They are read from ELI's memory and goal store, refreshed every half minute. You can pick one up; moving one changes nothing in ELI.
+**ELI's records in its rooms.** The Memory Archive carries ELI's real recent memories as lights, each with its words; the Upgrade Bay carries the goals ELI holds now; the Evidence Wall carries what ELI believes about you, each with when it learned it (amber where something disputes it); the Anomaly Room carries each place where two things ELI was told disagree, with the question that would settle it. They are read from ELI's memory, claims and goal store, refreshed every half minute. You can pick one up; moving one changes nothing in ELI.
 
 ## How building works
 
@@ -215,7 +215,7 @@ ELI v3 carries an edition pack for ELI VR (`eli/editions/vr/`), the same shape a
 - A very small model keeps to the named shapes, says little worth hearing about what it made, and unasked often makes nothing. That is the model, not a rule.
 - Free parts and a painted sky have been drawn from edits sent by hand. No model large enough to be offered them has been tried yet.
 - ELI building of its own accord has been tested with ELI v3's own engine and a stand-in for the model, not yet left running over days.
-- The Evidence Wall does not yet show ELI's real claims, nor the Anomaly Room ELI's open contradictions.
+- A contradiction in the Anomaly Room is settled by answering ELI in conversation, not from inside the room.
 - Talking and building have been tried flat against ELI v3's real server, not yet with a real microphone in the headset.
 - Opening ELI VR from ELI v3 has been tested with ELI v3's own launch code and a stand-in for the app, not yet into a headset.
 - Licences do not carry editions yet, so ELI v3 allows every bundle.
