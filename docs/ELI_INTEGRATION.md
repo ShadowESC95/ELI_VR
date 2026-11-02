@@ -10,7 +10,7 @@ ELI VR names no model and ships none. Whichever model ELI v3 has loaded answers,
 
 ## Switching it on
 
-Start ELI v3's local server first (in ELI v3: `./scripts/eli_serve.sh`, or the server switch in its window). Then any one of:
+The link is on by itself wherever ELI v3 is installed on the machine ("auto"); ELI v3 opening ELI VR turns it on too. Opened from ELI v3's Bundles menu, ELI v3 has its local server answering first. Opened on its own, ELI VR reaches ELI once ELI v3's server is running (in ELI v3: `./scripts/eli_serve.sh`, or the server switch in its window), trying again quietly until then. To turn it on where ELI v3 is not installed, or for one run:
 
 ```bash
 python3 tools/eli_vr.py eli on                                # remembered, source checkout
@@ -149,7 +149,7 @@ A failure has a kind, and the status line and the line under ELI say which:
 
 | Key | Default | Meaning |
 |---|---|---|
-| `eli_bridge.enabled` | `false` | The link |
+| `eli_bridge.enabled` | `"auto"` | The link: on where ELI v3 is installed or started ELI VR; `true` or `false` to decide |
 | `eli_bridge.endpoint` | `http://127.0.0.1:8081` | ELI v3's local server. 8081 is ELI's default port; if you moved it in ELI's settings, change this to match, or set `ELI_API_PORT`. Only loopback addresses are accepted. |
 | `eli_bridge.voice` | `true` | Push to talk |
 | `eli_bridge.model` | empty | A model of ELI's, by name, to ask for when ELI has nothing loaded yet. Empty: whichever ELI has |
@@ -163,7 +163,7 @@ There are two ways ELI v3 can find ELI VR.
 
 | How | Do this once | Runs |
 |---|---|---|
-| **Registered.** ELI VR is installed on its own: the AppImage, a release folder, a checkout. | `--register-eli` on the AppImage or `./launch/eli-vr.sh`, or `python3 tools/register_eli_bundle.py` | As its own program, started by ELI v3 |
+| **Registered.** ELI VR is installed on its own: the AppImage, a release folder, a checkout. | Nothing: it registers itself at each start while ELI v3 is installed. By hand: `--register-eli` on the AppImage or `./launch/eli-vr.sh`, or `python3 tools/register_eli_bundle.py` | As its own program, started by ELI v3 |
 | **Installed beside ELI v3.** The Python package is in ELI v3's own environment. | `pip install -e /path/to/ELI_VR` in that environment | Started from inside ELI v3's process |
 
 Registering writes one file, `vr.json`, into the `bundles` folder of ELI v3's data, and keeps a note of where this copy is, and its icon, in ELI VR's own config folder. `--show` prints what would be written and writes nothing; `--remove` (or `--unregister-eli`) takes it back. The installed package advertises itself under the `eli.bundles` entry point and needs nothing written. If both are there, ELI v3 uses the installed one.

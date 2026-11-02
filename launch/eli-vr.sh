@@ -32,6 +32,10 @@ case "${1:-}" in
     ;;
 esac
 
+# What a person starts to open this copy, for ELI v3's list of bundles: the AppImage itself,
+# not where it happens to be mounted, or this launcher.
+export ELI_VR_COMMAND="${APPIMAGE:-$ROOT/launch/eli-vr.sh}"
+
 MONADO="${ELI_VR_MONADO:-0}"
 DESKTOP=1
 MODE="auto"

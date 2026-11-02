@@ -6,6 +6,7 @@ const CapabilityClass = preload("res://scripts/core/capability_detector.gd")
 const NetworkPolicyClass = preload("res://scripts/core/network_policy.gd")
 const RuntimeOptimizerClass = preload("res://scripts/core/runtime_optimizer.gd")
 const EliLinkClass = preload("res://scripts/eli/eli_link.gd")
+const EliBundleClass = preload("res://scripts/eli/eli_bundle.gd")
 const EliPresenceClass = preload("res://scripts/eli/eli_presence.gd")
 const EliVoiceClass = preload("res://scripts/eli/eli_voice.gd")
 const EliSensesClass = preload("res://scripts/eli/eli_senses.gd")
@@ -79,6 +80,8 @@ var _exit_armed_until_ms := 0
 var _eli_called_until_ms := 0
 
 func _ready() -> void:
+    # On ELI v3's list before anything else, licensed or not: ELI v3 asks for a key itself.
+    EliBundleClass.register_with_v3(str(ProjectSettings.get_setting("application/config/version", "")))
     if not _licensed():
         return
     config = AppConfigClass.new()

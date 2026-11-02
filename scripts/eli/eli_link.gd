@@ -1,7 +1,9 @@
 class_name EliLink
 extends Node
 
-# The link to a local ELI v3. Off unless asked for, and loopback only.
+# The link to a local ELI v3, loopback only. On by itself when ELI v3 is installed here or
+# started this copy ("auto"); `--eli-link=off` or a saved false turns it off. Off unless asked
+# for, a double-clicked ELI VR had ELI dormant in every room while ELI v3 was running.
 # ELI's world state arrives over a WebSocket on v3's own server; speech,
 # conversation and building use the same server's HTTP routes. Nothing here
 # starts or installs ELI: if it is not running, the link keeps quiet and
@@ -42,7 +44,11 @@ var _was_open := false
 var _welcome_wait := 0.0
 
 func configure(config, policy) -> void:
-    enabled = bool(config.get_value("eli_bridge.enabled", false))
+    var asked = config.get_value("eli_bridge.enabled", "auto")
+    if typeof(asked) == TYPE_STRING and asked == "auto":
+        enabled = EliBundle.eli_v3_installed() or OS.get_environment("ELI_API_PORT").is_valid_int()
+    else:
+        enabled = bool(asked)
     base_url = str(config.get_value("eli_bridge.endpoint", DEFAULT_ENDPOINT)).strip_edges().trim_suffix("/")
     # Settings saved before the link existed still carry the reserved port.
     if base_url.is_empty() or base_url == OLD_PLACEHOLDER:

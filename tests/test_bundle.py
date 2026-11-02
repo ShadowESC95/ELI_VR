@@ -148,6 +148,45 @@ class Registering(Sandbox):
         self.assertFalse((into / "vr.json").exists())
 
 
+class SelfRegistering(Sandbox):
+    """The app puts itself on ELI v3's list at each start: told by hand, it never was."""
+
+    def _register(self, command: str = "") -> str:
+        import shutil
+        import subprocess
+        godot = os.environ.get("GODOT_BIN") or shutil.which("godot") or shutil.which("godot4")
+        if not godot:
+            self.skipTest("Godot is not installed here")
+        script = self.tmp / "register.gd"
+        script.write_text('extends SceneTree\nfunc _init():\n    print("REG=" + EliBundle.register_with_v3("%s"))\n'
+                          '    quit()\n' % __version__)
+        env = {**os.environ, "ELI_VR_COMMAND": command} if command else dict(os.environ)
+        env.pop("DISPLAY", None)
+        env.pop("WAYLAND_DISPLAY", None)
+        out = subprocess.run([godot, "--headless", "--xr-mode", "off", "--path", str(ROOT), "--script", str(script)],
+                             env=env, capture_output=True, text=True, timeout=300).stdout
+        return next((line[4:] for line in out.splitlines() if line.startswith("REG=")), "")
+
+    def test_it_writes_the_record_eli_v3_reads_where_eli_v3_is_installed(self) -> None:
+        (self.tmp / "data" / "ELI_v3").mkdir(parents=True)
+        written = self._register("/opt/apps/ELI_VR-x86_64.AppImage")
+        self.assertTrue(written, "ELI v3 is installed: ELI VR puts itself on its list")
+        got = json.loads(Path(written).read_text(encoding="utf-8"))
+        want = bundle.describe()
+        for key in ("contract", "id", "title", "summary", "version", "edition", "needs", "requires_core"):
+            self.assertEqual(got[key], want[key], key)
+        self.assertEqual(got["command"], ["/opt/apps/ELI_VR-x86_64.AppImage"])
+
+    def test_without_eli_v3_nothing_is_written(self) -> None:
+        self.assertEqual(self._register("/opt/apps/ELI_VR-x86_64.AppImage"), "")
+        self.assertFalse((self.tmp / "data" / "ELI_v3").exists())
+
+    def test_the_link_to_eli_is_on_by_itself(self) -> None:
+        defaults = json.loads((ROOT / "config" / "defaults.json").read_text(encoding="utf-8"))
+        self.assertEqual(defaults["eli_bridge"]["enabled"], "auto",
+                         "off unless asked for, a double-clicked ELI VR had ELI dormant in every room")
+
+
 class Launching(Sandbox):
     def run_launch(self, argv, host):
         seen = self.tmp / "seen.json"

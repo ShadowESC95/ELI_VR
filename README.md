@@ -168,7 +168,7 @@ If something goes wrong the status line says which thing: ELI is not running, EL
 
 ### Opened from ELI v3
 
-ELI v3 lists the ELI applications installed beside it and opens them, at start-up, from its Bundles menu or with `eli --bundle vr`. ELI VR is one of those bundles, the same way ELI Legal is. Tell ELI v3 once where this copy is:
+ELI v3 lists the ELI applications installed beside it and opens them, at start-up, from its Bundles menu or with `eli --bundle vr`. ELI VR is one of those bundles, the same way ELI Legal is. ELI VR puts itself on ELI v3's list each time it starts, when ELI v3 is installed on the machine, so a moved or updated copy is the one ELI v3 opens; ELI v3 also finds a copy left on the desktop, in Downloads or in an applications folder, and its Bundles menu offers to find one that is elsewhere. Registering by hand still works:
 
 ```bash
 ./ELI_VR-*-x86_64.AppImage --register-eli     # the AppImage
@@ -176,7 +176,7 @@ ELI v3 lists the ELI applications installed beside it and opens them, at start-u
 python3 tools/register_eli_bundle.py          # any OS
 ```
 
-Opened that way, ELI v3 has its local server answering first and ELI VR starts with the link on. Running ELI VR on its own is unchanged. Details in [docs/ELI_INTEGRATION.md](docs/ELI_INTEGRATION.md).
+Opened that way, ELI v3 has its local server answering first. The link to ELI is on by itself wherever ELI v3 is installed (`--eli-link=off` turns it off); opened on its own, ELI VR reaches ELI when ELI v3's server is running and keeps trying quietly until it is. Details in [docs/ELI_INTEGRATION.md](docs/ELI_INTEGRATION.md).
 
 ## Settings
 

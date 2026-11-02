@@ -91,7 +91,7 @@
     "allow_experimental": true
   },
   "eli_bridge": {
-    "enabled": false,
+    "enabled": "auto",
     "endpoint": "http://127.0.0.1:8081",
     "token_env": "ELI_VR_TOKEN",
     "voice": true,
