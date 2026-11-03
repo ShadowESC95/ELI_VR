@@ -223,6 +223,15 @@ func _run() -> void:
     var faces: Array = sight._body.get_children().filter(func(n): return n is MeshInstance3D)
     var shown_face: StandardMaterial3D = faces[1].material_override
     var pictured: bool = shown_face.albedo_texture != null and is_equal_approx((faces[1].mesh as QuadMesh).size.x / (faces[1].mesh as QuadMesh).size.y, 2.0)
+    var radio_model := ModelCache.scene("boombox")
+    var cached: bool = radio_model != null and ModelCache.scene("boombox") == radio_model and ModelCache.scene("no_such_model") == null
+    ModelCache.warm()
+    var frames := 0
+    while (ModelCache.poll() > 0 or not ModelCache._asked.is_empty()) and frames < 20000:
+        frames += 1
+        await process_frame
+    _check("models_load_once_in_the_background_and_are_kept", cached and ModelCache._held.size() >= 40 and frames < 20000,
+           "kept %s, held %d after %d frames" % [cached, ModelCache._held.size(), frames])
     _check("a_picture_eli_took_is_pinned_up_as_a_photograph", placed_at is Transform3D and wall.pin_spot("seen", 4) == null
            and pictured and link.asked == ["/v1/world/picture/31"], "placed %s, pictured %s, asked %s" % [placed_at is Transform3D, pictured, link.asked])
     _check("a_painting_is_painted_and_stands_on_an_easel_on_the_floor", styled == 5 and hung.eye_height() < 0.6

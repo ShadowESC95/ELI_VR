@@ -319,7 +319,7 @@ func _paper(tint: Color, held_by: String, typed: bool) -> void:
 func _radio() -> void:
     _name_tag.visible = false
     _material = null
-    var radio := load("res://assets/models/boombox/boombox_1k.gltf") as PackedScene
+    var radio := ModelCache.scene("boombox")
     if radio != null:
         _body.add_child(radio.instantiate())
     var paused := "paused" in lines

@@ -28,5 +28,4 @@ static func plain(name: String) -> String:
 static func model(id: String) -> PackedScene:
     if id.is_empty() or not id.is_valid_filename():
         return null
-    var path := "res://assets/models/%s/%s_1k.gltf" % [id, id]
-    return load(path) as PackedScene if ResourceLoader.exists(path) else null
+    return ModelCache.scene(id)

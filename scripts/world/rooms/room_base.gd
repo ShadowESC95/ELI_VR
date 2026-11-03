@@ -94,7 +94,7 @@ func glow(at: Vector3, colour: Color, size: float, energy: float = 1.0, core: fl
 # A real object from assets/models/ (CC0, listed in assets/CREDITS.md), standing on the floor at
 # `at`, turned `turn` degrees about the vertical. Models are real-world size.
 func prop(model: String, at: Vector3, turn: float = 0.0, size: float = 1.0, parent: Node3D = self) -> Node3D:
-    var scene := load("res://assets/models/%s/%s_1k.gltf" % [model, model]) as PackedScene
+    var scene := ModelCache.scene(model)
     if scene == null:
         push_warning("ELI VR: no model %s" % model)
         return null

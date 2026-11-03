@@ -107,6 +107,9 @@ class Screens(Alive):
     def test_a_picture_eli_took_is_pinned_up_as_a_photograph(self) -> None:
         self.check("a_picture_eli_took_is_pinned_up_as_a_photograph")
 
+    def test_changing_rooms_does_not_read_the_models_from_disk_again(self) -> None:
+        self.check("models_load_once_in_the_background_and_are_kept")
+
 
 if __name__ == "__main__":
     unittest.main()

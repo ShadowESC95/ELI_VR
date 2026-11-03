@@ -89,6 +89,7 @@ var _exit_armed_until_ms := 0
 var _eli_called_until_ms := 0
 
 func _ready() -> void:
+    ModelCache.warm()              # every real model loading on worker threads from the start
     # On ELI v3's list before anything else, licensed or not: ELI v3 asks for a key itself.
     EliBundleClass.register_with_v3(str(ProjectSettings.get_setting("application/config/version", "")))
     if not _licensed():
@@ -410,6 +411,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
             Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 
 func _process(_delta: float) -> void:
+    ModelCache.poll()                # the next real model, loading in the background
     _process_eli_talk()
     if not xr_active:
         return
