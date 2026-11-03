@@ -125,7 +125,45 @@ func _physics_process(_delta: float) -> void:
     if pressed and not trigger_before and current:
         current.activate()
         controller.trigger_haptic_pulse("haptic", 0.0, 0.30, 0.04, 0.0)
+    elif current == null:
+        _use_desktop(origin, direction, pressed)
     trigger_before = pressed
+
+# With no panel in the way, the ray may be on the desktop: there the pointer goes where it points
+# and the trigger clicks; on the right hand, pressing the stick in right-clicks and pushing it up or
+# down scrolls (the left stick walks, and turning is the right stick's left and right).
+var _scroll_wait := 0.0
+var _side_before := false
+
+func _use_desktop(origin: Vector3, direction: Vector3, pressed: bool) -> void:
+    var query := PhysicsRayQueryParameters3D.create(origin, origin + direction * RAY_LENGTH)
+    query.collision_mask = 4
+    query.collide_with_areas = true
+    query.collide_with_bodies = false
+    var hit := get_world_3d().direct_space_state.intersect_ray(query)
+    var screen = hit.get("collider")
+    if screen == null or not screen.has_method("point") or not screen.is_visible_in_tree():
+        return
+    var at: Vector3 = hit["position"]
+    reticle.visible = true
+    reticle.position = Vector3(0.0, 0.0, -origin.distance_to(at))
+    _set_beam_length(maxf(0.05, origin.distance_to(at)))
+    var right_hand := str(controller.tracker) == "right_hand"
+    var side: bool = right_hand and controller.is_button_pressed("primary_click")
+    var stick: float = controller.get_vector2("primary").y if right_hand else 0.0
+    var steps := 0
+    _scroll_wait = maxf(0.0, _scroll_wait - get_physics_process_delta_time())
+    if absf(stick) > 0.5 and _scroll_wait <= 0.0 and not controller.is_button_pressed("grip_click"):
+        steps = -1 if stick > 0.0 else 1
+        _scroll_wait = 0.12
+    if pressed != trigger_before:
+        screen.point(at, "left", pressed, steps)
+        controller.trigger_haptic_pulse("haptic", 0.0, 0.25, 0.03, 0.0)
+    elif side != _side_before:
+        screen.point(at, "right", side, steps)
+    else:
+        screen.point(at, "", false, steps)
+    _side_before = side
 
 func _select_pose_node() -> Node3D:
     if (

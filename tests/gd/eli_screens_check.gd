@@ -16,6 +16,24 @@ class Settings extends RefCounted:
     func get_value(_key, fallback = null):
         return fallback
 
+# Stands in for the desktop helper: keeps what would have gone to the desktop, and sends nothing.
+class FakeHelper extends Node:
+    var sent := []
+    func send_input(event: Dictionary) -> bool:
+        sent.append(event)
+        return true
+    func status_text() -> String:
+        return "off"
+
+# The desktop's settings, switched off so nothing reaches a real helper.
+class DesktopSettings extends RefCounted:
+    func get_value(key, fallback = null):
+        return 2 if key == "desktop.layout_version" else (false if key == "desktop.enabled" else fallback)
+    func set_value(_key, _value) -> void:
+        pass
+    func save_runtime() -> void:
+        pass
+
 # Stands in for the link to ELI v3: serves one picture, a 6 by 3 PNG.
 class PictureLink extends Node:
     var asked := []
@@ -232,6 +250,20 @@ func _run() -> void:
         await process_frame
     _check("models_load_once_in_the_background_and_are_kept", cached and ModelCache._held.size() >= 40 and frames < 20000,
            "kept %s, held %d after %d frames" % [cached, ModelCache._held.size(), frames])
+    var desk := DesktopSurface.new()
+    root.add_child(desk)
+    desk.setup(DesktopSettings.new(), false, {})
+    var helper := FakeHelper.new()
+    desk.bridge = helper
+    desk.global_position = Vector3(0, 2, -5)
+    desk.point(desk.to_global(Vector3(0.0, 0.0, 0.0)), "left", true)
+    desk.point(desk.to_global(Vector3(-2.1, 1.18, 0.0)), "", false, -1)
+    desk.point(desk.to_global(Vector3(9.0, 0.0, 0.0)), "left", false)
+    var sent: Array = helper.sent
+    var desk_ok: bool = sent.size() == 4 and sent[0] == {"kind": "move", "x": 0.5, "y": 0.5} \
+        and sent[1] == {"kind": "button", "button": "left", "down": true} and sent[2]["x"] == 0.0 and sent[2]["y"] == 0.0 \
+        and sent[3] == {"kind": "scroll", "steps": -1}
+    _check("pointing_at_the_desktop_moves_clicks_and_scrolls_it", desk_ok and desk.bridge_started == false, str(sent))
     _check("a_picture_eli_took_is_pinned_up_as_a_photograph", placed_at is Transform3D and wall.pin_spot("seen", 4) == null
            and pictured and link.asked == ["/v1/world/picture/31"], "placed %s, pictured %s, asked %s" % [placed_at is Transform3D, pictured, link.asked])
     _check("a_painting_is_painted_and_stands_on_an_easel_on_the_floor", styled == 5 and hung.eye_height() < 0.6

@@ -110,6 +110,9 @@ class Screens(Alive):
     def test_changing_rooms_does_not_read_the_models_from_disk_again(self) -> None:
         self.check("models_load_once_in_the_background_and_are_kept")
 
+    def test_the_desktop_can_be_pointed_at_clicked_and_scrolled(self) -> None:
+        self.check("pointing_at_the_desktop_moves_clicks_and_scrolls_it")
+
 
 if __name__ == "__main__":
     unittest.main()

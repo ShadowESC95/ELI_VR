@@ -165,6 +165,14 @@ func _publish(image: Image) -> void:
             texture.update(image)
     frame_updated.emit(texture)
 
+## Pointer input for the desktop, one line of JSON to the helper on this computer: "move" with x, y
+## (0..1 across and down the screen), "button" with button ("left", "right") and down, "scroll"
+## with steps (up is negative). A helper without input lets them pass unread.
+func send_input(event: Dictionary) -> bool:
+    if peer.get_status() != StreamPeerTCP.STATUS_CONNECTED:
+        return false
+    return peer.put_data((JSON.stringify(event) + "\n").to_utf8_buffer()) == OK
+
 func _set_state(value: String) -> void:
     if value == _state:
         return

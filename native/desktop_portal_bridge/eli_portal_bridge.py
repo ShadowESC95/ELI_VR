@@ -4,8 +4,15 @@
 XDG Desktop Portal ScreenCast -> PipeWire -> GStreamer -> loopback RGBA.
 The transport binds before portal negotiation so Godot can distinguish a live
 local adapter from a missing process. No remote network access is used.
+
+With the portal's RemoteDesktop (GNOME and KDE have it) the same session also
+takes the pointer: ELI VR sends one JSON line per event over the same loopback
+connection ({"kind": "move", "x", "y"} with x and y from 0 to 1 across the
+screen, {"kind": "button", "button": "left"|"right", "down"}, {"kind": "scroll",
+"steps"}), and they reach the desktop through the portal, which asks the user
+once. Without it, or if the user says no, the screen is shown and not touched.
 """
-import argparse, os, socket, struct, threading
+import argparse, json, os, socket, struct, threading
 from pathlib import Path
 
 import dbus
@@ -19,11 +26,13 @@ from gi.repository import GLib, Gst, GstVideo
 PORTAL_BUS = "org.freedesktop.portal.Desktop"
 PORTAL_PATH = "/org/freedesktop/portal/desktop"
 SCREENCAST = "org.freedesktop.portal.ScreenCast"
+REMOTE = "org.freedesktop.portal.RemoteDesktop"
+BUTTONS = {"left": 0x110, "right": 0x111, "middle": 0x112}       # BTN_LEFT, BTN_RIGHT, BTN_MIDDLE
 REQUEST = "org.freedesktop.portal.Request"
 PROPERTIES = "org.freedesktop.DBus.Properties"
 
 class Bridge:
-    def __init__(self, bind, width, fps, token_file):
+    def __init__(self, bind, width, fps, token_file, take_input=True):
         self.bind = bind
         self.width = width
         self.fps = fps
@@ -38,6 +47,9 @@ class Bridge:
         self.bus = None
         self.portal = None
         self.portal_version = 0
+        self.remote_version = 0
+        self.take_input = take_input        # ask for the pointer as well as the screen
+        self.node_id = None
         self.source_size = None
 
     def open_listener(self):
@@ -60,6 +72,49 @@ class Bridge:
                     except OSError: pass
                 self.client = c
             print(f"ELI portal: Godot/client connected {addr}", flush=True)
+            threading.Thread(target=self.read_input, args=(c,), daemon=True).start()
+
+    def read_input(self, c):
+        """Pointer events from ELI VR, one JSON line each, handed to the portal on its own loop."""
+        pending = b""
+        while True:
+            try:
+                chunk = c.recv(4096)
+            except OSError:
+                return
+            if not chunk:
+                return
+            pending += chunk
+            while b"\n" in pending:
+                line, pending = pending.split(b"\n", 1)
+                try:
+                    event = json.loads(line)
+                except ValueError:
+                    continue
+                if isinstance(event, dict):
+                    GLib.idle_add(self.handle_input, event)
+
+    def handle_input(self, event):
+        if not (self.take_input and self.session and self.node_id is not None and self.source_size):
+            return False
+        remote = dbus.Interface(self.portal, REMOTE)
+        none = dbus.Dictionary({}, signature='sv')
+        try:
+            kind = event.get("kind")
+            if kind == "move":
+                x = min(1.0, max(0.0, float(event.get("x", 0.0)))) * self.source_size[0]
+                y = min(1.0, max(0.0, float(event.get("y", 0.0)))) * self.source_size[1]
+                remote.NotifyPointerMotionAbsolute(self.session, none, dbus.UInt32(self.node_id), dbus.Double(x), dbus.Double(y))
+            elif kind == "button" and event.get("button") in BUTTONS:
+                remote.NotifyPointerButton(self.session, none, dbus.Int32(BUTTONS[event["button"]]),
+                                           dbus.UInt32(1 if event.get("down") else 0))
+            elif kind == "scroll":
+                steps = int(event.get("steps", 0))
+                if steps:
+                    remote.NotifyPointerAxisDiscrete(self.session, none, dbus.UInt32(0), dbus.Int32(steps))
+        except (dbus.DBusException, TypeError, ValueError) as exc:
+            print(f"ELI portal: input not passed on: {exc}", flush=True)
+        return False
 
     def init_portal(self):
         self.bus = dbus.SessionBus()
@@ -69,7 +124,14 @@ class Bridge:
             self.portal_version = int(props.Get(SCREENCAST, 'version'))
         except Exception:
             self.portal_version = 0
-        print(f"ELI portal: ScreenCast interface version={self.portal_version}", flush=True)
+        try:
+            self.remote_version = int(props.Get(REMOTE, 'version'))
+        except Exception:
+            self.remote_version = 0
+        if not self.remote_version:
+            self.take_input = False
+        print(f"ELI portal: ScreenCast interface version={self.portal_version} RemoteDesktop interface version={self.remote_version}"
+              f" input={'asked for' if self.take_input else 'off'}", flush=True)
 
     def token(self, prefix):
         self.seq += 1
@@ -79,7 +141,7 @@ class Bridge:
         sender = self.bus.get_unique_name()[1:].replace('.', '_')
         return f"/org/freedesktop/portal/desktop/request/{sender}/{token}"
 
-    def request(self, method_name, callback, args=(), options=None):
+    def request(self, method_name, callback, args=(), options=None, interface=SCREENCAST):
         options = dict(options or {})
         handle_token = self.token("req")
         options['handle_token'] = handle_token
@@ -87,20 +149,50 @@ class Bridge:
         self.bus.add_signal_receiver(
             callback, signal_name='Response', dbus_interface=REQUEST, path=path
         )
-        iface = dbus.Interface(self.portal, SCREENCAST)
+        iface = dbus.Interface(self.portal, interface)
         getattr(iface, method_name)(*(tuple(args) + (dbus.Dictionary(options, signature='sv'),)))
 
     def start_portal(self):
         session_token = self.token("session")
-        self.request('CreateSession', self.on_create, options={'session_handle_token': session_token})
+        self.request('CreateSession', self.on_create, options={'session_handle_token': session_token},
+                     interface=REMOTE if self.take_input else SCREENCAST)
+
+    def without_input(self, why):
+        """The pointer was refused or failed: show the screen alone, as before input was asked for."""
+        print(f"ELI portal: {why}; sharing the screen without the pointer", flush=True)
+        self.take_input = False
+        self.session = None
+        self.start_portal()
 
     def on_create(self, response, results):
         if int(response) != 0:
+            if self.take_input:
+                return self.without_input(f"RemoteDesktop CreateSession rejected ({int(response)})")
             print(f"ELI portal: CreateSession rejected ({int(response)})", flush=True)
             self.loop.quit(); return
         self.session = results['session_handle']
+        if self.take_input:
+            devices = {'types': dbus.UInt32(3)}        # keyboard and pointer
+            if self.remote_version >= 2:
+                devices['persist_mode'] = dbus.UInt32(2)
+                token = self.remote_token_file().read_text().strip() if self.remote_token_file().exists() else ""
+                if token:
+                    devices['restore_token'] = token
+            self.request('SelectDevices', self.on_devices, args=(self.session,), options=devices, interface=REMOTE)
+            return
+        self.select_sources()
+
+    def remote_token_file(self):
+        return self.token_file.with_name(self.token_file.name + ".remote")
+
+    def on_devices(self, response, results):
+        if int(response) != 0:
+            return self.without_input(f"SelectDevices rejected ({int(response)})")
+        self.select_sources()
+
+    def select_sources(self):
         options = {'multiple': False, 'types': dbus.UInt32(1), 'cursor_mode': dbus.UInt32(2)}
-        if self.portal_version >= 4:
+        if self.portal_version >= 4 and not self.take_input:
             options['persist_mode'] = dbus.UInt32(2)
             if self.token_file.exists():
                 token = self.token_file.read_text().strip()
@@ -109,26 +201,36 @@ class Bridge:
         self.request('SelectSources', self.on_select, args=(self.session,), options=options)
 
     def on_select(self, response, results):
+        if int(response) != 0 and self.take_input:
+            return self.without_input(f"SelectSources rejected ({int(response)})")
         if int(response) != 0:
             print(f"ELI portal: SelectSources rejected ({int(response)})", flush=True)
             self.token_file.unlink(missing_ok=True)
             self.loop.quit(); return
         print("ELI portal: source selection accepted", flush=True)
-        self.request('Start', self.on_start, args=(self.session, ''), options={})
+        self.request('Start', self.on_start, args=(self.session, ''), options={},
+                     interface=REMOTE if self.take_input else SCREENCAST)
 
     def on_start(self, response, results):
         if int(response) != 0:
+            if self.take_input:
+                self.remote_token_file().unlink(missing_ok=True)
+                return self.without_input(f"RemoteDesktop Start rejected/cancelled ({int(response)})")
             print(f"ELI portal: Start rejected/cancelled ({int(response)})", flush=True)
             self.loop.quit(); return
         restore = results.get('restore_token')
         if restore:
-            self.token_file.parent.mkdir(parents=True, exist_ok=True)
-            self.token_file.write_text(str(restore))
+            kept = self.remote_token_file() if self.take_input else self.token_file
+            kept.parent.mkdir(parents=True, exist_ok=True)
+            kept.write_text(str(restore))
+        if self.take_input:
+            print(f"ELI portal: pointer granted (devices={int(results.get('devices', 0))})", flush=True)
         streams = results.get('streams', [])
         if not streams:
             print('ELI portal: no PipeWire streams returned', flush=True)
             self.loop.quit(); return
         node_id = int(streams[0][0])
+        self.node_id = node_id
         stream_props = dict(streams[0][1]) if len(streams[0]) > 1 else {}
         print(f"ELI portal: PipeWire node={node_id} properties={stream_props}", flush=True)
         size = stream_props.get('size')
@@ -229,11 +331,13 @@ def main():
     ap.add_argument('--width', type=int, default=0, help="frame width; 0 sends the screen at its own width")
     ap.add_argument('--fps', type=int, default=18)
     ap.add_argument('--token-file', default='~/.local/state/eli-vr-standalone/portal-restore-token')
+    ap.add_argument('--no-input', action='store_true', help="share the screen only; never ask for the pointer")
     args = ap.parse_args()
     DBusGMainLoop(set_as_default=True)
     Gst.init(None)
     try:
-        Bridge(args.bind, 0 if args.width <= 0 else max(640, args.width), max(5, min(args.fps, 30)), args.token_file).run()
+        Bridge(args.bind, 0 if args.width <= 0 else max(640, args.width), max(5, min(args.fps, 30)), args.token_file,
+               take_input=not args.no_input).run()
     except Exception as exc:
         print(f"ELI portal fatal: {type(exc).__name__}: {exc}", flush=True)
         raise

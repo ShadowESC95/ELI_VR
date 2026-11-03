@@ -71,12 +71,16 @@ With `auto`, ELI VR uses a headset when an OpenXR runtime is active and falls ba
 | Input | Action |
 |---|---|
 | Trigger | Press buttons, enter portals |
-| Grip | Grab and move panels and objects |
+| Grip | Grab and move panels and objects (hold it; while held, the stick brings it nearer or turns it) |
+| Trigger, pointing at the desktop | Move the desktop's pointer there and click |
+| Right stick in / up / down, pointing at the desktop | Right-click / scroll |
 | Left stick | Move |
 | Right stick | Snap turn |
 | B / Y | Show or hide the spatial console |
 | Menu (left) | Wrist menu |
 | Hold A / X | Talk to ELI (with the ELI link on) |
+
+Clicking on the desktop needs the desktop helper with your desktop's permission to take the pointer: on Linux under Wayland the screen-sharing dialog asks for it the first time, and it is remembered. Without it the desktop is shown and not touched.
 
 **Leaving:** press **EXIT** on the spatial console or the wrist menu twice, or **Exit ELI VR** in the settings dock (`F1`). Started through `./launch/eli-vr.sh` or the AppImage on Linux, closing ELI VR also stops the VR runtime it started, so no GPU memory stays held.
 

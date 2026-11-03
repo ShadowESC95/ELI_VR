@@ -184,7 +184,7 @@ func _build_frame(width: float, height: float) -> void:
         _frame_parts.append(box)
 
     var handle: Label3D = Label3D.new()
-    handle.text = "GRIP SCREEN TO MOVE  •  STICK Y DISTANCE  •  STICK X ROTATE"
+    handle.text = "TRIGGER CLICKS  •  HOLD GRIP TO MOVE  •  RIGHT STICK SCROLLS"
     handle.font_size = 22
     handle.pixel_size = 0.0011
     handle.modulate = Color("#9cc7dd")
@@ -238,6 +238,28 @@ func _on_frame(texture: Texture2D) -> void:
         placeholder_label.visible = false
     if title_label:
         title_label.visible = false
+
+## Where on the screen a point on the panel is: (0, 0) top left, (1, 1) bottom right; null off it.
+func screen_point(at: Vector3) -> Variant:
+    var local := to_local(at)
+    var u := local.x / _width + 0.5
+    var v := 0.5 - local.y / _height
+    return Vector2(u, v) if u >= 0.0 and u <= 1.0 and v >= 0.0 and v <= 1.0 else null
+
+var _last_point := Vector2(-1, -1)
+
+## The controller pointing at the screen: the pointer goes there, a press clicks, steps scroll.
+func point(at: Vector3, button: String = "", down: bool = false, steps: int = 0) -> void:
+    var spot = screen_point(at)
+    if spot == null or bridge == null:
+        return
+    if (spot as Vector2).distance_to(_last_point) > 0.0005:
+        _last_point = spot
+        bridge.send_input({"kind": "move", "x": snappedf(spot.x, 0.0001), "y": snappedf(spot.y, 0.0001)})
+    if not button.is_empty():
+        bridge.send_input({"kind": "button", "button": button, "down": down})
+    if steps != 0:
+        bridge.send_input({"kind": "scroll", "steps": steps})
 
 func _reshape(width: float, height: float) -> void:
     _height = height
