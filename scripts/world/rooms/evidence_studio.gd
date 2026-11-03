@@ -24,6 +24,7 @@ func _build() -> void:
 
     _wall_of_sheets()
     _desk()
+    _findings_board()
     _projector()
     _fan()
     _files()
@@ -97,6 +98,33 @@ func _desk() -> void:
     glow(Vector3(0.6, top + 0.45, 0.0), warm, 0.4, 1.6, 0.9, desk)
     spot(Vector3(0.6, top + 0.5, 0.0), Vector3(0.0, top, 0.1), warm, 5.0, 4.0, 60.0, desk)
 
+# Over the desk, a board for what ELI found for you: each search, the news or the weather, printed
+# and pinned up, the newest first.
+const FOUND_BEARING := -118.0
+const FOUND_PLACES := [Vector3(-1.1, 0.45, 0.09), Vector3(0.0, 0.45, 0.09), Vector3(1.1, 0.45, 0.09),
+                       Vector3(-1.1, -0.6, 0.09), Vector3(0.0, -0.6, 0.09), Vector3(1.1, -0.6, 0.09)]
+
+func _found_board() -> Transform3D:
+    var a := deg_to_rad(FOUND_BEARING)
+    return Transform3D(Basis(Vector3.UP, -a), Vector3(sin(a), 0.0, -cos(a)) * 13.3 + Vector3(0, 2.25, 0))
+
+func _findings_board() -> void:
+    var cork := MaterialKitClass.surface("planks", 1.2, Color(0.75, 0.55, 0.36), 1.0, true)
+    var board := Node3D.new()
+    board.transform = _found_board()
+    add_child(board)
+    box(Vector3(3.6, 2.5, 0.08), cork, Vector3.ZERO, board)
+    var heading := Label3D.new()
+    heading.text = "WHAT ELI FOUND"
+    heading.font_size = 48
+    heading.pixel_size = 0.003
+    heading.modulate = Color(0.95, 0.88, 0.75)
+    heading.outline_size = 6
+    heading.position = Vector3(0, 1.45, 0.05)
+    board.add_child(heading)
+    var warm := Color(1.0, 0.85, 0.65)
+    spot(board.transform * Vector3(0, 2.2, 2.2), board.transform * Vector3(0, 0, 0), warm, 3.5, 6.0, 38.0)
+
 func _projector() -> void:
     var at := Vector3(6.4, 0, 4.0)
     prop("tool_cart", at, -52.0 + 90.0)
@@ -142,8 +170,11 @@ func _files() -> void:
         prop("plastic_crate_01", beside, facing + 14.0)
         prop("plastic_crate_02", beside + Vector3(0, 0.41, 0), facing - 9.0)
 
-# Where the `index`th of ELI's beliefs is pinned: on the boards, the nearest first.
+# Where the `index`th of ELI's beliefs is pinned: on the boards, the nearest first. What it found
+# for you goes up on the board over the desk.
 func pin_spot(kind: String, index: int) -> Variant:
+    if kind == "found":
+        return _found_board() * Transform3D(Basis.IDENTITY, FOUND_PLACES[index]) if index >= 0 and index < FOUND_PLACES.size() else null
     if kind != "claim" or index >= BOARD_ORDER.size() * PLACES.size():
         return null
     var b: int = BOARD_ORDER[index / PLACES.size()]

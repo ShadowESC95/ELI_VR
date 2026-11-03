@@ -6,6 +6,9 @@ extends SceneTree
 const DebugBunker = preload("res://scripts/world/rooms/debug_bunker.gd")
 const Archive = preload("res://scripts/world/rooms/memory_cathedral.gd")
 const Thing = preload("res://scripts/eli/eli_thing.gd")
+const EvidenceWall = preload("res://scripts/world/rooms/evidence_studio.gd")
+const Workshop = preload("res://scripts/world/rooms/workshop_bay.gd")
+const Core = preload("res://scripts/world/rooms/orbital_core.gd")
 
 # Stands in for the app's settings: every value as its default.
 class Settings extends RefCounted:
@@ -92,6 +95,55 @@ func _run() -> void:
            str(reads))
     _check("writing_starts_inside_the_page", written.all(func(l): return absf((l as Label3D).position.x + 0.129) < 0.01),
            str(written.map(func(l): return (l as Label3D).position)))
+    memory.position = spots[0].origin
+    var rest: Vector3 = memory._body.position
+    for n in 30:
+        memory._process(0.1)
+    _check("a_written_record_holds_still", memory._body.position.is_equal_approx(rest), str(memory._body.position))
+
+    # what ELI did for you: each kind has its room's places, and only that room's
+    var homes := {"found": EvidenceWall, "written": Workshop, "playing": Core}
+    var kept := {"found": 6, "written": 6, "playing": 1}
+    var placed := true
+    for kind in homes:
+        var home = homes[kind].new()
+        root.add_child(home)
+        home.build({}, Settings.new())
+        for i in kept[kind]:
+            placed = placed and home.pin_spot(kind, i) is Transform3D
+        placed = placed and home.pin_spot(kind, kept[kind]) == null
+        for other in homes:
+            if other != kind:
+                placed = placed and home.pin_spot(other, 0) == null
+        if kind == "found":
+            placed = placed and home.pin_spot("claim", 0) is Transform3D          # the beliefs keep theirs
+        home.queue_free()
+    _check("what_eli_did_has_its_places", placed, "")
+
+    var radio = Thing.new()
+    root.add_child(radio)
+    var song := {"id": "playing", "name": "Harbour Lights", "kind": "playing", "meaning": "The Quiet Ferries",
+                 "lines": ["The Quiet Ferries", "Low Tide"], "form": {"shape": "lamp", "colour": "#e8e2d4"}}
+    radio.build(song)
+    radio.pin_to(Transform3D.IDENTITY)
+    var card := _labels(radio).map(func(l): return (l as Label3D).text)
+    var named := card.any(func(t): return "Harbour Lights" in t and "Low Tide" in t)
+    song["name"] = "Night Ferry"
+    song["lines"] = ["The Quiet Ferries", "paused"]
+    radio.refresh(song)
+    await process_frame
+    card = _labels(radio).map(func(l): return (l as Label3D).text)
+    var moved_on := card.any(func(t): return "Night Ferry" in t and "(paused)" in t) and not card.any(func(t): return "Harbour Lights" in t)
+    _check("the_radio_says_what_is_playing", named and moved_on, str(card))
+
+    var printout = Thing.new()
+    root.add_child(printout)
+    printout.build({"id": "found_1", "name": "Searched: when do the tides turn", "kind": "found", "meaning": "Tide times",
+                    "lines": ["Tide times explained", "    example.org"], "form": {"shape": "board", "colour": "#e8e2d4"}})
+    printout.pin_to(Transform3D.IDENTITY)
+    var printed := _labels(printout).map(func(l): return (l as Label3D).text)
+    _check("a_finding_is_printed_with_its_lines", "Searched: when do the tides turn" in printed
+           and "Tide times explained\n    example.org" in printed, str(printed))
     quit()
 
 func _labels(node: Node) -> Array:

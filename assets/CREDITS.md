@@ -77,6 +77,7 @@ Each set is the 1K version, repacked as colour, normal (OpenGL convention) and o
 | `bench_vice_01` | Bench Vice 01 | Antanas Kep, Yann Kervran |
 | `binder_notebook` | Binder Notebook | DaDrood |
 | `book_encyclopedia_set_01` | Book Encyclopedia Set 01 | John Malcolm |
+| `boombox` | Boombox | Thomas Paul Mouilleron |
 | `caged_hanging_light` | Caged Hanging Light | Ulan Cabanilla |
 | `ceiling_fan` | Ceiling Fan | Ulan Cabanilla |
 | `circuit_board` | Circuit Board | Benny Weimer |
@@ -104,6 +105,7 @@ Each set is the 1K version, repacked as colour, normal (OpenGL convention) and o
 | `portable_welding_cart` | Portable Welding Cart | Georgii Gorbunov |
 | `power_box_01` | Power Box 01 | Rico Cilliers, Yann Kervran |
 | `retro_multimeter` | Retro Multimeter | elli moeller |
+| `side_table_01` | Side Table 01 | James Ray Cock |
 | `steel_frame_shelves_01` | Steel Frame Shelves 01 | James Ray Cock |
 | `steel_frame_shelves_02` | Steel Frame Shelves 02 | James Ray Cock |
 | `television_02` | Television 02 | Benny Weimer |

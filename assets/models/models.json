@@ -90,6 +90,15 @@
   "polyhaven_id": "book_encyclopedia_set_01",
   "triangles": 67306
  },
+ "boombox": {
+  "name": "Boombox",
+  "authors": [
+   "Thomas Paul Mouilleron"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "boombox",
+  "triangles": 10168
+ },
  "caged_hanging_light": {
   "name": "Caged Hanging Light",
   "authors": [
@@ -335,6 +344,15 @@
   "licence": "CC0 1.0",
   "polyhaven_id": "retro_multimeter",
   "triangles": 13356
+ },
+ "side_table_01": {
+  "name": "Side Table 01",
+  "authors": [
+   "James Ray Cock"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "side_table_01",
+  "triangles": 2756
  },
  "steel_frame_shelves_01": {
   "name": "Steel Frame Shelves 01",

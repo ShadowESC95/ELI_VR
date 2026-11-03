@@ -35,7 +35,12 @@ var _parts: Array = []
 var _parts_key := ""
 var _moving: Array = []        # [node, spin radians a second, bob metres, pulse, material, rest height]
 var pinned := false            # the room has a place for this kind of record, and it stands there
-const WRITTEN := ["claim", "memory"]   # records that, pinned, are written out where they stand
+# Records that, pinned, are written out where they stand: a belief, a memory, what ELI found for
+# you, what it wrote, and what it is playing.
+const WRITTEN := ["claim", "memory", "found", "written", "playing"]
+const TYPED := ["DejaVu Sans Mono", "Liberation Mono", "Menlo", "Consolas", "Courier New", "monospace"]
+var lines: Array = []               # what a written record says, line by line, when ELI sends it so
+var _text_key := ""
 var _pin := Transform3D.IDENTITY
 var _made_height := 1.0
 
@@ -63,6 +68,7 @@ func refresh(data: Dictionary, first: bool = false) -> void:
     meaning = str(data.get("meaning", ""))
     made_by = str(data.get("made_by", ""))
     kind = str(data.get("kind", ""))
+    lines = data.get("lines", []) if typeof(data.get("lines")) == TYPE_ARRAY else []
     var pos: Array = form.get("pos", [0.0, 0.0, 0.0])
     _target = _pin.origin if pinned else EliSenses.from_protocol(pos)
     if first:
@@ -76,6 +82,8 @@ func refresh(data: Dictionary, first: bool = false) -> void:
         _parts = form.get("parts", [])
         _parts_key = parts_key
         _shape()
+    elif pinned and kind in WRITTEN and _words_key() != _text_key:
+        _shape()                    # the same record says something new: another song on the radio
     _name_tag.text = label
     _name_tag.modulate = colour.lightened(0.55)
     _name_tag.position = Vector3(0, eye_height() * 2.0 + 0.28, 0)
@@ -123,7 +131,7 @@ func _sheet() -> void:
 # What a written record says: its name, and below it what it means, in a column `width` metres wide
 # whose top middle is `top`. Left-aligned text in a Label3D starts at the label's position, so the
 # labels stand at the column's left edge (at the middle, the writing ran off the page).
-func _write(ink: Color, width: float, top: Vector3, title_pixel: float, words_pixel: float) -> void:
+func _write(ink: Color, width: float, top: Vector3, title_pixel: float, words_pixel: float, typed: bool = false) -> void:
     top.x -= width * 0.5
     var title := Label3D.new()
     title.text = label
@@ -139,8 +147,9 @@ func _write(ink: Color, width: float, top: Vector3, title_pixel: float, words_pi
     title.position = top
     title.render_priority = 1
     _body.add_child(title)
+    _text_key = _words_key()
     var words := Label3D.new()
-    words.text = meaning
+    words.text = "\n".join(lines) if not lines.is_empty() else meaning
     words.font_size = 26
     words.pixel_size = words_pixel
     words.modulate = ink.lightened(0.15)
@@ -156,6 +165,10 @@ func _write(ink: Color, width: float, top: Vector3, title_pixel: float, words_pi
                                                        title.font_size).y * title_pixel
     words.position = top - Vector3(0, maxf(0.16 * title_pixel / 0.0016, name_height + 0.012), 0)
     words.render_priority = 1
+    if typed:
+        var mono := SystemFont.new()
+        mono.font_names = PackedStringArray(TYPED)
+        words.font = mono
     _body.add_child(words)
 
 # A memory kept in the Memory Archive: a book stood face out on the shelf, leaning back a little,
@@ -201,6 +214,86 @@ func _cover() -> void:
     _write(Color(0.1, 0.07, 0.05), 0.27, Vector3(0.006, 0.405, 0.032), 0.0011, 0.0009)
     _body = held
 
+func _words_key() -> String:
+    return "%s|%s|%s" % [label, meaning, "\n".join(lines)]
+
+# A sheet pinned or clipped up: what ELI found for you, printed (`typed`), or what it wrote, with
+# the sheets under it showing at the edges.
+func _paper(tint: Color, held_by: String, typed: bool) -> void:
+    _name_tag.visible = false
+    _material = null
+    var paper := StandardMaterial3D.new()
+    paper.albedo_color = tint
+    paper.roughness = 0.95
+    var quad := QuadMesh.new()
+    quad.size = Vector2(0.62, 0.8)
+    var under := [] if held_by == "pin" else [Vector3(0.018, -0.014, -0.004), Vector3(-0.012, -0.026, -0.008)]
+    for offset in under + [Vector3.ZERO]:
+        var sheet := MeshInstance3D.new()
+        sheet.mesh = quad
+        sheet.material_override = paper
+        sheet.position = offset
+        sheet.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+        _body.add_child(sheet)
+    _write(Color(0.08, 0.07, 0.07), 0.56, Vector3(0, 0.34, 0.002), 0.0014, 0.0011, typed)
+    var hold := MeshInstance3D.new()
+    var dark := StandardMaterial3D.new()
+    if held_by == "pin":
+        var head := SphereMesh.new()
+        head.radius = 0.022
+        head.height = 0.044
+        hold.mesh = head
+        dark.albedo_color = Color(0.1, 0.35, 0.8)
+    else:
+        var clip := BoxMesh.new()                   # a binder clip along the top edge
+        clip.size = Vector3(0.12, 0.05, 0.02)
+        hold.mesh = clip
+        dark.albedo_color = Color(0.05, 0.05, 0.06)
+        dark.metallic = 0.8
+        dark.roughness = 0.35
+    hold.material_override = dark
+    hold.position = Vector3(0, 0.38, 0.015)
+    _body.add_child(hold)
+
+# What ELI is playing, on the radio the room keeps: the radio, a card in front naming the track,
+# and a light that pulses while it plays.
+func _radio() -> void:
+    _name_tag.visible = false
+    _material = null
+    var radio := load("res://assets/models/boombox/boombox_1k.gltf") as PackedScene
+    if radio != null:
+        _body.add_child(radio.instantiate())
+    var paused := "paused" in lines
+    var card := Label3D.new()
+    var said := lines.filter(func(l): return l != "paused")
+    card.text = "%s\n%s" % [label, "  ·  ".join(said)] if not said.is_empty() else label
+    if paused:
+        card.text += "\n(paused)"
+    card.font_size = 40
+    card.pixel_size = 0.0016
+    card.outline_size = 8
+    card.modulate = Color(1.0, 0.93, 0.8) if not paused else Color(0.75, 0.72, 0.68)
+    card.width = 0.9 / 0.0016
+    card.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    card.position = Vector3(0, 0.66, 0.0)
+    card.billboard = BaseMaterial3D.BILLBOARD_FIXED_Y
+    _body.add_child(card)
+    var light := StandardMaterial3D.new()
+    light.albedo_color = Color(1.0, 0.7, 0.4)
+    light.emission_enabled = true
+    light.emission = Color(1.0, 0.62, 0.3)
+    light.emission_energy_multiplier = 0.0 if paused else 1.4
+    var dot := MeshInstance3D.new()
+    var bead := SphereMesh.new()
+    bead.radius = 0.012
+    bead.height = 0.024
+    dot.mesh = bead
+    dot.material_override = light
+    dot.position = Vector3(0.3, 0.42, 0.11)
+    _body.add_child(dot)
+    if not paused:
+        _moving.append([dot, 0.0, 0.0, 0.6, light, dot.position.y, 1.4])
+
 func eye_height() -> float:
     if not _parts.is_empty():
         return _made_height * 0.5
@@ -235,7 +328,9 @@ func _process(delta: float) -> void:
     _body.scale = Vector3.ONE * maxf(0.001, eased * (1.0 + 0.12 * sin(_grown * PI)))
     if not _held:
         position = position.lerp(_target, clampf(delta * 4.0, 0.0, 1.0))
-    if shape == "orb":
+    if pinned and kind in WRITTEN:
+        pass                        # written out where it stands, it holds still
+    elif shape == "orb":
         _body.position.y = 0.06 * sin(_clock * 1.1 + float(get_index()))
     elif shape == "ring" or shape == "crystal":
         _body.rotate_y(delta * 0.35)
@@ -269,6 +364,15 @@ func _shape() -> void:
         return
     if kind == "memory" and pinned:
         _cover()
+        return
+    if kind == "found" and pinned:
+        _paper(Color(0.96, 0.95, 0.91), "pin", true)
+        return
+    if kind == "written" and pinned:
+        _paper(Color(0.95, 0.94, 0.9), "clip", false)
+        return
+    if kind == "playing" and pinned:
+        _radio()
         return
     if not _parts.is_empty():
         _material = null

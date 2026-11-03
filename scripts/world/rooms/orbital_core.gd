@@ -26,6 +26,7 @@ func _build() -> void:
     _consoles()
     _core_globe()
     _outer_ring()
+    _radio_table()
     if motes:
         drift(Vector3(0, 3.4, 0), Vector3(8.0, 3.2, 8.0), 240, Color(1, 1, 1).lerp(accent, 0.35))
     probe()
@@ -324,6 +325,17 @@ func _outer_ring() -> void:
         if red:
             blink(lamp, 1.6, float(i) * 0.4)
     spin(carrier, Vector3.UP, 0.035)
+
+# On your right, a low table with the radio that plays what ELI is playing.
+const RADIO_AT := Vector3(3.7, 0.0, 0.4)
+
+func _radio_table() -> void:
+    prop("side_table_01", RADIO_AT, rad_to_deg(atan2(-RADIO_AT.x, -RADIO_AT.z)))
+
+func pin_spot(kind: String, index: int) -> Variant:
+    if kind != "playing" or index != 0:
+        return null
+    return Transform3D(Basis(Vector3.UP, atan2(-RADIO_AT.x, -RADIO_AT.z)), RADIO_AT + Vector3(0, 0.55, 0))
 
 func show_eli(eli: Dictionary) -> void:
     if _screens.size() < CONSOLES.size():

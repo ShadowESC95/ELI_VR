@@ -23,6 +23,7 @@ func _build() -> void:
     _benches()
     _stores()
     _tool_board()
+    _writing_rack()
     _welding_arm()
     _crane_and_load()
     _rover_on_lift()
@@ -135,6 +136,41 @@ func _tool_board() -> void:
     _tools.rotation.y = atan2(-at.x, -at.z)
     add_child(_tools)
     _tools.show_idle("ELI is not connected")
+
+# On your right, clear of the stores, a slanted rack for what ELI wrote for you, each document
+# clipped to it, the newest first.
+const WRITTEN_PLACES := [Vector3(-0.85, 0.5, 0.05), Vector3(0.0, 0.5, 0.05), Vector3(0.85, 0.5, 0.05),
+                         Vector3(-0.85, -0.45, 0.05), Vector3(0.0, -0.45, 0.05), Vector3(0.85, -0.45, 0.05)]
+
+func _rack() -> Transform3D:
+    var at := Vector3(6.2, 1.45, 3.4)
+    return Transform3D(Basis(Vector3.UP, atan2(-at.x, -at.z)) * Basis(Vector3.RIGHT, deg_to_rad(-18.0)), at)
+
+func _writing_rack() -> void:
+    var wood := MaterialKitClass.surface("planks", 1.4, Color(0.8, 0.66, 0.5), 0.9, true)
+    var steel := MaterialKitClass.surface("brushed_metal", 0.6, Color(0.7, 0.72, 0.76), 0.6, true)
+    var rack := Node3D.new()
+    rack.transform = _rack()
+    add_child(rack)
+    box(Vector3(2.7, 2.0, 0.06), wood, Vector3.ZERO, rack)
+    box(Vector3(2.7, 0.05, 0.12), steel, Vector3(0, -1.0, 0.06), rack)          # the ledge along the foot
+    for x in [-1.2, 1.2]:
+        rod(0.03, 1.45, steel, Vector3(rack.position.x, 0.72, rack.position.z) + rack.basis.x * x - rack.basis.z * 0.35)
+    var heading := Label3D.new()
+    heading.text = "WHAT ELI WROTE"
+    heading.font_size = 44
+    heading.pixel_size = 0.0028
+    heading.modulate = Color(1.0, 0.86, 0.66)
+    heading.outline_size = 6
+    heading.position = Vector3(0, 1.15, 0.04)
+    rack.add_child(heading)
+    spot(rack.transform * Vector3(0, 2.0, 2.0), rack.transform * Vector3.ZERO, Color(1.0, 0.88, 0.7), 3.0, 6.0, 40.0)
+
+# What ELI wrote for you is clipped to the rack.
+func pin_spot(kind: String, index: int) -> Variant:
+    if kind != "written" or index < 0 or index >= WRITTEN_PLACES.size():
+        return null
+    return _rack() * Transform3D(Basis.IDENTITY, WRITTEN_PLACES[index])
 
 func show_eli(eli: Dictionary) -> void:
     if _tools == null:

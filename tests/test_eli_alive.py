@@ -84,6 +84,14 @@ class Screens(Alive):
     def test_a_memory_is_written_on_its_cover_inside_the_page(self) -> None:
         self.check("a_memory_is_written_on_its_cover")
         self.check("writing_starts_inside_the_page")
+        self.check("a_written_record_holds_still")
+
+    def test_what_eli_did_for_you_stands_where_it_belongs(self) -> None:
+        self.check("what_eli_did_has_its_places")
+
+    def test_what_eli_found_is_printed_and_the_radio_says_what_is_playing(self) -> None:
+        self.check("a_finding_is_printed_with_its_lines")
+        self.check("the_radio_says_what_is_playing")
 
 
 if __name__ == "__main__":

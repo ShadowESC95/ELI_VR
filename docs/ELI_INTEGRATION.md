@@ -75,7 +75,7 @@ ELI: BUILD asks now: the oldest urge if one is waiting, otherwise simply what is
 
 **True screens** (`scripts/world/kit/info_screen.gd`, `eli_readout.gd`). Each room is handed ELI's state (`RoomBase.show_eli`) and its screens show it: the feed's `log` (version 2: a screenful of ELI's own world events, newest last, without the room's own reports), `awareness`, `recent`, `mind`, the records in `objects`, and the model ELI thinks with. A screen with nothing true to show says why.
 
-**ELI's records in its rooms.** The Memory Archive carries ELI's real recent memories as books stood face out on the eye-level shelves ahead, each with its words on the cover; the Upgrade Bay carries the goals ELI holds now; the Evidence Wall carries what ELI believes about you, each with when it learned it (amber where something disputes it); the Anomaly Room carries each place where two things ELI was told disagree, with the question that would settle it. They are read from ELI's memory, claims and goal store, refreshed every half minute. You can pick one up; moving one changes nothing in ELI.
+**ELI's records in its rooms.** The Memory Archive carries ELI's real recent memories as books stood face out on the eye-level shelves ahead, each with its words on the cover; the Upgrade Bay carries the goals ELI holds now; the Evidence Wall carries what ELI believes about you, each with when it learned it (amber where something disputes it); the Anomaly Room carries each place where two things ELI was told disagree, with the question that would settle it. What ELI did for you is there too, from its evidence ledger, only what worked and only yours: what it found (`kind` `found`: a search, the news, the weather) on the board over the Evidence Wall's desk, what it wrote (`written`) on the Workshop's rack, and what it is playing (`playing`) on the Core Room's radio. These carry `lines`, what the sheet or the radio says line by line; an older ELI VR reads `meaning` instead. They are read from ELI's memory, claims, goal store and evidence ledger, refreshed every half minute. You can pick one up; moving one changes nothing in ELI.
 
 ## How building works
 
@@ -131,7 +131,10 @@ A version 2 world message, shortened:
   "objects": [
     { "id": "built_lantern_1a2b3c4d", "name": "Lantern", "kind": "built", "room": "own_room",
       "meaning": "a light left on", "made_by": "eli",
-      "form": { "shape": "lamp", "colour": "#f5b942", "size": 1.0, "glow": 0.8, "pos": [1.0, 0.0, 3.0] } }
+      "form": { "shape": "lamp", "colour": "#f5b942", "size": 1.0, "glow": 0.8, "pos": [1.0, 0.0, 3.0] } },
+    { "id": "found_412", "name": "Searched: when do the tides turn", "kind": "found", "room": "evidence_wall",
+      "meaning": "Tide times explained · example.org", "lines": ["Tide times explained", "    example.org"],
+      "made_by": "web_search", "form": { "shape": "board", "colour": "#e8e2d4", "size": 0.6, "glow": 0.4, "pos": [2.0, 1.2, 3.5] } }
   ],
   "own_room": "own_room",
   "spaces": { "own_room": { "name": "ELI's Room",
