@@ -14,7 +14,7 @@ Expected in the folder:
     world.topo.bathy.200412.3x5400x2700.jpg      NASA Blue Marble Next Generation
     cloud_combined_2048.jpg                      NASA Blue Marble clouds
     BlackMarble_2016_01deg.jpg                   NASA Black Marble 2016
-    <Material>_1K-JPG.zip                        ambientCG materials
+    <Material>_2K-JPG.zip or _1K-JPG.zip         ambientCG materials (the 2K one when both are there)
     <panorama>.jpg                               Poly Haven tonemapped panoramas
 """
 from __future__ import annotations
@@ -123,6 +123,18 @@ def material(archive: Path, name: str) -> None:
         MATERIALS / f"{name}_orm.jpg", quality=90, subsampling=0)
 
 
+def sharper(archive: Path, made: Path) -> bool:
+    """Whether a set's download is larger than the texture already made from it (or there is none)."""
+    if not made.exists():
+        return True
+    with zipfile.ZipFile(archive) as z, Image.open(made) as have:
+        colour = next((i for i in z.namelist() if i.endswith("_Color.jpg")), None)
+        if colour is None:
+            return False
+        with Image.open(z.open(colour)) as offered:
+            return offered.size[0] > have.size[0]
+
+
 def leaves() -> None:
     """A fern frond and a blade of kelp, drawn here from nothing, so they are
     ours to give away. Stem at the bottom, tip at the top, clear around."""
@@ -198,8 +210,9 @@ def main() -> int:
     if (folder / "cloud_combined_2048.jpg").exists() and (force or not (SPACE / "earth_day.jpg").exists()):
         earth(folder)
     for source_id, name in MATERIAL_SETS.items():
-        archive = folder / f"{source_id}_1K-JPG.zip"
-        if archive.exists() and (force or not (MATERIALS / f"{name}_albedo.jpg").exists()):
+        archive = next((folder / f"{source_id}_{res}-JPG.zip" for res in ("2K", "1K")
+                        if (folder / f"{source_id}_{res}-JPG.zip").exists()), None)
+        if archive is not None and (force or sharper(archive, MATERIALS / f"{name}_albedo.jpg")):
             material(archive, name)
     for source_id, name in PANORAMAS.items():
         src = folder / f"{source_id}.jpg"

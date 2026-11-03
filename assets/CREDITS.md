@@ -55,7 +55,7 @@ Scanned materials from ambientCG, <https://ambientcg.com>, by Lennart Demes. Lic
 | `assets/materials/lab_tiles_*.jpg` | Tiles107 |
 | `assets/materials/bark_*.jpg` | Bark012 |
 
-Each set is the 1K version, repacked as colour, normal (OpenGL convention) and one texture holding occlusion, roughness and metalness.
+Each set is the 2K version, repacked as colour, normal (OpenGL convention) and one texture holding occlusion, roughness and metalness.
 
 ## Drawn for ELI VR
 
