@@ -136,6 +136,9 @@ class Screens(Alive):
     def test_the_desktop_link_gives_the_key_and_reads_the_screen_as_tiles(self) -> None:
         self.check("the_desktop_link_gives_the_key_and_reads_the_screen_as_tiles")
 
+    def test_a_model_eli_brought_in_is_fetched_once_measured_and_drawn(self) -> None:
+        self.check("a_model_eli_brought_in_is_fetched_once_measured_and_drawn")
+
 
 if __name__ == "__main__":
     unittest.main()

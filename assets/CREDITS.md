@@ -116,3 +116,31 @@ Each set is the 2K version, repacked as colour, normal (OpenGL convention) and o
 | `vintage_wooden_drawer_01` | Vintage Wooden Drawer 01 | James Ray Cock |
 | `wooden_bookshelf_worn` | Wooden Bookshelf Worn | Ulan Cabanilla |
 | `worn_metal_rack` | Worn Metal Rack | Luca B |
+| `boulder_01` | Boulder 01 | Rico Cilliers |
+| `coast_rocks_05` | Coast Rocks 05 | Rob Tuytel |
+| `dead_tree_trunk` | Dead Tree Trunk | Rob Tuytel |
+| `dead_tree_trunk_02` | Dead Tree Trunk 02 | Jenelle van Heerden, Rico Cilliers |
+| `didelta_spinosa` | Didelta Spinosa | Jenelle van Heerden |
+| `dry_branches_medium_01` | Dry Branches Medium 01 | Rico Cilliers |
+| `fern_02` | Fern 02 | Rico Cilliers, Rob Tuytel |
+| `fir_sapling` | Fir Sapling | Rico Cilliers, Rob Tuytel |
+| `grass_medium_02` | Grass Medium 02 | Rico Cilliers |
+| `moss_01` | Moss 01 | Rob Tuytel |
+| `namaqualand_boulder_02` | Namaqualand Boulder 02 | Greg Zaal, Rico Cilliers |
+| `namaqualand_boulder_03` | Namaqualand Boulder 03 | Dario Barresi, Jenelle van Heerden |
+| `namaqualand_boulder_05` | Namaqualand Boulder 05 | Dario Barresi, Jenelle van Heerden |
+| `namaqualand_boulder_06` | Namaqualand Boulder 06 | Greg Zaal, Jenelle van Heerden |
+| `namaqualand_stones_01` | Namaqualand Stones 01 | Greg Zaal, Jenelle van Heerden |
+| `painted_wooden_bench` | Painted Wooden Bench | Kirill Sannikov |
+| `pine_sapling_small` | Pine Sapling Small | Rico Cilliers, Rob Tuytel |
+| `quiver_tree_01` | Quiver Tree 01 | Dario Barresi, James Ray Cock, Rico Cilliers |
+| `quiver_tree_02` | Quiver Tree 02 | Dario Barresi, Rico Cilliers |
+| `rock_moss_set_02` | Rock Moss Set 02 | Kless Gyzen |
+| `sand_rocks_small_01` | Sand Rocks Small 01 | Rico Cilliers, Rob Tuytel |
+| `searsia_lucida` | Searsia Lucida | James Ray Cock, Jenelle van Heerden |
+| `shrub_04` | Shrub 04 | Rico Cilliers |
+| `stone_fire_pit` | Stone Fire Pit | Sebastian Platen |
+| `tree_stump_01` | Tree Stump 01 | Rob Tuytel |
+| `wooden_barrels_01` | Wooden Barrels 01 | James Ray Cock |
+| `wooden_crate_01` | Wooden Crate 01 | James Ray Cock |
+| `wooden_lantern_01` | Wooden Lantern 01 | James Ray Cock |

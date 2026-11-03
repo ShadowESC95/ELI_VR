@@ -618,6 +618,7 @@ func _setup_eli() -> void:
     add_child(eli_link)
     eli_link.configure(config, network_policy)
     EliPictures.link = eli_link
+    EliModels.link = eli_link
     if not eli_link.enabled:
         return
 
@@ -693,6 +694,8 @@ func _on_eli_link_changed(connected: bool) -> void:
 
 func _on_eli_world_state(state: Dictionary) -> void:
     _eli_state = state
+    if typeof(state.get("models")) == TYPE_ARRAY:
+        EliModels.want(state["models"])          # ELI's own models, fetched once each
     _show_eli_in_room()
     eli_presence.apply_world_state(state)
     eli_room_light.apply_world_state(state)

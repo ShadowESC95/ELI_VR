@@ -10,10 +10,20 @@ static var _held := {}                  # path -> PackedScene
 static var _asked := {}                 # path -> true, while it loads in the background
 static var _queue: Array = []           # paths still to start, one after another
 
-## A model's file: its 2K version where it has one (furniture you see up close), else its 1K one.
+## A model's file: its 2K version where it has one (furniture you see up close), else its 1K one;
+## else one of ELI's own (EliModels), which is loaded while running rather than imported.
 static func path_of(model: String) -> String:
     var sharp := "res://assets/models/%s/%s_2k.gltf" % [model, model]
-    return sharp if ResourceLoader.exists(sharp) else "res://assets/models/%s/%s_1k.gltf" % [model, model]
+    if ResourceLoader.exists(sharp):
+        return sharp
+    var plain := "res://assets/models/%s/%s_1k.gltf" % [model, model]
+    return plain if ResourceLoader.exists(plain) else EliModels.path_of(model)
+
+## ELI's own models are loaded again next time they are asked for (new ones arrived).
+static func forget_user_models() -> void:
+    for path in _held.keys():
+        if str(path).begins_with(EliModels.FOLDER):
+            _held.erase(path)
 
 ## Lines every listed model up to load in the background, one at a time (all at once filled every
 ## worker thread and the first frame after waited on one for ever). Safe to call more than once.
@@ -53,6 +63,11 @@ static func scene(model: String) -> PackedScene:
     var path := path_of(model)
     if _held.has(path):
         return _held[path]
+    if path.begins_with(EliModels.FOLDER):
+        var own := EliModels.load_scene(model)
+        if own != null:
+            _held[path] = own
+        return own
     if not ResourceLoader.exists(path):
         return null
     _queue.erase(path)                  # wanted now: not left waiting its turn

@@ -99,7 +99,10 @@ func setup(config, p_xr_active: bool = false, capabilities: Dictionary = {}) -> 
     if enabled:
         bridge.start()
     _refresh_waiting()
-    _reshape()
+    if is_inside_tree():
+        _reshape()
+    else:
+        _reshape.call_deferred()
 
 # --- what is shown ---------------------------------------------------------------------------
 
@@ -351,17 +354,22 @@ func _build_mesh() -> void:
 ## The layer for this shape, where the runtime has one: a cylinder when curved, a quad when flat.
 func _choose_drawing() -> void:
     var kind := "OpenXRCompositionLayerCylinder" if curve > 0.0 else "OpenXRCompositionLayerQuad"
-    var wanted := xr_active and display_mode != "mesh" and _runtime_has(kind)
+    var wanted := xr_active and display_mode != "mesh" and is_inside_tree() and ClassDB.class_exists(kind)
     if wanted and (_layer == null or _layer_kind != kind):
         _drop_layer()
-        _layer = ClassDB.instantiate(kind) as Node3D
-        _layer_kind = kind
-        _layer.name = "DesktopLayer"
-        add_child(_layer)                   # in the tree before it is given its viewport
-        _layer.set("sort_order", -1)        # behind the room, seen through the hole cut for it
-        _layer.set("alpha_blend", false)
-        _layer.set("enable_hole_punch", false)
-        _layer.set("layer_viewport", _view)
+        var layer := ClassDB.instantiate(kind) as Node3D
+        layer.name = "DesktopLayer"
+        add_child(layer)                    # in the tree before it is asked anything or given its viewport
+        if bool(layer.call("is_natively_supported")):
+            _layer = layer
+            _layer_kind = kind
+            _layer.set("sort_order", -1)    # behind the room, seen through the hole cut for it
+            _layer.set("alpha_blend", false)
+            _layer.set("enable_hole_punch", false)
+            _layer.set("layer_viewport", _view)
+        else:
+            layer.queue_free()              # the runtime has no such layer: drawn in the room
+            wanted = false
     elif not wanted:
         _drop_layer()
     if wanted != _using_layer:
@@ -370,14 +378,6 @@ func _choose_drawing() -> void:
     _mesh.material_override = _hole_material if _using_layer else _screen_material
     # the hole shows what is behind the room only where the room leaves its alpha
     get_tree().root.transparent_bg = _using_layer and visible
-
-func _runtime_has(kind: String) -> bool:
-    if not ClassDB.class_exists(kind):
-        return false
-    var probe := ClassDB.instantiate(kind) as Node3D
-    var has := bool(probe.call("is_natively_supported"))
-    probe.free()
-    return has
 
 func _drop_layer() -> void:
     if _layer:

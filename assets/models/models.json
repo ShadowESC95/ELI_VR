@@ -154,6 +154,20 @@
    0.19
   ]
  },
+ "boulder_01": {
+  "name": "Boulder 01",
+  "authors": [
+   "Rico Cilliers"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "boulder_01",
+  "triangles": null,
+  "size": [
+   1.27,
+   1.0,
+   1.83
+  ]
+ },
  "caged_hanging_light": {
   "name": "Caged Hanging Light",
   "authors": [
@@ -224,6 +238,49 @@
    0.34
   ]
  },
+ "coast_rocks_05": {
+  "name": "Coast Rocks 05",
+  "authors": [
+   "Rob Tuytel"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "coast_rocks_05",
+  "triangles": null,
+  "size": [
+   4.04,
+   1.33,
+   3.75
+  ]
+ },
+ "dead_tree_trunk": {
+  "name": "Dead Tree Trunk",
+  "authors": [
+   "Rob Tuytel"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "dead_tree_trunk",
+  "triangles": null,
+  "size": [
+   3.05,
+   0.29,
+   0.28
+  ]
+ },
+ "dead_tree_trunk_02": {
+  "name": "Dead Tree Trunk 02",
+  "authors": [
+   "Jenelle van Heerden",
+   "Rico Cilliers"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "dead_tree_trunk_02",
+  "triangles": null,
+  "size": [
+   4.05,
+   1.06,
+   1.06
+  ]
+ },
  "desk_lamp_arm_01": {
   "name": "Desk Lamp Arm 01",
   "authors": [
@@ -237,6 +294,20 @@
    0.2,
    0.89,
    0.61
+  ]
+ },
+ "didelta_spinosa": {
+  "name": "Didelta Spinosa",
+  "authors": [
+   "Jenelle van Heerden"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "didelta_spinosa",
+  "triangles": null,
+  "size": [
+   2.12,
+   2.07,
+   4.56
   ]
  },
  "drawer_cabinet": {
@@ -267,6 +338,35 @@
    0.6
   ]
  },
+ "dry_branches_medium_01": {
+  "name": "Dry Branches Medium 01",
+  "authors": [
+   "Rico Cilliers"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "dry_branches_medium_01",
+  "triangles": null,
+  "size": [
+   1.06,
+   0.34,
+   1.3
+  ]
+ },
+ "fern_02": {
+  "name": "Fern 02",
+  "authors": [
+   "Rico Cilliers",
+   "Rob Tuytel"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "fern_02",
+  "triangles": null,
+  "size": [
+   1.97,
+   0.43,
+   1.72
+  ]
+ },
  "filmstrip_projector_8mm": {
   "name": "Filmstrip Projector 8mm",
   "authors": [
@@ -279,6 +379,35 @@
    0.25,
    0.35,
    0.6
+  ]
+ },
+ "fir_sapling": {
+  "name": "Fir Sapling",
+  "authors": [
+   "Rico Cilliers",
+   "Rob Tuytel"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "fir_sapling",
+  "triangles": null,
+  "size": [
+   2.74,
+   1.3,
+   0.83
+  ]
+ },
+ "grass_medium_02": {
+  "name": "Grass Medium 02",
+  "authors": [
+   "Rico Cilliers"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "grass_medium_02",
+  "triangles": null,
+  "size": [
+   1.31,
+   0.41,
+   0.43
   ]
  },
  "hanging_industrial_lamp": {
@@ -436,6 +565,20 @@
    0.21
   ]
  },
+ "moss_01": {
+  "name": "Moss 01",
+  "authors": [
+   "Rob Tuytel"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "moss_01",
+  "triangles": null,
+  "size": [
+   0.22,
+   0.04,
+   0.03
+  ]
+ },
  "mounted_fluorescent_lights": {
   "name": "Mounted Fluorescent Lights",
   "authors": [
@@ -450,6 +593,81 @@
    0.65
   ]
  },
+ "namaqualand_boulder_02": {
+  "name": "Namaqualand Boulder 02",
+  "authors": [
+   "Greg Zaal",
+   "Rico Cilliers"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "namaqualand_boulder_02",
+  "triangles": null,
+  "size": [
+   2.53,
+   0.88,
+   1.23
+  ]
+ },
+ "namaqualand_boulder_03": {
+  "name": "Namaqualand Boulder 03",
+  "authors": [
+   "Dario Barresi",
+   "Jenelle van Heerden"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "namaqualand_boulder_03",
+  "triangles": null,
+  "size": [
+   2.41,
+   1.47,
+   3.07
+  ]
+ },
+ "namaqualand_boulder_05": {
+  "name": "Namaqualand Boulder 05",
+  "authors": [
+   "Dario Barresi",
+   "Jenelle van Heerden"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "namaqualand_boulder_05",
+  "triangles": null,
+  "size": [
+   1.36,
+   0.54,
+   0.75
+  ]
+ },
+ "namaqualand_boulder_06": {
+  "name": "Namaqualand Boulder 06",
+  "authors": [
+   "Greg Zaal",
+   "Jenelle van Heerden"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "namaqualand_boulder_06",
+  "triangles": null,
+  "size": [
+   0.67,
+   0.65,
+   1.21
+  ]
+ },
+ "namaqualand_stones_01": {
+  "name": "Namaqualand Stones 01",
+  "authors": [
+   "Greg Zaal",
+   "Jenelle van Heerden"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "namaqualand_stones_01",
+  "triangles": null,
+  "size": [
+   1.02,
+   0.08,
+   0.11
+  ]
+ },
  "office_notepads": {
   "name": "Office Notepads",
   "authors": [
@@ -462,6 +680,35 @@
    1.1,
    0.02,
    0.66
+  ]
+ },
+ "painted_wooden_bench": {
+  "name": "Painted Wooden Bench",
+  "authors": [
+   "Kirill Sannikov"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "painted_wooden_bench",
+  "triangles": null,
+  "size": [
+   1.16,
+   0.89,
+   0.5
+  ]
+ },
+ "pine_sapling_small": {
+  "name": "Pine Sapling Small",
+  "authors": [
+   "Rico Cilliers",
+   "Rob Tuytel"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "pine_sapling_small",
+  "triangles": null,
+  "size": [
+   2.64,
+   1.3,
+   0.77
   ]
  },
  "plastic_crate_01": {
@@ -521,6 +768,37 @@
    0.4
   ]
  },
+ "quiver_tree_01": {
+  "name": "Quiver Tree 01",
+  "authors": [
+   "Dario Barresi",
+   "James Ray Cock",
+   "Rico Cilliers"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "quiver_tree_01",
+  "triangles": null,
+  "size": [
+   1.18,
+   2.72,
+   0.97
+  ]
+ },
+ "quiver_tree_02": {
+  "name": "Quiver Tree 02",
+  "authors": [
+   "Dario Barresi",
+   "Rico Cilliers"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "quiver_tree_02",
+  "triangles": null,
+  "size": [
+   0.87,
+   1.47,
+   0.88
+  ]
+ },
  "retro_multimeter": {
   "name": "Retro Multimeter",
   "authors": [
@@ -533,6 +811,64 @@
    0.22,
    0.28,
    0.2
+  ]
+ },
+ "rock_moss_set_02": {
+  "name": "Rock Moss Set 02",
+  "authors": [
+   "Kless Gyzen"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "rock_moss_set_02",
+  "triangles": null,
+  "size": [
+   8.28,
+   1.37,
+   3.41
+  ]
+ },
+ "sand_rocks_small_01": {
+  "name": "Sand Rocks Small 01",
+  "authors": [
+   "Rico Cilliers",
+   "Rob Tuytel"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "sand_rocks_small_01",
+  "triangles": null,
+  "size": [
+   4.63,
+   0.53,
+   3.88
+  ]
+ },
+ "searsia_lucida": {
+  "name": "Searsia Lucida",
+  "authors": [
+   "James Ray Cock",
+   "Jenelle van Heerden"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "searsia_lucida",
+  "triangles": null,
+  "size": [
+   4.78,
+   2.34,
+   2.84
+  ]
+ },
+ "shrub_04": {
+  "name": "Shrub 04",
+  "authors": [
+   "Rico Cilliers"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "shrub_04",
+  "triangles": null,
+  "size": [
+   0.58,
+   0.22,
+   0.15
   ]
  },
  "side_table_01": {
@@ -577,6 +913,20 @@
    0.5
   ]
  },
+ "stone_fire_pit": {
+  "name": "Stone Fire Pit",
+  "authors": [
+   "Sebastian Platen"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "stone_fire_pit",
+  "triangles": null,
+  "size": [
+   1.45,
+   0.39,
+   1.43
+  ]
+ },
  "television_02": {
   "name": "Television 02",
   "authors": [
@@ -603,6 +953,20 @@
    1.27,
    0.96,
    0.75
+  ]
+ },
+ "tree_stump_01": {
+  "name": "Tree Stump 01",
+  "authors": [
+   "Rob Tuytel"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "tree_stump_01",
+  "triangles": null,
+  "size": [
+   1.43,
+   0.57,
+   1.59
   ]
  },
  "vintage_cabinet_01": {
@@ -662,6 +1026,20 @@
    1.01
   ]
  },
+ "wooden_barrels_01": {
+  "name": "Wooden Barrels 01",
+  "authors": [
+   "James Ray Cock"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "wooden_barrels_01",
+  "triangles": null,
+  "size": [
+   4.44,
+   0.96,
+   3.34
+  ]
+ },
  "wooden_bookshelf_worn": {
   "name": "Wooden Bookshelf Worn",
   "authors": [
@@ -674,6 +1052,34 @@
    1.37,
    2.06,
    0.58
+  ]
+ },
+ "wooden_crate_01": {
+  "name": "Wooden Crate 01",
+  "authors": [
+   "James Ray Cock"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "wooden_crate_01",
+  "triangles": null,
+  "size": [
+   0.83,
+   0.35,
+   0.41
+  ]
+ },
+ "wooden_lantern_01": {
+  "name": "Wooden Lantern 01",
+  "authors": [
+   "James Ray Cock"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "wooden_lantern_01",
+  "triangles": null,
+  "size": [
+   0.22,
+   0.53,
+   0.23
   ]
  },
  "worn_metal_rack": {

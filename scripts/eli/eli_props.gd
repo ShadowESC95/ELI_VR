@@ -18,6 +18,12 @@ static func catalogue() -> Array:
         if typeof(size) != TYPE_ARRAY or size.size() != 3:
             continue
         out.append({"id": id, "name": plain(str(entry.get("name", id))), "size": size})
+    var had := {}
+    for entry in out:
+        had[entry["id"]] = true
+    for entry in EliModels.catalogue():      # ELI's own, fetched from ELI v3
+        if not had.has(entry["id"]):
+            out.append(entry)
     return out
 
 # "Arm Chair 01" -> "arm chair": what a thing is, without the catalogue's numbering.

@@ -24,6 +24,17 @@ var _last: Array = []
 var _forms: Dictionary = {}        # id -> its form as last drawn
 var _settled := false              # the room's things as you found them are drawn
 
+func _ready() -> void:
+    add_to_group("eli_things")
+
+## ELI's own models have arrived: a thing drawn as an orb for want of its model is drawn again.
+func redraw_props() -> void:
+    for id in _things:
+        var thing = _things[id]
+        if is_instance_valid(thing) and not str(thing.prop).is_empty() and thing.shape == "orb":
+            thing.shape = "prop"
+            thing._shape()
+
 func show_room(room_id: String) -> void:
     if room_id == room:
         return

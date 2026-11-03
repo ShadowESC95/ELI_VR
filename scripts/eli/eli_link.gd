@@ -23,6 +23,7 @@ const OLD_PLACEHOLDER := "ws://127.0.0.1:47832"
 const RETRY_SECONDS := 5.0
 const SURFACE := "eli_vr"
 const PROTOCOL_VERSIONS := [1, 2]
+const WANTS_NOTE := "models: the real things ELI brought in of its own, fetched and drawn"
 const WANTS := ["world-state", "room-events", "scene", "say", "building", "undo", "own-room", "mind", "props", "pictures"]
 const WELCOME_SECONDS := 4.0
 const CLOSE_UNAUTHORISED := 4401
@@ -142,11 +143,12 @@ func _agree(version: int, has: Array, from: String) -> void:
     if can("props"):
         report_body.call_deferred()
 
-# A picture ELI took or looked at for you, as the bytes ELI v3 serves it.
-func fetch(path: String) -> EliResult:
-    if not can("pictures"):
+# Bytes ELI v3 serves: a picture ELI took or looked at for you ("pictures"), a file of a model
+# ELI brought in ("models").
+func fetch(path: String, capability: String = "pictures") -> EliResult:
+    if not can(capability):
         return EliResult.bad("unsupported")
-    return await _request(HTTPClient.METHOD_GET, path, PackedByteArray(), "application/octet-stream", 30.0)
+    return await _request(HTTPClient.METHOD_GET, path, PackedByteArray(), "application/octet-stream", 60.0)
 
 # Once a link is agreed: the real things ELI VR can draw, for ELI to place in its rooms.
 func report_body() -> EliResult:

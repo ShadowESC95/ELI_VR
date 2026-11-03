@@ -37,6 +37,24 @@ class DesktopSettings extends RefCounted:
     func save_runtime() -> void:
         pass
 
+# Stands in for the link to ELI v3 serving a model ELI brought in: its files from a folder here.
+class ModelLink extends Node:
+    var folder := ""
+    var asked := []
+    var reported := 0
+    func can(capability: String) -> bool:
+        return capability == "models" or capability == "props"
+    func fetch(path: String, _capability: String = "pictures") -> EliResult:
+        asked.append(path)
+        var rel := path.trim_prefix("/v1/world/model/")
+        var file := folder.path_join(rel.get_slice("/", 0)).path_join(rel.substr(rel.find("/") + 1))
+        if not FileAccess.file_exists(file):
+            return EliResult.bad("unsupported")
+        return EliResult.good(FileAccess.get_file_as_bytes(file))
+    func report_body() -> EliResult:
+        reported += 1
+        return EliResult.good()
+
 # Stands in for the link to ELI v3: serves one picture, a 6 by 3 PNG.
 class PictureLink extends Node:
     var asked := []
@@ -254,12 +272,63 @@ func _run() -> void:
     _check("models_load_once_in_the_background_and_are_kept", cached and ModelCache._held.size() >= 40 and frames < 20000,
            "kept %s, held %d after %d frames" % [cached, ModelCache._held.size(), frames])
     await _desktop_checks()
+    await _models_check()
     _check("a_picture_eli_took_is_pinned_up_as_a_photograph", placed_at is Transform3D and wall.pin_spot("seen", 4) == null
            and pictured and link.asked == ["/v1/world/picture/31"], "placed %s, pictured %s, asked %s" % [placed_at is Transform3D, pictured, link.asked])
     _check("a_painting_is_painted_and_stands_on_an_easel_on_the_floor", styled == 5 and hung.eye_height() < 0.6
            and standing.eye_height() > 0.8 and standing._body.get_child_count() > hung._body.get_child_count(),
            "style %d, hung %s, standing %s" % [styled, hung.eye_height(), standing.eye_height()])
     quit()
+
+# A model ELI brought in: fetched from the feed's list once, loaded while running, measured, in the
+# catalogue ELI is told of, and drawn as itself. The files come from the bundled side table, served
+# by a stand-in link, into the sandbox folder the test was given.
+func _models_check() -> void:
+    var sandbox := OS.get_environment("ELI_VR_TEST_SANDBOX")
+    if sandbox.is_empty() or not ProjectSettings.globalize_path(EliModels.FOLDER).begins_with(sandbox):
+        _check("a_model_eli_brought_in_is_fetched_once_measured_and_drawn", false,
+               "not run: %s is not in the test's sandbox" % ProjectSettings.globalize_path(EliModels.FOLDER))
+        return
+    var link := ModelLink.new()
+    root.add_child(link)
+    link.folder = ProjectSettings.globalize_path("user://served")
+    var served := link.folder.path_join("little_table")
+    DirAccess.make_dir_recursive_absolute(served.path_join("textures"))
+    var src := ProjectSettings.globalize_path("res://assets/models/side_table_01")
+    var files := []
+    for f in DirAccess.get_files_at(src):
+        if not f.ends_with(".import") and not f.ends_with(".uid"):
+            DirAccess.copy_absolute(src.path_join(f), served.path_join(f))
+            files.append(f)
+    for f in DirAccess.get_files_at(src.path_join("textures")):
+        if not f.ends_with(".import"):
+            DirAccess.copy_absolute(src.path_join("textures").path_join(f), served.path_join("textures").path_join(f))
+            files.append("textures/" + f)
+    files.sort_custom(func(a, b): return a.ends_with(".gltf") and not b.ends_with(".gltf"))
+    EliModels.link = link
+    var feed := [{"id": "little_table", "name": "Little Table", "size": [1, 1, 1], "files": files + ["../escape.bin"],
+                  "source": "Poly Haven side_table_01", "licence": "CC0 1.0"}]
+    await EliModels.want(feed)
+    await EliModels.want(feed)                      # the same list again: nothing more is fetched
+    var listed := EliModels.listed()
+    var size: Array = listed.get("little_table", {}).get("size", [])
+    var in_catalogue := EliProps.catalogue().filter(func(e): return e["id"] == "little_table")
+    var scene := ModelCache.scene("little_table")
+    var thing = Thing.new()
+    root.add_child(thing)
+    thing.build({"id": "t1", "name": "A table", "room": "own_room", "form": {"shape": "prop", "prop": "little_table",
+                 "colour": "#ffffff", "size": 1.0, "glow": 0.0, "pos": [0, 0, 2]}})
+    var drawn: int = thing._body.find_children("*", "MeshInstance3D", true, false).size()
+    var ok: bool = link.asked.size() == files.size() and listed.has("little_table") and bool(listed["little_table"]["measured"]) \
+        and size.size() == 3 and float(size[1]) > 0.3 and float(size[1]) < 1.5 and in_catalogue.size() == 1 \
+        and in_catalogue[0]["name"] == "little table" and scene != null and drawn > 0 and link.reported == 1 \
+        and not FileAccess.file_exists(ProjectSettings.globalize_path(EliModels.FOLDER).path_join("escape.bin"))
+    _check("a_model_eli_brought_in_is_fetched_once_measured_and_drawn", ok,
+           "asked %d of %d, listed %s, catalogue %s, scene %s, drawn %d, reported %d" % [link.asked.size(), files.size(),
+           listed.get("little_table"), in_catalogue, scene != null, drawn, link.reported])
+    thing.queue_free()
+    link.queue_free()
+    EliModels.link = null
 
 func _desktop_checks() -> void:
     var eye := Camera3D.new()
