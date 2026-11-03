@@ -101,6 +101,9 @@ class Screens(Alive):
         self.check("a_real_thing_is_its_model_turned_as_eli_turned_it")
         self.check("a_painting_is_painted_and_stands_on_an_easel_on_the_floor")
 
+    def test_the_core_room_shows_what_is_coming_up_on_your_agenda(self) -> None:
+        self.check("the_core_shows_what_is_coming_up")
+
 
 if __name__ == "__main__":
     unittest.main()

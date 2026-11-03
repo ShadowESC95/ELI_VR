@@ -183,6 +183,18 @@ func _run() -> void:
     standing.build({"id": "p2", "name": "Dawn", "kind": "built", "form": {"shape": "painting", "size": 1.0, "pos": [1.0, 0.0, 4.0]}})
     var canvas: MeshInstance3D = hung._body.get_child(0)
     var styled: int = (canvas.material_override as ShaderMaterial).get_shader_parameter("style")
+    var core = Core.new()
+    root.add_child(core)
+    core.build({}, Settings.new())
+    core.show_eli({"connected": true, "state": {"coming_up": [
+        {"when": 1.0, "said": "today (Mon 2 Nov) at 19:30", "what": "Ferry to the island", "kind": "event"},
+        {"when": 2.0, "said": "tomorrow (Tue 3 Nov) at 08:00", "what": "Water the basil", "kind": "reminder"}]}})
+    var agenda := _texts(core._coming)
+    var coming_ok: bool = agenda[0] == "today (Mon 2 Nov) at 19:30" and agenda[1] == "  Ferry to the island" \
+        and agenda[3] == "  remind: Water the basil"
+    core.show_eli({"connected": true, "state": {"coming_up": []}})
+    var none_ok: bool = _texts(core._coming)[0] == "nothing on the agenda"
+    _check("the_core_shows_what_is_coming_up", coming_ok and none_ok, str(agenda))
     _check("a_painting_is_painted_and_stands_on_an_easel_on_the_floor", styled == 5 and hung.eye_height() < 0.6
            and standing.eye_height() > 0.8 and standing._body.get_child_count() > hung._body.get_child_count(),
            "style %d, hung %s, standing %s" % [styled, hung.eye_height(), standing.eye_height()])

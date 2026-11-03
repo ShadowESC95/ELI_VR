@@ -17,6 +17,7 @@ var _cloud_shift := 0.0
 # did lately and why, and what is on its mind.
 const CONSOLES := ["ELI", "Measures", "Log", "Lately", "On its mind"]
 var _screens: Array = []
+var _coming: InfoScreen
 
 func _build() -> void:
     _sky_and_light()
@@ -27,6 +28,7 @@ func _build() -> void:
     _core_globe()
     _outer_ring()
     _radio_table()
+    _coming_up_board()
     if motes:
         drift(Vector3(0, 3.4, 0), Vector3(8.0, 3.2, 8.0), 240, Color(1, 1, 1).lerp(accent, 0.35))
     probe()
@@ -332,12 +334,32 @@ const RADIO_AT := Vector3(3.7, 0.0, 0.4)
 func _radio_table() -> void:
     prop("side_table_01", RADIO_AT, rad_to_deg(atan2(-RADIO_AT.x, -RADIO_AT.z)))
 
+# On your left, opposite the radio: a standing screen of what is coming up on your agenda.
+func _coming_up_board() -> void:
+    var at := Vector3(-RADIO_AT.x, 0.0, RADIO_AT.z)
+    var steel := MaterialKitClass.metal("brushed_metal", 0.6, Color(0.6, 0.62, 0.66), 0.6)
+    rod(0.03, 1.2, steel, at + Vector3(0, 0.6, 0))
+    box(Vector3(0.5, 0.04, 0.4), steel, at + Vector3(0, 0.02, 0))
+    _coming = InfoScreen.make(Vector2(1.5, 1.05), "Coming up", accent, 34)
+    _coming.position = at + Vector3(0, 1.55, 0)
+    _coming.rotation.y = atan2(-at.x, -at.z)
+    add_child(_coming)
+    _coming.show_idle("ELI is not connected")
+
 func pin_spot(kind: String, index: int) -> Variant:
     if kind != "playing" or index != 0:
         return null
     return Transform3D(Basis(Vector3.UP, atan2(-RADIO_AT.x, -RADIO_AT.z)), RADIO_AT + Vector3(0, 0.55, 0))
 
 func show_eli(eli: Dictionary) -> void:
+    if _coming != null:
+        var soon := EliReadout.coming_lines(eli, accent)
+        if not bool(eli.get("connected", false)):
+            _coming.show_idle(EliReadout.idle_reason(eli))
+        elif soon.is_empty():
+            _coming.show_idle("nothing on the agenda")
+        else:
+            _coming.show_lines(soon)
     if _screens.size() < CONSOLES.size():
         return
     if not bool(eli.get("connected", false)):

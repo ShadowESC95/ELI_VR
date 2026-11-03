@@ -112,6 +112,17 @@ static func _wrap(text: String, width: int) -> Array:
         out.append(line)
     return out
 
+## What is on your agenda soon, from ELI's own: when, then what, earliest first.
+static func coming_lines(eli: Dictionary, tint: Color) -> Array:
+    var lines := []
+    for item in (eli.get("state", {}) as Dictionary).get("coming_up", []):
+        if typeof(item) != TYPE_DICTIONARY:
+            continue
+        lines.append([str(item.get("said", "")), PALE])
+        var what := str(item.get("what", ""))
+        lines.append(["  " + ("remind: " if str(item.get("kind", "")) == "reminder" else "") + what, tint])
+    return lines
+
 ## What a screen says when ELI cannot be read.
 static func idle_reason(eli: Dictionary) -> String:
     return "ELI is not connected" if not bool(eli.get("connected", false)) else "nothing yet"
