@@ -34,6 +34,8 @@ var _clock := 0.0
 var _parts: Array = []
 var _parts_key := ""
 var _moving: Array = []        # [node, spin radians a second, bob metres, pulse, material, rest height]
+var pinned := false            # the room has a place for this kind of record, and it stands there
+var _pin := Transform3D.IDENTITY
 var _made_height := 1.0
 
 func build(data: Dictionary) -> void:
@@ -61,7 +63,7 @@ func refresh(data: Dictionary, first: bool = false) -> void:
     made_by = str(data.get("made_by", ""))
     kind = str(data.get("kind", ""))
     var pos: Array = form.get("pos", [0.0, 0.0, 0.0])
-    _target = EliSenses.from_protocol(pos)
+    _target = _pin.origin if pinned else EliSenses.from_protocol(pos)
     if first:
         position = _target
     var parts_key := JSON.stringify(form.get("parts", []))
@@ -80,9 +82,76 @@ func refresh(data: Dictionary, first: bool = false) -> void:
 func leave() -> void:
     _leaving = true
 
+## Stand at a place the room keeps for records of this kind (a belief pinned to the Evidence Wall).
+func pin_to(spot: Transform3D) -> void:
+    var moved := not pinned or not spot.is_equal_approx(_pin)
+    pinned = true
+    _pin = spot
+    _target = spot.origin
+    basis = spot.basis
+    if moved and kind == "claim":
+        _shape()
+
+# A belief pinned up: a sheet of paper with what ELI believes written on it, and a red pin.
+func _sheet() -> void:
+    _name_tag.visible = false
+    _material = null
+    var paper := StandardMaterial3D.new()
+    paper.albedo_color = Color(0.93, 0.9, 0.82).lerp(colour, 0.25)
+    paper.roughness = 0.95
+    var sheet := MeshInstance3D.new()
+    var quad := QuadMesh.new()
+    quad.size = Vector2(0.62, 0.8)
+    sheet.mesh = quad
+    sheet.material_override = paper
+    _body.add_child(sheet)
+    var ink := Color(0.08, 0.07, 0.07)
+    var title := Label3D.new()
+    title.text = label
+    title.font_size = 34
+    title.pixel_size = 0.0016
+    title.modulate = ink
+    title.outline_size = 0
+    title.shaded = false
+    title.width = 0.56 / 0.0016
+    title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    title.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+    title.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+    title.position = Vector3(0, 0.34, 0.002)
+    title.render_priority = 1
+    _body.add_child(title)
+    var words := Label3D.new()
+    words.text = meaning
+    words.font_size = 26
+    words.pixel_size = 0.0013
+    words.modulate = ink.lightened(0.15)
+    words.outline_size = 0
+    words.shaded = false
+    words.width = 0.56 / 0.0013
+    words.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    words.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+    words.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+    words.position = Vector3(0, 0.18, 0.002)
+    words.render_priority = 1
+    _body.add_child(words)
+    var pin := MeshInstance3D.new()
+    var head := SphereMesh.new()
+    head.radius = 0.022
+    head.height = 0.044
+    pin.mesh = head
+    var red := StandardMaterial3D.new()
+    red.albedo_color = Color(0.85, 0.08, 0.06)
+    red.emission_enabled = true
+    red.emission = Color(0.6, 0.04, 0.03)
+    pin.material_override = red
+    pin.position = Vector3(0, 0.37, 0.02)
+    _body.add_child(pin)
+
 func eye_height() -> float:
     if not _parts.is_empty():
         return _made_height * 0.5
+    if pinned and kind == "claim":
+        return 0.0
     return {"orb": 0.9, "pillar": 1.1, "lamp": 1.0, "beacon": 1.6, "tree": 1.2, "arch": 1.1,
             "ring": 0.9, "board": 0.9, "crystal": 0.7}.get(shape, 0.35) * size
 
@@ -140,6 +209,10 @@ func _shape() -> void:
         child.queue_free()
     lamp = null
     _moving.clear()
+    _name_tag.visible = true
+    if kind == "claim" and pinned:
+        _sheet()
+        return
     if not _parts.is_empty():
         _material = null
         _made_height = 0.2

@@ -17,6 +17,8 @@ const ThingClass = preload("res://scripts/eli/eli_thing.gd")
 const MAX_LAMPS := 4
 
 var room := ""
+# The room as built: it may keep places for kinds of record (RoomBase.pin_spot).
+var pinner: Node
 var _things: Dictionary = {}       # id -> EliThing
 var _last: Array = []
 var _forms: Dictionary = {}        # id -> its form as last drawn
@@ -52,6 +54,7 @@ func near(point: Vector3, limit: int) -> Array:
 
 func _apply(objects: Array) -> void:
     var seen := {}
+    var counted := {}              # kind -> how many of that kind are placed so far
     for data in objects:
         if typeof(data) != TYPE_DICTIONARY or str(data.get("room", "")) != room:
             continue
@@ -73,6 +76,12 @@ func _apply(objects: Array) -> void:
             if _settled:
                 appeared.emit(thing)
         _forms[id] = form
+        var record := str(data.get("kind", ""))
+        if pinner != null and is_instance_valid(pinner) and pinner.has_method("pin_spot"):
+            var spot = pinner.pin_spot(record, int(counted.get(record, 0)))
+            if spot is Transform3D:
+                _things[id].pin_to(spot)
+        counted[record] = int(counted.get(record, 0)) + 1
     for id in _things.keys():
         if not seen.has(id):
             if is_instance_valid(_things[id]):

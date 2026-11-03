@@ -6,7 +6,11 @@ extends RoomBase
 # fan turns overhead, a projector flickers at the side; behind, a desk under its
 # lamp and a cabinet of files.
 
-var _slide: ShaderMaterial
+var _questions: InfoScreen
+# Boards nearest straight ahead first; each keeps three by two places for ELI's beliefs.
+const BOARD_ORDER := [3, 2, 4, 1, 5, 0, 6]
+const PLACES := [Vector3(-1.7, 0.75, 0.16), Vector3(0.0, 0.75, 0.16), Vector3(1.7, 0.75, 0.16),
+                 Vector3(-1.7, -0.75, 0.16), Vector3(0.0, -0.75, 0.16), Vector3(1.7, -0.75, 0.16)]
 
 func _build() -> void:
     var env := environment(Color(0.26, 0.22, 0.2), 1.35)
@@ -98,13 +102,14 @@ func _projector() -> void:
     prop("tool_cart", at, -52.0 + 90.0)
     prop("filmstrip_projector_8mm", at + Vector3(0, 0.96, 0), -52.0 + 180.0)
     var lens := at + Vector3(0, 1.2, 0)
-    # the picture it throws on the side wall
-    _slide = MaterialKitClass.shader("res://assets/shaders/document.gdshader", {"seed": 7.0, "picture": 1.0, "brightness": 1.3})
-    var screen := QuadMesh.new()
-    screen.size = Vector2(3.4, 2.4)
+    # what it throws on the side wall: the questions ELI is waiting on you to settle
     var a := deg_to_rad(118.0)
-    var picture := add(screen, _slide, Vector3(sin(a), 0.0, -cos(a)) * 13.4 + Vector3(0, 2.6, 0))
-    picture.rotation.y = -a
+    _questions = InfoScreen.make(Vector2(3.4, 2.4), "Open questions", Color(1.0, 0.93, 0.8), 44)
+    _questions.position = Vector3(sin(a), 0.0, -cos(a)) * 13.4 + Vector3(0, 2.6, 0)
+    _questions.rotation.y = -a
+    add_child(_questions)
+    _questions.show_idle("ELI is not connected")
+    var picture := _questions
     glow(lens, Color(1.0, 0.95, 0.85), 0.4, 2.0, 1.0)
     spot(lens, picture.position, Color(1.0, 0.95, 0.85), 3.0, 14.0, 20.0)
 
@@ -137,7 +142,28 @@ func _files() -> void:
         prop("plastic_crate_01", beside, facing + 14.0)
         prop("plastic_crate_02", beside + Vector3(0, 0.41, 0), facing - 9.0)
 
-func _animate(_delta: float) -> void:
-    # the slide changes every few seconds, and the lamp never quite holds steady
-    _slide.set_shader_parameter("seed", floor(_clock / 5.0) * 3.7 + 7.0)
-    _slide.set_shader_parameter("brightness", 1.2 + 0.12 * sin(_clock * 31.0) * sin(_clock * 7.0))
+# Where the `index`th of ELI's beliefs is pinned: on the boards, the nearest first.
+func pin_spot(kind: String, index: int) -> Variant:
+    if kind != "claim" or index >= BOARD_ORDER.size() * PLACES.size():
+        return null
+    var b: int = BOARD_ORDER[index / PLACES.size()]
+    var a := deg_to_rad(-78.0 + 26.0 * b)
+    var board := Transform3D(Basis(Vector3.UP, -a), Vector3(sin(a), 0.0, -cos(a)) * 13.3 + Vector3(0, 2.6, 0))
+    return board * Transform3D(Basis.IDENTITY, PLACES[index % PLACES.size()])
+
+func show_eli(eli: Dictionary) -> void:
+    if _questions == null:
+        return
+    if not bool(eli.get("connected", false)):
+        _questions.show_idle(EliReadout.idle_reason(eli))
+        return
+    var lines := []
+    for record in (eli.get("state", {}) as Dictionary).get("objects", []):
+        if typeof(record) == TYPE_DICTIONARY and str(record.get("kind", "")) == "conflict":
+            for chunk in EliReadout._wrap(str(record.get("meaning", "")), 42):
+                lines.append(chunk)
+            lines.append("")
+    if lines.is_empty():
+        _questions.show_idle("nothing in dispute")
+    else:
+        _questions.show_lines(lines)

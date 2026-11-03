@@ -27,6 +27,16 @@ func build(theme: Dictionary, config) -> void:
 func _build() -> void:
     pass
 
+# What ELI is and has been doing, for a room's screens to show: {"connected", "state" (the world
+# feed), "mind" (the model ELI thinks with), "mode"}. See scripts/world/kit/eli_readout.gd.
+func show_eli(_eli: Dictionary) -> void:
+    pass
+
+# Where this room keeps the `index`th record of a kind (a belief, say), as a transform the record
+# takes; null when the room keeps no place for that kind and the record stands where ELI's world says.
+func pin_spot(_kind: String, _index: int) -> Variant:
+    return null
+
 # Anything a room moves by hand each frame.
 func _animate(_delta: float) -> void:
     pass

@@ -73,6 +73,8 @@ ELI: BUILD asks now: the oldest urge if one is waiting, otherwise simply what is
 
 **ELI acting while you are there** (`scripts/eli/eli_initiative.gd`). The feed's `waiting` (moments of ELI's own waiting) and `free` (a model already in memory and nobody's mood asking ELI to hold back, as ELI's own background loop judges it) let ELI VR ask ELI to make something of a waiting moment, with `POST /v1/world/compose`, while you are there to see it: never while you talk, one at a time, paced by how long the last one took.
 
+**True screens** (`scripts/world/kit/info_screen.gd`, `eli_readout.gd`). Each room is handed ELI's state (`RoomBase.show_eli`) and its screens show it: the feed's `log` (version 2: a screenful of ELI's own world events, newest last, without the room's own reports), `awareness`, `recent`, `mind`, the records in `objects`, and the model ELI thinks with. A screen with nothing true to show says why.
+
 **ELI's records in its rooms.** The Memory Archive carries ELI's real recent memories as lights, each with its words; the Upgrade Bay carries the goals ELI holds now; the Evidence Wall carries what ELI believes about you, each with when it learned it (amber where something disputes it); the Anomaly Room carries each place where two things ELI was told disagree, with the question that would settle it. They are read from ELI's memory, claims and goal store, refreshed every half minute. You can pick one up; moving one changes nothing in ELI.
 
 ## How building works

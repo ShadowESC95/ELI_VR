@@ -37,6 +37,7 @@ func _build() -> void:
     _plan_table()
     _glass_screens()
     _equipment()
+    _boards()
     probe(Vector3(28, 6.4, 28), Vector3(0, 3.2, 0), true)
 
 func _printer() -> void:
@@ -151,6 +152,47 @@ func _equipment() -> void:
     prop("industrial_storage_cart", Vector3(3.0, 0, 6.2), 200.0)
     prop("portable_welding_cart", Vector3(-9.6, 0, -3.4), 120.0)
     lamp(Vector3(0, 3.0, 6.3), Color(0.95, 0.98, 1.0), 1.2, 6.0)
+
+var _goals: InfoScreen
+var _improving: InfoScreen
+
+# Two of the glass screens carry what this bay is for: ELI's goals and ambitions, and the
+# improvements it has proposed, reviewed and made.
+func _boards() -> void:
+    for pair in [[150.0, "Goals"], [210.0, "Improvements"]]:
+        var a := deg_to_rad(float(pair[0]))
+        var screen := InfoScreen.make(Vector2(3.4, 2.2), pair[1], accent.darkened(0.2), 44)
+        screen.position = Vector3(sin(a), 0.0, -cos(a)) * 11.05 + Vector3(0, 1.55, 0)
+        screen.rotation.y = -a
+        add_child(screen)
+        screen.show_idle("ELI is not connected")
+        if pair[1] == "Goals":
+            _goals = screen
+        else:
+            _improving = screen
+
+func show_eli(eli: Dictionary) -> void:
+    if _goals == null:
+        return
+    if not bool(eli.get("connected", false)):
+        _goals.show_idle(EliReadout.idle_reason(eli))
+        _improving.show_idle(EliReadout.idle_reason(eli))
+        return
+    var goals := []
+    for record in (eli.get("state", {}) as Dictionary).get("objects", []):
+        if typeof(record) == TYPE_DICTIONARY and str(record.get("kind", "")) == "goal":
+            goals.append(["- " + str(record.get("name", "")), accent.lightened(0.3)])
+    goals.append_array(EliReadout.mind_lines(eli, accent, ["ambition", "goal_done"]))
+    if goals.is_empty():
+        _goals.show_idle("no goals held now")
+    else:
+        _goals.show_lines(goals)
+    var kinds := ["improvement_proposal", "upgrade_candidate", "review_completed", "repair_completed"]
+    var made := EliReadout.log_lines(eli, accent, func(kind): return kind in kinds)
+    if made.is_empty():
+        _improving.show_idle("nothing proposed lately")
+    else:
+        _improving.show_lines(EliReadout.tail(made, _improving.rows()))
 
 func _glass_screens() -> void:
     var pane := MaterialKitClass.glass(Color(0.7, 0.9, 1.0), 0.12)

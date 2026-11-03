@@ -13,6 +13,11 @@ const SUN_DIR := Vector3(-0.85, 0.30, 0.20)
 var _earth_mat: ShaderMaterial
 var _cloud_shift := 0.0
 
+# What each console shows, round from the right: ELI's state, its own measures, its log, what it
+# did lately and why, and what is on its mind.
+const CONSOLES := ["ELI", "Measures", "Log", "Lately", "On its mind"]
+var _screens: Array = []
+
 func _build() -> void:
     _sky_and_light()
     _earth_below()
@@ -200,10 +205,12 @@ func _consoles() -> void:
         add(skirt, MaterialKitClass.light(accent, 1.4), Vector3(0, 0.02, 0), station)
         add(top, hull, Vector3(0, 0.9, 0.1), station).rotation.x = deg_to_rad(-12.0)
         add(back, hull, Vector3(0, 1.42, -0.06), station).rotation.x = deg_to_rad(-14.0)
-        var face := add(screen, MaterialKitClass.shader("res://assets/shaders/data_screen.gdshader", {
-            "tint": rgb(accent), "seed": float(i) * 3.7,
-        }), Vector3(0, 1.425, -0.035), station)
-        face.rotation.x = deg_to_rad(-14.0)
+        var info := InfoScreen.make(screen.size, CONSOLES[i], accent, 46)
+        info.position = Vector3(0, 1.425, -0.033)
+        info.rotation.x = deg_to_rad(-14.0)
+        station.add_child(info)
+        info.show_idle("ELI is not connected")
+        _screens.append(info)
         var glow := OmniLight3D.new()
         glow.position = Vector3(0, 1.35, 0.3)
         glow.light_color = accent
@@ -317,3 +324,19 @@ func _outer_ring() -> void:
         if red:
             blink(lamp, 1.6, float(i) * 0.4)
     spin(carrier, Vector3.UP, 0.035)
+
+func show_eli(eli: Dictionary) -> void:
+    if _screens.size() < CONSOLES.size():
+        return
+    if not bool(eli.get("connected", false)):
+        for s in _screens:
+            s.show_idle(EliReadout.idle_reason(eli))
+        return
+    var shown := [EliReadout.status_lines(eli, accent), EliReadout.measure_lines(eli, accent),
+                  EliReadout.tail(EliReadout.log_lines(eli, accent), _screens[2].rows()),
+                  EliReadout.recent_lines(eli, accent), EliReadout.mind_lines(eli, accent)]
+    for n in _screens.size():
+        if shown[n].is_empty():
+            _screens[n].show_idle("nothing yet")
+        else:
+            _screens[n].show_lines(shown[n])

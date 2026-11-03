@@ -22,6 +22,7 @@ func _build() -> void:
     _shell()
     _benches()
     _stores()
+    _tool_board()
     _welding_arm()
     _crane_and_load()
     _rover_on_lift()
@@ -123,6 +124,30 @@ func _stores() -> void:
     var warm := Color(1.0, 0.86, 0.66)
     spot(Vector3(0, 6.0, 4.5), Vector3(0, 0.8, 8.6), warm, 10.0, 12.0, 52.0)
     lamp(Vector3(0, 3.2, 7.0), warm, 1.6, 9.0)
+
+var _tools: InfoScreen
+
+# Beside the stores: what ELI's tools have done lately, what worked and what failed and why.
+func _tool_board() -> void:
+    _tools = InfoScreen.make(Vector2(1.9, 1.15), "Tools", Color(1.0, 0.86, 0.66), 34)
+    var at := Vector3(-3.7, 1.75, 6.3)
+    _tools.position = at
+    _tools.rotation.y = atan2(-at.x, -at.z)
+    add_child(_tools)
+    _tools.show_idle("ELI is not connected")
+
+func show_eli(eli: Dictionary) -> void:
+    if _tools == null:
+        return
+    if not bool(eli.get("connected", false)):
+        _tools.show_idle(EliReadout.idle_reason(eli))
+        return
+    var kinds := ["task_completed", "error_detected", "tool_activity", "runtime_fault"]
+    var used := EliReadout.log_lines(eli, Color(1.0, 0.86, 0.66), func(kind): return kind in kinds)
+    if used.is_empty():
+        _tools.show_idle("no tools used lately")
+    else:
+        _tools.show_lines(EliReadout.tail(used, _tools.rows()))
 
 func _welding_arm() -> void:
     var paint := StandardMaterial3D.new()

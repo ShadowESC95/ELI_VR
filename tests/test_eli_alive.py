@@ -20,9 +20,11 @@ class Alive(unittest.TestCase):
         if not godot:
             raise unittest.SkipTest("Godot is not installed here")
         env = {k: v for k, v in os.environ.items() if k not in ("DISPLAY", "WAYLAND_DISPLAY")}
-        out = subprocess.run([godot, "--headless", "--xr-mode", "off", "--path", str(ROOT),
-                              "--script", str(ROOT / "tests" / "gd" / "eli_alive_check.gd")],
-                             env=env, capture_output=True, text=True, timeout=300).stdout
+        out = ""
+        for check in ("eli_alive_check.gd", "eli_screens_check.gd"):
+            out += subprocess.run([godot, "--headless", "--xr-mode", "off", "--path", str(ROOT),
+                                   "--script", str(ROOT / "tests" / "gd" / check)],
+                                  env=env, capture_output=True, text=True, timeout=300).stdout
         for line in out.splitlines():
             if line.startswith(("PASS ", "FAIL ")):
                 name = line.split(" ", 1)[1].split(":", 1)[0]
@@ -51,6 +53,28 @@ class Alive(unittest.TestCase):
 
     def test_leaving_the_room_yourself_is_not_eli_leaving(self) -> None:
         self.check("gone_when_you_leave")
+
+
+class Screens(Alive):
+    """The screens in the rooms show ELI's real log and state, and nothing made up."""
+
+    def test_a_screen_shows_what_fits_and_cuts_what_does_not(self) -> None:
+        self.check("fits_its_rows")
+        self.check("cuts_a_long_line")
+
+    def test_the_log_reads_in_order_with_troubles_marked(self) -> None:
+        self.check("log_in_order")
+        self.check("trouble_in_amber")
+        self.check("tail_is_the_newest")
+
+    def test_a_terminal_follows_one_strand_of_the_log(self) -> None:
+        self.check("strand_keeps_its_kind")
+
+    def test_without_eli_a_screen_says_so_and_shows_nothing_else(self) -> None:
+        self.check("says_when_not_connected")
+
+    def test_the_basement_board_shows_the_log(self) -> None:
+        self.check("board_shows_the_log")
 
 
 if __name__ == "__main__":

@@ -9,6 +9,16 @@ extends RoomBase
 
 var _tube: MeshInstance3D
 var _tube_light: OmniLight3D
+var _board: InfoScreen
+var _terminals: Array = []
+# Each terminal follows one strand of ELI's log: its troubles, its reasoning, what it recalled,
+# what it took on and finished.
+const STRANDS := [
+    ["Troubles", ["error_detected", "runtime_fault", "evidence_weak", "memory_uncertainty"]],
+    ["Reasoning", ["reasoning_stage", "reflection"]],
+    ["Recall", ["memory_recall", "evidence_weak"]],
+    ["Work", ["task_opened", "task_completed", "repair_completed", "review_completed", "improvement_proposal"]],
+]
 
 func _build() -> void:
     var env := environment(Color(0.16, 0.19, 0.19), 1.3)
@@ -24,9 +34,10 @@ func _build() -> void:
     add(MeshKitClass.annulus(2.94, 3.03, 128), strip({"energy": 1.4, "wave": 0.12}), Vector3(0, 0.006, 0))
 
     _racks()
-    _terminals()
+    _terminals_on_desks()
     _roof(wall)
     _wiring()
+    _log_board()
     if motes:
         drift(Vector3(0, 2.4, 0), Vector3(12, 2.4, 12), 200, Color(0.8, 0.9, 0.8), 0.025)
     probe(Vector3(30, 5.2, 30), Vector3(0, 2.6, 0), true)
@@ -53,7 +64,7 @@ func _racks() -> void:
     lamp(Vector3(-9.5, 2.4, 3.0), green, 1.2, 9.0)
     lamp(Vector3(0, 2.4, 10.0), green, 1.2, 9.0)
 
-func _terminals() -> void:
+func _terminals_on_desks() -> void:
     var amber := Color(1.0, 0.7, 0.2)
     var screen := QuadMesh.new()
     screen.size = Vector2(0.4, 0.3)
@@ -70,10 +81,11 @@ func _terminals() -> void:
         var top := 0.79
         prop("Television_01" if i % 2 == 0 else "television_02", Vector3(0, top, -0.15), 0.0, 1.0, desk)
         var tint := amber if i % 2 == 0 else Color(0.3, 1.0, 0.5)
-        add(screen, MaterialKitClass.shader("res://assets/shaders/code_rain.gdshader", {
-            "tint": rgb(tint), "seed": float(bearings[i]),
-            "cells": Vector2(18.0, 13.0), "energy": 1.4, "base": Vector3(0.01, 0.015, 0.01),
-        }), Vector3(0, top + 0.24, 0.09), desk)
+        var terminal := InfoScreen.make(screen.size, STRANDS[i][0], tint, 22)
+        terminal.position = Vector3(0, top + 0.24, 0.09)
+        desk.add_child(terminal)
+        terminal.show_idle("not connected")
+        _terminals.append(terminal)
         var side := -0.6
         for thing in on_desk[i]:
             prop(thing, Vector3(side, top, 0.1), 20.0 * side, 1.0, desk)
@@ -136,6 +148,36 @@ func _wiring() -> void:
         var at := Vector3(cos(angle) * 3.6, 4.7, sin(angle) * 3.6)
         prop("caged_hanging_light", at - Vector3(0, 0.75, 0), rad_to_deg(angle))
         lamp(at - Vector3(0, 0.9, 0), cold, 1.4, 8.0)
+
+# ELI's whole log, on the wall ahead where nothing else stands.
+func _log_board() -> void:
+    _board = InfoScreen.make(Vector2(4.0, 2.2), "ELI's log", Color(0.4, 1.0, 0.6), 60)
+    _board.position = Vector3(0, 2.4, -14.6)
+    add_child(_board)
+    _board.show_idle("ELI is not connected")
+    lamp(Vector3(0, 2.4, -13.4), Color(0.4, 1.0, 0.6), 0.6, 4.0)
+
+func show_eli(eli: Dictionary) -> void:
+    if _board == null:
+        return
+    if not bool(eli.get("connected", false)):
+        _board.show_idle(EliReadout.idle_reason(eli))
+        for t in _terminals:
+            t.show_idle("not connected")
+        return
+    var everything := EliReadout.log_lines(eli, Color(0.4, 1.0, 0.6))
+    if everything.is_empty():
+        _board.show_idle("nothing in the log yet")
+    else:
+        _board.show_lines(EliReadout.tail(everything, _board.rows()))
+    for i in _terminals.size():
+        var kinds: Array = STRANDS[i][1]
+        var lines := EliReadout.log_lines(eli, _terminals[i].tint, func(kind): return kind in kinds)
+        # the terminal is narrow: the time, then the words
+        if lines.is_empty():
+            _terminals[i].show_idle("nothing yet")
+        else:
+            _terminals[i].show_lines(EliReadout.tail(lines, _terminals[i].rows()))
 
 func _animate(_delta: float) -> void:
     var on := sin(_clock * 23.0) * sin(_clock * 7.3) > -0.55 or fmod(_clock, 6.0) > 1.2

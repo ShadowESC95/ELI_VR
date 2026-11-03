@@ -74,6 +74,7 @@ var eli_room_light
 var eli_motion
 var eli_thoughts
 var eli_initiative
+var _eli_state: Dictionary = {}
 var eli_presence
 var eli_voice
 var eli_senses
@@ -532,7 +533,9 @@ func _apply_current_room() -> void:
     if ambient_audio: ambient_audio.play_environment(env_id)
     _build_portals()
     _apply_eli_mood()
+    _show_eli_in_room()
     if eli_things:
+        eli_things.pinner = _room_node()
         eli_things.show_room(room_id)
     _refresh_eli_presence()
 
@@ -623,6 +626,7 @@ func _setup_eli() -> void:
     eli_things = EliThingsClass.new()
     eli_things.name = "EliThings"
     add_child(eli_things)
+    eli_things.pinner = _room_node()
     eli_things.show_room(_current_room_id())
     eli_things.moved_by_hand.connect(_on_eli_thing_moved)
     eli_motion = EliMotionClass.new()
@@ -666,6 +670,7 @@ func _current_room_id() -> String:
     return str(config.get_value("world.room", "core_room"))
 
 func _on_eli_link_changed(connected: bool) -> void:
+    _show_eli_in_room()
     eli_presence.set_mode("idle" if connected else "dormant")
     if connected and eli_link.can("mind") and _eli_mind.is_empty():
         _settle_eli_mind()
@@ -677,6 +682,8 @@ func _on_eli_link_changed(connected: bool) -> void:
     _refresh_eli_presence()
 
 func _on_eli_world_state(state: Dictionary) -> void:
+    _eli_state = state
+    _show_eli_in_room()
     eli_presence.apply_world_state(state)
     eli_room_light.apply_world_state(state)
     eli_thoughts.apply_world_state(state)
@@ -688,6 +695,29 @@ func _on_eli_world_state(state: Dictionary) -> void:
         _eli_mood = own["mood"]
         _apply_eli_mood()
     _refresh_eli_presence()
+
+# The room as built, if it is one of the rebuilt rooms (RoomBase).
+func _room_node() -> Node:
+    if room_root == null:
+        return null
+    for room in room_root.get_children():
+        if not room.is_queued_for_deletion() and room.has_method("pin_spot"):
+            return room
+    return null
+
+# The room's screens show what ELI is and has been doing (RoomBase.show_eli).
+func _show_eli_in_room() -> void:
+    if room_root == null:
+        return
+    var eli := {
+        "connected": eli_link != null and eli_link.connected,
+        "state": _eli_state,
+        "mind": eli_mind_name() if eli_link != null and eli_link.connected else "",
+        "mode": eli_presence.mode if eli_presence != null else "",
+    }
+    for room in room_root.get_children():
+        if room.has_method("show_eli") and not room.is_queued_for_deletion():
+            room.show_eli(eli)
 
 # ELI's own room is drawn the way ELI's world says ELI made it.
 func _apply_eli_mood() -> void:
