@@ -11,6 +11,12 @@ var grabbed: Node3D
 var grab_distance: float = 2.0
 var grip_before: bool = false
 
+# The grip is held while the squeeze is down. The runtime's own grip "click" can be a press of a
+# single frame (Monado with Rift CV1 controllers), which let go of the desktop the moment it was
+# taken; so the squeeze's own value is read, taking hold past HOLD and letting go below LET_GO.
+const HOLD := 0.6
+const LET_GO := 0.35
+
 const MAX_GRAB_DISTANCE := 90.0
 
 func setup(
@@ -32,7 +38,9 @@ func _physics_process(delta: float) -> void:
     if controller == null:
         return
 
-    var grip_now: bool = controller.is_button_pressed("grip_click")
+    var squeeze: float = controller.get_float("grip")
+    var grip_now: bool = squeeze > (LET_GO if grip_before else HOLD) or (
+        controller.is_button_pressed("grip_click") and squeeze <= 0.0)       # a controller with no squeeze value
     if grip_now and not grip_before:
         _try_begin_grab()
     elif not grip_now and grip_before:

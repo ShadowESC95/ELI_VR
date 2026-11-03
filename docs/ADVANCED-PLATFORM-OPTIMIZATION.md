@@ -10,8 +10,8 @@ Out of the box the setting is `auto`: at start ELI VR looks at the CPU, the memo
 |---|---|---|---|---|---|
 | `low` | off | off | off | 0.55 | 0.75 |
 | `medium` | on | on | on | 1.0 | 0.9 |
-| `high` | on | on | on | 1.35 | 1.0 |
-| `ultra` | on | on | on | 1.8 | 1.15 |
+| `high` | on | on | on | 1.35 | 1.15 |
+| `ultra` | on | on | on | 1.8 | 1.3 |
 
 The rooms are the same at every profile. What changes is how much drifts and moves in them, whether lights cast shadows, and how many pixels the headset is given. The files are `config/profiles/*.json`.
 
@@ -21,6 +21,7 @@ Render scale is read once, when the headset session starts. Change the profile a
 
 - **The headset's refresh rate.** It follows what the OpenXR runtime reports, and physics ticks at that rate.
 - **Foveation.** Switched on when the runtime supports it, lighter at `low` and `medium`. `xr.foveation` set to `off` disables it.
+- **Edges and textures.** 4x multisampling on every edge and 16x anisotropic filtering on every texture, so lines stay clean and floors and text stay sharp at a slant.
 - **Glow.** Off in a headset, where it costs a full-screen pass per eye, and on in the flat window.
 - **Textures.** Compressed on the GPU with mipmaps (`tools/set_texture_imports.py`), so the art costs video memory once and not per room.
 - **Focus.** The world pauses when the headset says the session has lost focus, and carries on when it has it back. `xr.pause_when_unfocused` set to `false` keeps it running.
@@ -29,7 +30,7 @@ OpenXR extensions are treated as optional. A runtime without one loses that feat
 
 ## What to expect
 
-The reference setup is a mid-range desktop GPU from 2019 driving a 90 Hz PC headset. There, every one of the fifteen places holds 90 frames a second at `ultra`, with roughly 1.5 to 2.1 GB of video memory in use. That is one machine, with the profile chosen by hand. On less, `auto` will pick lower; on integrated graphics expect `low` in the flat window.
+The reference setup is a mid-range desktop GPU from 2019 driving a 90 Hz PC headset. There, every one of the fifteen places held 90 frames a second with a headset render scale of 1.15 (now `high`), with roughly 1.5 to 2.1 GB of video memory in use. That is one machine, with the profile chosen by hand; `ultra` at 1.3, with multisampling on, has not been measured in a headset yet. On less, `auto` will pick lower; on integrated graphics expect `low` in the flat window.
 
 The performance HUD (`F3`) shows the frame rate, and `ELI_VR_LOG_FPS=1` writes it to the log every few seconds.
 

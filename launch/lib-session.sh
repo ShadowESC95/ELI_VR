@@ -116,7 +116,7 @@ desktop_helper_start(){
       return 0
     fi
     PYTHONUNBUFFERED=1 python3 "$ROOT/native/desktop_portal_bridge/eli_portal_bridge.py" \
-      --width "${ELI_VR_CAPTURE_WIDTH:-1280}" --fps "${ELI_VR_CAPTURE_FPS:-18}" \
+      --width "${ELI_VR_CAPTURE_WIDTH:-0}" --fps "${ELI_VR_CAPTURE_FPS:-18}" \
       --token-file "$(eli_state_dir)/portal-restore-token" >"$log" 2>&1 &
     HELPER_PID=$!
     desktop_share_wait "$log" "$HELPER_PID"
@@ -126,7 +126,7 @@ desktop_helper_start(){
       printf '\nWARNING: desktop screen off: the desktop helper is not built.\n' >&2
       return 0
     fi
-    "$bin" --fps "${ELI_VR_CAPTURE_FPS:-15}" --width "${ELI_VR_CAPTURE_WIDTH:-1600}" \
+    "$bin" --fps "${ELI_VR_CAPTURE_FPS:-15}" --width "${ELI_VR_CAPTURE_WIDTH:-0}" \
       --quality "${ELI_VR_CAPTURE_QUALITY:-72}" >"$log" 2>&1 &
     HELPER_PID=$!
   fi

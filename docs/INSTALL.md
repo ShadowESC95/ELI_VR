@@ -367,7 +367,7 @@ All three helpers read the same optional variables:
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `ELI_VR_CAPTURE_WIDTH` | 1280 (Wayland), 1600 (others) | Width of the frames sent to the screen |
+| `ELI_VR_CAPTURE_WIDTH` | 0: the monitor's own width | Width of the frames sent to the screen; a smaller number sends less |
 | `ELI_VR_CAPTURE_FPS` | 18 (Wayland), 15 (others) | Frames per second |
 | `ELI_VR_CAPTURE_QUALITY` | 72 | JPEG quality, native helper only |
 

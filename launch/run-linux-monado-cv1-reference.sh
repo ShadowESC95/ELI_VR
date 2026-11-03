@@ -127,7 +127,7 @@ if [[ "${XDG_SESSION_TYPE:-}" == "wayland" && "${ELI_VR_DESKTOP_CAPTURE:-1}" != 
   if python3 -c 'import dbus, gi; gi.require_version("Gst","1.0"); from gi.repository import Gst; Gst.init(None); assert Gst.ElementFactory.find("pipewiresrc")' >/dev/null 2>&1; then
     say "Starting XDG Portal + PipeWire desktop capture"
     PYTHONUNBUFFERED=1 python3 "$PORTAL_BRIDGE" \
-      --width "${ELI_VR_CAPTURE_WIDTH:-1280}" \
+      --width "${ELI_VR_CAPTURE_WIDTH:-0}" \
       --fps "${ELI_VR_CAPTURE_FPS:-18}" \
       --token-file "$STATE/portal-restore-token" \
       >"$BRIDGE_LOG" 2>&1 &
@@ -159,7 +159,7 @@ elif [[ "${ELI_VR_START_DESKTOP_BRIDGE:-0}" == "1" ]]; then
   BRIDGE="$ROOT/native/desktop_bridge/target/release/eli-vr-desktop-bridge"
   if [[ -x "$BRIDGE" ]]; then
     say "Starting legacy/X11 desktop bridge"
-    "$BRIDGE" --fps "${ELI_VR_CAPTURE_FPS:-15}" --width "${ELI_VR_CAPTURE_WIDTH:-1280}" --quality "${ELI_VR_CAPTURE_QUALITY:-72}" >"$BRIDGE_LOG" 2>&1 &
+    "$BRIDGE" --fps "${ELI_VR_CAPTURE_FPS:-15}" --width "${ELI_VR_CAPTURE_WIDTH:-0}" --quality "${ELI_VR_CAPTURE_QUALITY:-72}" >"$BRIDGE_LOG" 2>&1 &
     BRIDGE_PID=$!
   else
     warn "Legacy desktop bridge requested but binary is not built."

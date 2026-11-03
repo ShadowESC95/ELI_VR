@@ -11,5 +11,5 @@ fi
 # macOS asks for Screen Recording permission the first time the bridge captures.
 exec "$BIN" \
   --fps "${ELI_VR_CAPTURE_FPS:-15}" \
-  --width "${ELI_VR_CAPTURE_WIDTH:-1600}" \
+  --width "${ELI_VR_CAPTURE_WIDTH:-0}" \
   --quality "${ELI_VR_CAPTURE_QUALITY:-72}"

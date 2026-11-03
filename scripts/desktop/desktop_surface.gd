@@ -19,6 +19,10 @@ var capture_backend: String = "local_bridge"
 var config_ref
 var bridge_started: bool = false
 var composition_requested: bool = false
+var _width := 4.2                   # the panel, in metres
+var _height := 2.36
+var _frame_parts: Array = []        # the frame round the screen, rebuilt to the screen's own shape
+var _grab_shape: BoxShape3D
 
 func setup(config, p_xr_active: bool = false, capabilities: Dictionary = {}) -> void:
     config_ref = config
@@ -39,6 +43,8 @@ func setup(config, p_xr_active: bool = false, capabilities: Dictionary = {}) -> 
 
     var width: float = float(config.get_value("desktop.width_m", 4.20))
     var height: float = float(config.get_value("desktop.height_m", 2.36))
+    _width = width
+    _height = height
     var distance: float = float(config.get_value("desktop.distance_m", 5.60))
     var y: float = float(config.get_value("desktop.vertical_offset_m", 2.55))
     var x: float = float(config.get_value("desktop.horizontal_offset_m", 0.0))
@@ -175,6 +181,7 @@ func _build_frame(width: float, height: float) -> void:
         box.position = spec[1]
         box.material_override = frame_material
         add_child(box)
+        _frame_parts.append(box)
 
     var handle: Label3D = Label3D.new()
     handle.text = "GRIP SCREEN TO MOVE  •  STICK Y DISTANCE  •  STICK X ROTATE"
@@ -184,10 +191,12 @@ func _build_frame(width: float, height: float) -> void:
     handle.position = Vector3(0.0, -height * 0.5 - 0.13, 0.04)
     handle.no_depth_test = true
     add_child(handle)
+    _frame_parts.append(handle)
 
 func _build_grab_surface(width: float, height: float) -> void:
     var shape_node: CollisionShape3D = CollisionShape3D.new()
     var shape: BoxShape3D = BoxShape3D.new()
+    _grab_shape = shape
     shape.size = Vector3(width + 0.18, height + 0.22, 0.16)
     shape_node.shape = shape
     shape_node.position.z = 0.06
@@ -217,10 +226,28 @@ func _stop_bridge() -> void:
 
 func _on_frame(texture: Texture2D) -> void:
     texture_rect.texture = texture
+    # the screen itself on the panel, sampled once and with mipmaps, so text stays sharp and does
+    # not shimmer; the panel takes the screen's own shape
+    if material.albedo_texture != texture:
+        material.albedo_texture = texture
+        material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+    var shape_now := float(texture.get_height()) / maxf(1.0, float(texture.get_width()))
+    if absf(_height - _width * shape_now) > 0.01:
+        _reshape(_width, _width * shape_now)
     if placeholder_label:
         placeholder_label.visible = false
     if title_label:
         title_label.visible = false
+
+func _reshape(width: float, height: float) -> void:
+    _height = height
+    (mesh_instance.mesh as QuadMesh).size = Vector2(width, height)
+    for part in _frame_parts:
+        part.queue_free()
+    _frame_parts.clear()
+    _build_frame(width, height)
+    if _grab_shape:
+        _grab_shape.size = Vector3(width + 0.18, height + 0.22, 0.16)
 
 func _on_state(_state: String) -> void:
     _refresh_placeholder()

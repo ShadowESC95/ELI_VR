@@ -58,8 +58,8 @@ struct Args {
     #[arg(long, default_value_t = 15)]
     fps: u32,
 
-    /// Output width. Height preserves monitor aspect ratio.
-    #[arg(long, default_value_t = 1600)]
+    /// Output width; 0 sends the monitor at its own width. Height preserves monitor aspect ratio.
+    #[arg(long, default_value_t = 0)]
     width: u32,
 
     /// JPEG quality, 1-100.
@@ -104,7 +104,7 @@ fn send_loop(mut stream: TcpStream, monitor: &Monitor, args: &Args) -> Result<()
         let started = Instant::now();
         let captured = monitor.capture_image().context("capture_image failed")?;
         let (src_w, src_h) = captured.dimensions();
-        let target_w = args.width.clamp(320, src_w.max(320));
+        let target_w = if args.width == 0 { src_w.max(320) } else { args.width.clamp(320, src_w.max(320)) };
         let target_h = ((target_w as f64) * (src_h as f64) / (src_w as f64))
             .round()
             .max(180.0) as u32;

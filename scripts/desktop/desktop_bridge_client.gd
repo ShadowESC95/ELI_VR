@@ -155,6 +155,7 @@ func _drop() -> void:
     _reset_frame_state()
 
 func _publish(image: Image) -> void:
+    image.generate_mipmaps()            # small text on a far panel stays readable, not shimmering
     if texture == null:
         texture = ImageTexture.create_from_image(image)
     else:

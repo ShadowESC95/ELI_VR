@@ -142,17 +142,17 @@ class Bridge:
     def start_gstreamer(self, fd, node_id):
         # Pin the height too. With only a width, the scaler keeps the monitor's
         # height and sends a stretched, far larger frame.
-        size = f"width={self.width}"
+        size = f"width={self.width}" if self.width > 0 else ""
         if self.source_size:
             src_w, src_h = self.source_size
-            width = min(self.width, src_w)
+            width = min(self.width, src_w) if self.width > 0 else src_w      # 0: the screen's own width
             height = max(2, round(width * src_h / src_w / 2) * 2)
             size = f"width={width},height={height}"
         desc = (
             f"pipewiresrc fd={fd} path={node_id} do-timestamp=true ! "
             "queue max-size-buffers=1 leaky=downstream ! "
             "videoconvert ! videoscale ! videorate ! "
-            f"video/x-raw,format=RGBA,{size},framerate={self.fps}/1 ! "
+            f"video/x-raw,format=RGBA,{size + ',' if size else ''}framerate={self.fps}/1 ! "
             "appsink name=sink emit-signals=true max-buffers=1 drop=true sync=false"
         )
         self.pipeline = Gst.parse_launch(desc)
@@ -226,14 +226,14 @@ class Bridge:
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--bind', default='127.0.0.1:47831')
-    ap.add_argument('--width', type=int, default=1280)
+    ap.add_argument('--width', type=int, default=0, help="frame width; 0 sends the screen at its own width")
     ap.add_argument('--fps', type=int, default=18)
     ap.add_argument('--token-file', default='~/.local/state/eli-vr-standalone/portal-restore-token')
     args = ap.parse_args()
     DBusGMainLoop(set_as_default=True)
     Gst.init(None)
     try:
-        Bridge(args.bind, max(640,min(args.width,2560)), max(5,min(args.fps,30)), args.token_file).run()
+        Bridge(args.bind, 0 if args.width <= 0 else max(640, args.width), max(5, min(args.fps, 30)), args.token_file).run()
     except Exception as exc:
         print(f"ELI portal fatal: {type(exc).__name__}: {exc}", flush=True)
         raise

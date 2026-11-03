@@ -54,7 +54,7 @@ A profile sets the last four and the render scale together. The table is in [ADV
 | `desktop.bridge_host` | `127.0.0.1` | Where the capture helper is. Loopback only |
 | `desktop.bridge_port` | `47831` | Its port |
 | `desktop.bridge_fps` | `15` | Frames a second asked of the helper |
-| `desktop.bridge_width` | `1280` | Frame width asked of the helper |
+| `desktop.bridge_width` | `1280` | Width of the waiting screen shown until the first frame; the frames come at the monitor's own width (`ELI_VR_CAPTURE_WIDTH`) |
 | `desktop.jpeg_quality` | `72` | Frame quality, native helper |
 | `desktop.distance_m` | `5.6` | How far away the screen stands |
 | `desktop.width_m` | `4.2` | Its width |

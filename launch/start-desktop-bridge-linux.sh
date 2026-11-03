@@ -14,7 +14,7 @@ if [[ "${XDG_SESSION_TYPE:-}" == "wayland" && "${ELI_VR_ALLOW_LEGACY_WAYLAND_CAP
     exit 1
   fi
   exec python3 "$PORTAL" \
-    --width "${ELI_VR_CAPTURE_WIDTH:-1280}" \
+    --width "${ELI_VR_CAPTURE_WIDTH:-0}" \
     --fps "${ELI_VR_CAPTURE_FPS:-18}"
 fi
 
@@ -25,5 +25,5 @@ fi
 
 exec "$BIN" \
   --fps "${ELI_VR_CAPTURE_FPS:-15}" \
-  --width "${ELI_VR_CAPTURE_WIDTH:-1600}" \
+  --width "${ELI_VR_CAPTURE_WIDTH:-0}" \
   --quality "${ELI_VR_CAPTURE_QUALITY:-72}"
