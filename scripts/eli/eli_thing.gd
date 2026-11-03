@@ -37,10 +37,11 @@ var _moving: Array = []        # [node, spin radians a second, bob metres, pulse
 var pinned := false            # the room has a place for this kind of record, and it stands there
 # Records that, pinned, are written out where they stand: a belief, a memory, what ELI found for
 # you, what it wrote, and what it is playing.
-const WRITTEN := ["claim", "memory", "found", "written", "playing"]
+const WRITTEN := ["claim", "memory", "found", "written", "playing", "seen"]
 const TYPED := ["DejaVu Sans Mono", "Liberation Mono", "Menlo", "Consolas", "Courier New", "monospace"]
 var lines: Array = []               # what a written record says, line by line, when ELI sends it so
 var prop := ""                      # a real thing the body has (assets/models/<prop>), when that is what it is
+var picture := ""                   # the path ELI v3 serves a picture this record shows at
 var art := {}                       # a painting's style and colours
 const ART_STYLES := ["rings", "stripes", "waves", "cells", "blooms", "horizon", "rays", "drift"]
 var _text_key := ""
@@ -74,6 +75,7 @@ func refresh(data: Dictionary, first: bool = false) -> void:
     made_by = str(data.get("made_by", ""))
     kind = str(data.get("kind", ""))
     lines = data.get("lines", []) if typeof(data.get("lines")) == TYPE_ARRAY else []
+    picture = str(data.get("picture", ""))
     var pos: Array = form.get("pos", [0.0, 0.0, 0.0])
     _target = _pin.origin if pinned else EliSenses.from_protocol(pos)
     if first:
@@ -226,7 +228,53 @@ func _cover() -> void:
     _body = held
 
 func _words_key() -> String:
-    return "%s|%s|%s" % [label, meaning, "\n".join(lines)]
+    return "%s|%s|%s|%s" % [label, meaning, "\n".join(lines), picture]
+
+# A picture ELI took or looked at for you, as a photograph pinned up: the picture itself once it
+# has come from ELI v3 (dark until then), and under it what ELI saw in it.
+func _photo() -> void:
+    _name_tag.visible = false
+    _material = null
+    var border := StandardMaterial3D.new()
+    border.albedo_color = Color(0.95, 0.94, 0.9)
+    border.roughness = 0.9
+    var mount := MeshInstance3D.new()
+    var card := QuadMesh.new()
+    card.size = Vector2(0.92, 0.8)
+    mount.mesh = card
+    mount.material_override = border
+    _body.add_child(mount)
+    var print_face := StandardMaterial3D.new()
+    print_face.albedo_color = Color(0.08, 0.09, 0.1)
+    print_face.roughness = 0.6
+    var photo := MeshInstance3D.new()
+    var face := QuadMesh.new()
+    face.size = Vector2(0.84, 0.5)
+    photo.mesh = face
+    photo.material_override = print_face
+    photo.position = Vector3(0, 0.1, 0.002)
+    _body.add_child(photo)
+    var caption := Label3D.new()
+    caption.text = label + ("\n" + str(lines[0]) if not lines.is_empty() else "")
+    caption.font_size = 26
+    caption.pixel_size = 0.0011
+    caption.modulate = Color(0.1, 0.09, 0.08)
+    caption.outline_size = 0
+    caption.shaded = false
+    caption.width = 0.84 / 0.0011
+    caption.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+    caption.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+    caption.position = Vector3(-0.42, -0.17, 0.003)
+    caption.render_priority = 1
+    _body.add_child(caption)
+    if not picture.is_empty():
+        EliPictures.want(picture, func(texture: Texture2D):
+            if is_instance_valid(photo):
+                print_face.albedo_texture = texture
+                print_face.albedo_color = Color.WHITE
+                var wide := float(texture.get_width()) / maxf(1.0, float(texture.get_height()))
+                face.size = Vector2(minf(0.84, 0.5 * wide), minf(0.5, 0.84 / maxf(wide, 0.01))))
 
 # A sheet pinned or clipped up: what ELI found for you, printed (`typed`), or what it wrote, with
 # the sheets under it showing at the edges.
@@ -473,6 +521,9 @@ func _shape() -> void:
         return
     if kind == "playing" and pinned:
         _radio()
+        return
+    if kind == "seen" and pinned:
+        _photo()
         return
     if shape == "prop" and not prop.is_empty():
         _real()

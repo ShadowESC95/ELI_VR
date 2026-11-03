@@ -610,6 +610,7 @@ func _setup_eli() -> void:
     eli_link.name = "EliLink"
     add_child(eli_link)
     eli_link.configure(config, network_policy)
+    EliPictures.link = eli_link
     if not eli_link.enabled:
         return
 

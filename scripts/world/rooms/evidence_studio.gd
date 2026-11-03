@@ -25,6 +25,7 @@ func _build() -> void:
     _wall_of_sheets()
     _desk()
     _findings_board()
+    _sights_board()
     _projector()
     _fan()
     _files()
@@ -125,6 +126,30 @@ func _findings_board() -> void:
     var warm := Color(1.0, 0.85, 0.65)
     spot(board.transform * Vector3(0, 2.2, 2.2), board.transform * Vector3(0, 0, 0), warm, 3.5, 6.0, 38.0)
 
+# Beside it, a board for the pictures ELI took or looked at for you, each with what ELI saw.
+const SEEN_BEARING := -150.0
+const SEEN_PLACES := [Vector3(-0.55, 0.45, 0.09), Vector3(0.55, 0.45, 0.09), Vector3(-0.55, -0.5, 0.09), Vector3(0.55, -0.5, 0.09)]
+
+func _seen_board() -> Transform3D:
+    var a := deg_to_rad(SEEN_BEARING)
+    return Transform3D(Basis(Vector3.UP, -a), Vector3(sin(a), 0.0, -cos(a)) * 13.3 + Vector3(0, 2.25, 0))
+
+func _sights_board() -> void:
+    var cork := MaterialKitClass.surface("planks", 1.2, Color(0.75, 0.55, 0.36), 1.0, true)
+    var board := Node3D.new()
+    board.transform = _seen_board()
+    add_child(board)
+    box(Vector3(2.4, 2.2, 0.08), cork, Vector3.ZERO, board)
+    var heading := Label3D.new()
+    heading.text = "WHAT ELI SAW"
+    heading.font_size = 48
+    heading.pixel_size = 0.003
+    heading.modulate = Color(0.95, 0.88, 0.75)
+    heading.outline_size = 6
+    heading.position = Vector3(0, 1.3, 0.05)
+    board.add_child(heading)
+    spot(board.transform * Vector3(0, 2.2, 2.2), board.transform * Vector3(0, 0, 0), Color(1.0, 0.85, 0.65), 3.0, 6.0, 38.0)
+
 func _projector() -> void:
     var at := Vector3(6.4, 0, 4.0)
     prop("tool_cart", at, -52.0 + 90.0)
@@ -175,6 +200,8 @@ func _files() -> void:
 func pin_spot(kind: String, index: int) -> Variant:
     if kind == "found":
         return _found_board() * Transform3D(Basis.IDENTITY, FOUND_PLACES[index]) if index >= 0 and index < FOUND_PLACES.size() else null
+    if kind == "seen":
+        return _seen_board() * Transform3D(Basis.IDENTITY, SEEN_PLACES[index]) if index >= 0 and index < SEEN_PLACES.size() else null
     if kind != "claim" or index >= BOARD_ORDER.size() * PLACES.size():
         return null
     var b: int = BOARD_ORDER[index / PLACES.size()]

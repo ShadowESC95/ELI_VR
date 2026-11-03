@@ -104,6 +104,9 @@ class Screens(Alive):
     def test_the_core_room_shows_what_is_coming_up_on_your_agenda(self) -> None:
         self.check("the_core_shows_what_is_coming_up")
 
+    def test_a_picture_eli_took_is_pinned_up_as_a_photograph(self) -> None:
+        self.check("a_picture_eli_took_is_pinned_up_as_a_photograph")
+
 
 if __name__ == "__main__":
     unittest.main()

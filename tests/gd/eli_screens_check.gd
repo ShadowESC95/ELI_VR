@@ -16,6 +16,17 @@ class Settings extends RefCounted:
     func get_value(_key, fallback = null):
         return fallback
 
+# Stands in for the link to ELI v3: serves one picture, a 6 by 3 PNG.
+class PictureLink extends Node:
+    var asked := []
+    func can(capability: String) -> bool:
+        return capability == "pictures"
+    func fetch(path: String) -> EliResult:
+        asked.append(path)
+        var image := Image.create(6, 3, false, Image.FORMAT_RGB8)
+        image.fill(Color(0.2, 0.6, 0.9))
+        return EliResult.good(image.save_png_to_buffer())
+
 func _initialize() -> void:
     _run.call_deferred()
 
@@ -195,6 +206,25 @@ func _run() -> void:
     core.show_eli({"connected": true, "state": {"coming_up": []}})
     var none_ok: bool = _texts(core._coming)[0] == "nothing on the agenda"
     _check("the_core_shows_what_is_coming_up", coming_ok and none_ok, str(agenda))
+    var wall = EvidenceWall.new()
+    root.add_child(wall)
+    wall.build({}, Settings.new())
+    var link := PictureLink.new()
+    root.add_child(link)
+    EliPictures.link = link
+    var sight = Thing.new()
+    wall.add_child(sight)
+    sight.build({"id": "seen_31", "name": "A screenshot", "kind": "seen", "meaning": "The desktop",
+                 "lines": ["The desktop, two windows open"], "picture": "/v1/world/picture/31",
+                 "form": {"shape": "board", "colour": "#e8e2d4"}})
+    var placed_at = wall.pin_spot("seen", 0)
+    sight.pin_to(placed_at)
+    await process_frame
+    var faces: Array = sight._body.get_children().filter(func(n): return n is MeshInstance3D)
+    var shown_face: StandardMaterial3D = faces[1].material_override
+    var pictured: bool = shown_face.albedo_texture != null and is_equal_approx((faces[1].mesh as QuadMesh).size.x / (faces[1].mesh as QuadMesh).size.y, 2.0)
+    _check("a_picture_eli_took_is_pinned_up_as_a_photograph", placed_at is Transform3D and wall.pin_spot("seen", 4) == null
+           and pictured and link.asked == ["/v1/world/picture/31"], "placed %s, pictured %s, asked %s" % [placed_at is Transform3D, pictured, link.asked])
     _check("a_painting_is_painted_and_stands_on_an_easel_on_the_floor", styled == 5 and hung.eye_height() < 0.6
            and standing.eye_height() > 0.8 and standing._body.get_child_count() > hung._body.get_child_count(),
            "style %d, hung %s, standing %s" % [styled, hung.eye_height(), standing.eye_height()])
