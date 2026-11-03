@@ -17,6 +17,7 @@ func _build() -> void:
 
     _lights_in_the_sky()
     _snowfield()
+    _timber()
     _platform()
     _hut()
     if motes:
@@ -65,6 +66,21 @@ func _snowfield() -> void:
         var shard := add(spike, ice, Vector3(cos(angle) * distance, rng.randf_range(-0.2, 0.9), sin(angle) * distance))
         shard.scale = Vector3(1.0, rng.randf_range(0.5, 1.7), 1.0) * rng.randf_range(0.6, 1.8)
         shard.rotation = Vector3(rng.randf_range(-0.25, 0.25), rng.randf() * TAU, rng.randf_range(-0.25, 0.25))
+
+# Saplings, stumps and fallen trunks of the treeline, out of the snow (scanned, assets/models).
+func _timber() -> void:
+    var rng := RandomNumberGenerator.new()
+    rng.seed = 5
+    for i in 14:
+        var angle := rng.randf() * TAU
+        var distance := rng.randf_range(12.0, 40.0)
+        prop("pine_sapling_small" if i % 2 else "fir_sapling", Vector3(cos(angle) * distance, -0.1, sin(angle) * distance),
+             rng.randf() * 360.0, rng.randf_range(0.9, 1.8))
+    for i in 5:
+        var angle := rng.randf() * TAU
+        var distance := rng.randf_range(11.0, 30.0)
+        prop(["dead_tree_trunk_02", "dead_tree_trunk", "tree_stump_01", "boulder_01", "dead_tree_trunk_02"][i],
+             Vector3(cos(angle) * distance, -0.12, sin(angle) * distance), rng.randf() * 360.0, rng.randf_range(0.9, 1.5))
 
 func _platform() -> void:
     var boards := MaterialKitClass.surface("planks", 2.4, Color(1.5, 1.35, 1.2), 0.9)

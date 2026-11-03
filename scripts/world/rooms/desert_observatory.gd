@@ -36,15 +36,25 @@ func _dunes() -> void:
     var sand := MaterialKitClass.surface("sand", 4.0, Color(0.62, 0.58, 0.56), 0.95)
     add(MeshKitClass.terrain(640.0, 190, noise, 26.0, 12.0, 26.0, 30.0, -0.16), sand)
 
-    var stone := MaterialKitClass.surface("rock", 2.0, Color(0.62, 0.52, 0.42), 1.0, true)
+    # the boulders, quiver trees and dry scrub of a desert's edge (scanned, assets/models)
     var rng := RandomNumberGenerator.new()
     rng.seed = 14
+    var boulders := ["namaqualand_boulder_02", "namaqualand_boulder_03", "namaqualand_boulder_05", "namaqualand_boulder_06"]
     for i in 16:
         var angle := rng.randf() * TAU
         var distance := rng.randf_range(12.0, 44.0)
-        var boulder := add(MeshKitClass.rock(60 + i, rng.randf_range(0.5, 2.4), 0.3, 10), stone,
-            Vector3(cos(angle) * distance, rng.randf_range(-0.3, 0.5), sin(angle) * distance))
-        boulder.rotation.y = rng.randf() * TAU
+        prop(boulders[i % boulders.size()], Vector3(cos(angle) * distance, -0.16 + rng.randf_range(-0.15, 0.05), sin(angle) * distance),
+             rng.randf() * 360.0, rng.randf_range(0.8, 1.7))
+    for i in 7:
+        var angle := rng.randf() * TAU
+        var distance := rng.randf_range(13.0, 36.0)
+        prop(["quiver_tree_01", "quiver_tree_02", "didelta_spinosa"][i % 3], Vector3(cos(angle) * distance, -0.16, sin(angle) * distance),
+             rng.randf() * 360.0, rng.randf_range(0.9, 1.4))
+    for i in 20:
+        var angle := rng.randf() * TAU
+        var distance := rng.randf_range(10.5, 40.0)
+        prop("dry_branches_medium_01" if i % 2 else "shrub_04", Vector3(cos(angle) * distance, -0.16, sin(angle) * distance),
+             rng.randf() * 360.0, rng.randf_range(1.0, 2.2))
 
 func _platform() -> void:
     var slab := MaterialKitClass.surface("concrete", 3.0, Color(0.6, 0.55, 0.5), 0.9)

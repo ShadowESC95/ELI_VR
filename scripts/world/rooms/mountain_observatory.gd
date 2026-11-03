@@ -57,24 +57,32 @@ func _terrace() -> void:
         stone.rotation.y = -angle + PI * 0.5
         stone.scale = Vector3(1.0, 0.8 + 0.4 * fmod(float(i) * 0.37, 1.0), 1.0)
 
+# Real boulders, trees and shrubs of a dry mountain plateau (scanned, assets/models), scattered
+# beyond the outer walk; nothing stands on the terrace itself.
+const BOULDERS := ["namaqualand_boulder_02", "namaqualand_boulder_03", "namaqualand_boulder_05", "namaqualand_boulder_06", "boulder_01"]
+const TREES := ["searsia_lucida", "quiver_tree_01", "quiver_tree_02", "didelta_spinosa"]
+
 func _stones() -> void:
-    var rock := MaterialKitClass.surface("rock", 2.2, Color(1.0, 0.74, 0.6), 1.0, true)
     var rng := RandomNumberGenerator.new()
     rng.seed = 12
     for i in 18:
         var angle := rng.randf() * TAU
-        var distance := rng.randf_range(12.0, 34.0)
-        var boulder := add(MeshKitClass.rock(100 + i, rng.randf_range(0.5, 2.6), 0.32, 10), rock,
-            Vector3(cos(angle) * distance, rng.randf_range(-0.3, 0.4), sin(angle) * distance))
-        boulder.rotation.y = rng.randf() * TAU
-    # cairns: someone was here before
-    for at in [Vector3(-10.5, 0, -5.0), Vector3(11.0, 0, 3.5), Vector3(-4.0, 0, 11.5)]:
-        var size := 0.42
-        var y := -0.1
-        for level in 5:
-            add(MeshKitClass.rock(200 + level + int(at.x), size, 0.2, 8), rock, at + Vector3(rng.randf_range(-0.05, 0.05), y + size * 0.6, rng.randf_range(-0.05, 0.05)))
-            y += size * 1.15
-            size *= 0.78
+        var distance := rng.randf_range(11.5, 34.0)
+        prop(BOULDERS[i % BOULDERS.size()], Vector3(cos(angle) * distance, -0.14 + rng.randf_range(-0.1, 0.05), sin(angle) * distance),
+             rng.randf() * 360.0, rng.randf_range(0.8, 1.6))
+    for i in 9:
+        var angle := rng.randf() * TAU
+        var distance := rng.randf_range(13.0, 30.0)
+        prop(TREES[i % TREES.size()], Vector3(cos(angle) * distance, -0.14, sin(angle) * distance), rng.randf() * 360.0,
+             rng.randf_range(0.9, 1.4))
+    for i in 24:
+        var angle := rng.randf() * TAU
+        var distance := rng.randf_range(10.2, 36.0)
+        prop("shrub_04" if i % 3 else "dry_branches_medium_01", Vector3(cos(angle) * distance, -0.14, sin(angle) * distance),
+             rng.randf() * 360.0, rng.randf_range(1.2, 2.6))
+    for at in [Vector3(-10.5, -0.14, -5.0), Vector3(11.0, -0.14, 3.5)]:
+        prop("namaqualand_stones_01", at, rng.randf() * 360.0, 1.6)
+    prop("stone_fire_pit", Vector3(4.6, 0.0, 3.8), 0.0, 1.0)
 
 func _instrument() -> void:
     var brass := MaterialKitClass.metal("brushed_metal", 0.4, Color(0.95, 0.74, 0.42), 0.6)
@@ -94,16 +102,7 @@ func _instrument() -> void:
         Vector2(0.035, -0.6), Vector2(0.035, -0.75), Vector2(0.0, -0.75),
     ]), 20), brass, Vector3(0, 1.62, 0), stand)
     tube.rotation = Vector3(deg_to_rad(-62.0), deg_to_rad(-50.0), 0.0)
-    # benches facing the light
-    var seat := BoxMesh.new()
-    seat.size = Vector3(2.0, 0.12, 0.55)
-    var paving := MaterialKitClass.surface("concrete", 1.5, Color(0.9, 0.8, 0.72))
+    # benches facing the light: a bench's front is its +z, and the sunrise is towards -z
     for bearing in [118.0, 242.0]:
         var a := deg_to_rad(float(bearing))
-        var at := Vector3(sin(a), 0.0, -cos(a)) * 5.0
-        var bench := add(seat, paving, at + Vector3(0, 0.45, 0))
-        bench.rotation.y = -a
-        var foot := BoxMesh.new()
-        foot.size = Vector3(0.25, 0.4, 0.5)
-        for side in [-0.75, 0.75]:
-            add(foot, paving, Vector3(side, -0.25, 0), bench)
+        prop("painted_wooden_bench", Vector3(sin(a), 0.0, -cos(a)) * 5.0, 180.0 - bearing + 180.0, 1.1)

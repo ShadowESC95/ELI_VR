@@ -23,6 +23,8 @@ func _build() -> void:
     _rig()
     _afloat()
     _far_rocks()
+    _stores()
+    _shoals()
     flock(Vector3(-20, 22, -60), 40.0, 7, 0.14)
     if motes:
         drift(Vector3(0, 2.0, 0), Vector3(12, 2, 12), 160, Color(1.0, 0.85, 0.7), 0.025, Vector3(1, 0.1, 0.2), 0.4, 0.6)
@@ -123,6 +125,27 @@ func _afloat() -> void:
     ]), 20), hull_wood, Vector3.ZERO, boat)
     shell.scale = Vector3(1.0, 1.0, 2.6)
     _floating.append([boat, -2.4, 1.3, 0.07])
+
+# What a working platform keeps on deck (scanned, assets/models).
+func _stores() -> void:
+    prop("wooden_barrels_01", Vector3(5.2, 0.0, -5.6), 20.0, 0.9)
+    prop("wooden_crate_01", Vector3(6.6, 0.0, -3.4), -15.0, 1.0)
+    prop("wooden_crate_01", Vector3(7.2, 0.35, -3.6), 40.0, 1.0)
+    prop("wooden_crate_01", Vector3(-6.8, 0.0, 4.2), 70.0, 1.0)
+    for at in [Vector3(-7.0, 1.05, -5.2), Vector3(7.4, 1.05, 4.9), Vector3(0.6, 1.05, 8.6)]:
+        prop("wooden_lantern_01", at, 0.0, 1.0)
+        glow(at + Vector3(0, 0.3, 0), Color(1.0, 0.8, 0.5), 0.5, 1.2, 0.7)
+
+# Rocks breaking the water near the legs, part under, part over the swell.
+func _shoals() -> void:
+    var rng := RandomNumberGenerator.new()
+    rng.seed = 23
+    for i in 7:
+        var angle := rng.randf_range(0.6, 5.4)
+        var distance := rng.randf_range(13.0, 26.0)
+        prop("coast_rocks_05" if i % 2 else "sand_rocks_small_01",
+             Vector3(cos(angle) * distance, -2.6 - rng.randf_range(0.1, 0.5), sin(angle) * distance),
+             rng.randf() * 360.0, rng.randf_range(1.4, 2.8))
 
 func _far_rocks() -> void:
     var dark := MaterialKitClass.surface("rock", 30.0, Color(0.16, 0.14, 0.16), 1.0, true)

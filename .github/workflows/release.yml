@@ -82,9 +82,74 @@ jobs:
           path: build/release/ELI_VR-*-source.zip
           if-no-files-found: error
 
+  godot:
+    name: godot checks (${{ matrix.os }})
+    needs: check
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            file: linux.x86_64.zip
+            bin: Godot_v4.7.2-stable_linux.x86_64
+          - os: windows-2022
+            file: win64.exe.zip
+            bin: Godot_v4.7.2-stable_win64_console.exe
+          - os: macos-14
+            file: macos.universal.zip
+            bin: Godot.app/Contents/MacOS/Godot
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Cache Godot
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: .godot-dl
+          key: godot-${{ env.GODOT_VERSION }}-stable-${{ matrix.file }}
+
+      - name: Download Godot
+        if: steps.cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          mkdir -p .godot-dl && cd .godot-dl
+          curl -fL --retry 5 --retry-all-errors -o godot.zip \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_${{ matrix.file }}"
+
+      - name: Unpack Godot
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/godot"
+          unzip -q .godot-dl/godot.zip -d "$RUNNER_TEMP/godot"
+          GODOT="$RUNNER_TEMP/godot/${{ matrix.bin }}"
+          chmod +x "$GODOT" || true
+          echo "GODOT_BIN=$GODOT" >> "$GITHUB_ENV"
+          "$GODOT" --version
+
+      - name: Import the project
+        shell: bash
+        run: |
+          "$GODOT_BIN" --headless --path . --xr-mode off --import 2>&1 | tail -5
+
+      # The Godot checks that skip without Godot (tests/test_eli_alive.py): here they run, on
+      # every desktop OS ELI VR ships for.
+      - name: Godot checks
+        shell: bash
+        run: python -m unittest tests.test_eli_alive -v
+
+      - name: Soak (every environment built and taken down for two minutes)
+        shell: bash
+        run: |
+          "$GODOT_BIN" --headless --path . --xr-mode off --script tools/soak.gd -- --seconds=120 2>&1 | tee "$RUNNER_TEMP/soak.log" | grep -E "^SOAK" || true
+          grep -q "^SOAK PASS" "$RUNNER_TEMP/soak.log"
+
   export:
     name: godot export (linux, windows, macos)
-    needs: check
+    needs: [check, godot]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
