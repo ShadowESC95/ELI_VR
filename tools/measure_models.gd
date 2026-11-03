@@ -22,7 +22,7 @@ func _init() -> void:
     var listed: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(LISTED))
     var measured := 0
     for model in listed.keys():
-        var scene := load("res://assets/models/%s/%s_1k.gltf" % [model, model]) as PackedScene
+        var scene := load(ModelCache.path_of(model)) as PackedScene
         if scene == null:
             push_warning("no model %s" % model)
             continue

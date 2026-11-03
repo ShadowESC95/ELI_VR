@@ -9,8 +9,8 @@ how the files under assets/models/ were made, so they can be made again.
 Expected in the folder:
     models.json            Poly Haven's model list (https://api.polyhaven.com/assets?t=models),
                            for each model's name and authors
-    <id>/<id>_1k.gltf      each model as Poly Haven gives it at 1K: the glTF, its .bin
-    <id>/...               and the textures it names
+    <id>/<id>_2k.gltf      each model as Poly Haven gives it, at 2K (furniture you see up close)
+    <id>/<id>_1k.gltf      or at 1K (small things): the glTF, its .bin and the textures it names
 
 Every file a glTF names must be there, inside that model's folder; nothing else is
 copied. assets/models/models.json records what each model is and who made it, and
@@ -57,8 +57,8 @@ def main() -> int:
     manifest = {name: entry for name, entry in manifest.items() if (MODELS / name).is_dir()}
     for folder in sorted(p for p in src.iterdir() if p.is_dir()):
         model = folder.name
-        gltf = folder / f"{model}_1k.gltf"
-        if not gltf.exists() or model not in catalogue:
+        gltf = next((folder / f"{model}_{res}.gltf" for res in ("2k", "1k") if (folder / f"{model}_{res}.gltf").exists()), None)
+        if gltf is None or model not in catalogue:
             continue
         dest = MODELS / model
         dest.mkdir(parents=True, exist_ok=True)
@@ -67,6 +67,7 @@ def main() -> int:
         for old in [f for f in dest.rglob("*") if f.is_file() and not f.name.endswith(".import")]:
             if old.relative_to(dest).as_posix() not in keep:
                 old.unlink()
+                Path(f"{old}.import").unlink(missing_ok=True)       # its import settings go with it
         shutil.copy2(gltf, dest / gltf.name)
         for rel in named_files(gltf):
             if not (folder / rel).is_file():

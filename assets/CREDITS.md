@@ -63,7 +63,7 @@ Each set is the 2K version, repacked as colour, normal (OpenGL convention) and o
 
 ## Objects in the rooms
 
-`assets/models/` holds 3D models from Poly Haven, <https://polyhaven.com>, as glTF with their 1K textures. Licence: Creative Commons CC0 1.0 (public domain). `tools/prepare_models.py` brings them in from Poly Haven's own downloads and records them in `assets/models/models.json`.
+`assets/models/` holds 3D models from Poly Haven, <https://polyhaven.com>, as glTF with their 2K textures (1K for small things). Licence: Creative Commons CC0 1.0 (public domain). `tools/prepare_models.py` brings them in from Poly Haven's own downloads and records them in `assets/models/models.json`.
 
 | Folder | Poly Haven model | Made by |
 |---|---|---|

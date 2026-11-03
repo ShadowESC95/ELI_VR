@@ -10,8 +10,10 @@ static var _held := {}                  # path -> PackedScene
 static var _asked := {}                 # path -> true, while it loads in the background
 static var _queue: Array = []           # paths still to start, one after another
 
+## A model's file: its 2K version where it has one (furniture you see up close), else its 1K one.
 static func path_of(model: String) -> String:
-    return "res://assets/models/%s/%s_1k.gltf" % [model, model]
+    var sharp := "res://assets/models/%s/%s_2k.gltf" % [model, model]
+    return sharp if ResourceLoader.exists(sharp) else "res://assets/models/%s/%s_1k.gltf" % [model, model]
 
 ## Lines every listed model up to load in the background, one at a time (all at once filled every
 ## worker thread and the first frame after waited on one for ever). Safe to call more than once.
