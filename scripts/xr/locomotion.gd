@@ -41,7 +41,7 @@ func _process(delta: float) -> void:
     )
     var stick: Vector2 = left.get_vector2("primary") if left else Vector2.ZERO
     var left_grabbing: bool = (
-        left.is_button_pressed("grip_click") if left else false
+        (left.is_button_pressed("grip_click") or XRWorldManipulator.is_holding(left)) if left else false
     )
 
     if stick.length() > 0.15 and not left_grabbing:
@@ -76,7 +76,7 @@ func _process(delta: float) -> void:
 
     var turn: Vector2 = right.get_vector2("primary") if right else Vector2.ZERO
     var right_grabbing: bool = (
-        right.is_button_pressed("grip_click") if right else false
+        (right.is_button_pressed("grip_click") or XRWorldManipulator.is_holding(right)) if right else false
     )
 
     if universal_flight and not right_grabbing and absf(turn.y) > 0.18:

@@ -103,7 +103,7 @@ Building the native one:
 
 ```bash
 ./native/desktop_bridge/build-linux.sh          # or build-macos.sh, build-windows.ps1
-./native/desktop_bridge/target/release/eli-vr-desktop-bridge --fps 20 --width 1920 --quality 78 --monitor 1
+./native/desktop_bridge/target/release/eli-vr-desktop-bridge --fps 20 --width 1920 --monitor 1      # --no-input: show it, never click
 ```
 
 It also checks the licence, for the app and for you. Each prints JSON:
@@ -165,8 +165,9 @@ Right stick X        snap turn
 Right stick Y        up and down
 Trigger              press buttons, enter portals
 Grip                 grab a panel, the screen or an object
-Grip + stick Y       push it away or pull it in
-Grip + stick X       turn it
+Grip + stick Y       push it away or pull it in (the desktop: larger or smaller)
+Grip + stick X       turn it (the desktop: flatter or more curved)
+Grip + hand in/out   the desktop: nearer or further
 B / Y                show or hide the spatial console
 Menu (left)          wrist menu
 Hold A / X           talk to ELI, with the link on

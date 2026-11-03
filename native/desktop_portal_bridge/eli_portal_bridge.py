@@ -1,9 +1,16 @@
 #!/usr/bin/env python3
 """ELI VR Linux Wayland capture adapter.
 
-XDG Desktop Portal ScreenCast -> PipeWire -> GStreamer -> loopback RGBA.
+XDG Desktop Portal ScreenCast -> PipeWire -> GStreamer -> loopback RGBA tiles.
 The transport binds before portal negotiation so Godot can distinguish a live
 local adapter from a missing process. No remote network access is used.
+
+A client's first line must be {"kind": "hello", "key": ...} with the key this
+helper keeps where only this account can read it (key_path), so another account
+on the computer can neither watch the screen nor move the pointer. ELI VR is then
+sent the screen as lossless tiles in the same messages as the native helper
+(native/desktop_bridge/src/screen.rs): all of them first, then only those that
+changed, and nothing while the screen is still.
 
 With the portal's RemoteDesktop (GNOME and KDE have it) the same session also
 takes the pointer: ELI VR sends one JSON line per event over the same loopback
@@ -12,7 +19,7 @@ screen, {"kind": "button", "button": "left"|"right", "down"}, {"kind": "scroll",
 "steps"}), and they reach the desktop through the portal, which asks the user
 once. Without it, or if the user says no, the screen is shown and not touched.
 """
-import argparse, json, os, socket, struct, threading
+import argparse, json, os, secrets, socket, struct, threading, time
 from pathlib import Path
 
 import dbus
@@ -30,6 +37,73 @@ REMOTE = "org.freedesktop.portal.RemoteDesktop"
 BUTTONS = {"left": 0x110, "right": 0x111, "middle": 0x112}       # BTN_LEFT, BTN_RIGHT, BTN_MIDDLE
 REQUEST = "org.freedesktop.portal.Request"
 PROPERTIES = "org.freedesktop.DBus.Properties"
+MAGIC = b"ELIT"
+TILES_ACROSS = 16          # a screen of any width is cut into this many columns of square tiles
+
+
+def key_path():
+    """Where the key is kept; the native helper and ELI VR look in the same place."""
+    run = os.environ.get("XDG_RUNTIME_DIR")
+    if run:
+        return Path(run) / "eli-vr-desktop-key"
+    return Path.home() / ".local/state/eli-vr-standalone/desktop-key"
+
+
+def issue_key():
+    """A new key, kept where ELI VR looks, readable by this account alone."""
+    key = secrets.token_hex(16)
+    path = key_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.unlink(missing_ok=True)
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(fd, "w") as f:
+        f.write(key)
+    return key
+
+
+def admits(line, key):
+    """Whether a client's first line is a hello with this key."""
+    try:
+        hello = json.loads(line)
+    except ValueError:
+        return False
+    return (isinstance(hello, dict) and hello.get("kind") == "hello"
+            and secrets.compare_digest(str(hello.get("key", "")).encode(), key.encode()))
+
+
+def tiles(width, height):
+    """Every tile of the screen, row by row, as (x, y, w, h)."""
+    side = max(1, -(-width // TILES_ACROSS))
+    return [(x, y, min(side, width - x), min(side, height - y))
+            for y in range(0, height, side) for x in range(0, width, side)]
+
+
+def changed(before, now, width, height):
+    """The tiles where `now` differs from `before` (RGBA bytes); all of them without a `before`."""
+    every = tiles(width, height)
+    if before is None or len(before) != len(now):
+        return every
+    if before == now:
+        return []
+    stride = width * 4
+    rows = [before[y * stride:(y + 1) * stride] != now[y * stride:(y + 1) * stride] for y in range(height)]
+    out = []
+    for (x, y, w, h) in every:
+        lo, hi = x * 4, (x + w) * 4
+        if any(rows[r] and before[r * stride + lo:r * stride + hi] != now[r * stride + lo:r * stride + hi]
+               for r in range(y, y + h)):
+            out.append((x, y, w, h))
+    return out
+
+
+def encode(now, width, height, rects):
+    """One message: ELIT, the screen's size and tile count, then each tile and its RGBA rows."""
+    stride = width * 4
+    parts = [struct.pack("!4sIII", MAGIC, width, height, len(rects))]
+    for (x, y, w, h) in rects:
+        parts.append(struct.pack("!IIII", x, y, w, h))
+        parts.extend(now[r * stride + x * 4:r * stride + (x + w) * 4] for r in range(y, y + h))
+    return b"".join(parts)
 
 class Bridge:
     def __init__(self, bind, width, fps, token_file, take_input=True):
@@ -51,6 +125,11 @@ class Bridge:
         self.take_input = take_input        # ask for the pointer as well as the screen
         self.node_id = None
         self.source_size = None
+        self.key = None                     # made when the helper starts
+        self.fresh = False                  # the client has not been sent the whole screen yet
+        self.before = None                  # (width, height, pixels) last captured
+        self.latest = None                  # the newest frame not yet sent
+        self.frame_ready = threading.Condition()
 
     def open_listener(self):
         host, port_s = self.bind.rsplit(':', 1)
@@ -66,25 +145,38 @@ class Bridge:
         while True:
             c, addr = self.listener.accept()
             c.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-            with self.client_lock:
-                if self.client:
-                    try: self.client.close()
-                    except OSError: pass
-                self.client = c
-            print(f"ELI portal: Godot/client connected {addr}", flush=True)
             threading.Thread(target=self.read_input, args=(c,), daemon=True).start()
 
     def read_input(self, c):
-        """Pointer events from ELI VR, one JSON line each, handed to the portal on its own loop."""
+        """A client's key, then its pointer events, one JSON line each, handed to the portal on
+        its own loop. Without the key it is closed."""
         pending = b""
-        while True:
+        while b"\n" not in pending:
             try:
                 chunk = c.recv(4096)
             except OSError:
-                return
+                chunk = b""
             if not chunk:
+                c.close()
                 return
             pending += chunk
+        hello, pending = pending.split(b"\n", 1)
+        if not self.key or not admits(hello, self.key):
+            print("ELI portal: a connection did not give the key; closed", flush=True)
+            c.close()
+            return
+        with self.client_lock:
+            if self.client:
+                try: self.client.close()
+                except OSError: pass
+            self.client = c
+            self.fresh = True
+        print("ELI portal: ELI VR connected", flush=True)
+        with self.frame_ready:                  # the screen as it is, sent whole straight away
+            if self.latest is None and self.before is not None:
+                self.latest = self.before
+            self.frame_ready.notify()
+        while True:
             while b"\n" in pending:
                 line, pending = pending.split(b"\n", 1)
                 try:
@@ -93,6 +185,13 @@ class Bridge:
                     continue
                 if isinstance(event, dict):
                     GLib.idle_add(self.handle_input, event)
+            try:
+                chunk = c.recv(4096)
+            except OSError:
+                return
+            if not chunk:
+                return
+            pending += chunk
 
     def handle_input(self, event):
         if not (self.take_input and self.session and self.node_id is not None and self.source_size):
@@ -250,11 +349,13 @@ class Bridge:
             width = min(self.width, src_w) if self.width > 0 else src_w      # 0: the screen's own width
             height = max(2, round(width * src_h / src_w / 2) * 2)
             size = f"width={width},height={height}"
+        # no frame rate is asked for: the desktop sends a frame when something on it changes,
+        # and send_loop passes on the newest at most fps times a second
         desc = (
             f"pipewiresrc fd={fd} path={node_id} do-timestamp=true ! "
             "queue max-size-buffers=1 leaky=downstream ! "
-            "videoconvert ! videoscale ! videorate ! "
-            f"video/x-raw,format=RGBA,{size + ',' if size else ''}framerate={self.fps}/1 ! "
+            "videoconvert ! videoscale ! "
+            f"video/x-raw,format=RGBA{',' + size if size else ''} ! "
             "appsink name=sink emit-signals=true max-buffers=1 drop=true sync=false"
         )
         self.pipeline = Gst.parse_launch(desc)
@@ -306,21 +407,46 @@ class Bridge:
         return Gst.FlowReturn.OK
 
     def send_frame(self, width, height, payload):
-        with self.client_lock:
-            c = self.client
-            if c is None:
-                return
-            try:
-                c.sendall(struct.pack('!4sIII', b'ELIR', width, height, len(payload)))
-                c.sendall(payload)
-            except OSError:
-                try: c.close()
-                except OSError: pass
-                self.client = None
+        """The newest picture, for send_loop; one that comes before the last was sent replaces it."""
+        with self.frame_ready:
+            self.latest = (width, height, payload)
+            self.frame_ready.notify()
+
+    def send_loop(self):
+        """Send ELI VR what changed in the newest picture, at most fps times a second: the whole
+        screen to a client that has just joined, then only the tiles that changed."""
+        gap = 1.0 / self.fps
+        while True:
+            with self.frame_ready:
+                while self.latest is None:
+                    self.frame_ready.wait()
+                width, height, pixels = self.latest
+                self.latest = None
+            started = time.monotonic()
+            with self.client_lock:
+                c, fresh = self.client, self.fresh
+            last = self.before if self.before and not fresh and self.before[:2] == (width, height) else None
+            rects = changed(last[2] if last else None, pixels, width, height)
+            self.before = (width, height, pixels)
+            if c is not None and rects:
+                try:
+                    c.sendall(encode(pixels, width, height, rects))
+                    with self.client_lock:
+                        if self.client is c:
+                            self.fresh = False
+                except OSError:
+                    with self.client_lock:
+                        if self.client is c:
+                            try: c.close()
+                            except OSError: pass
+                            self.client = None
+            time.sleep(max(0.0, gap - (time.monotonic() - started)))
 
     def run(self):
+        self.key = issue_key()
         self.open_listener()
         threading.Thread(target=self.serve, daemon=True).start()
+        threading.Thread(target=self.send_loop, daemon=True).start()
         self.init_portal()
         self.start_portal()
         self.loop.run()

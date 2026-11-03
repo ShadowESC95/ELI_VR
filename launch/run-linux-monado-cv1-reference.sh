@@ -159,7 +159,7 @@ elif [[ "${ELI_VR_START_DESKTOP_BRIDGE:-0}" == "1" ]]; then
   BRIDGE="$ROOT/native/desktop_bridge/target/release/eli-vr-desktop-bridge"
   if [[ -x "$BRIDGE" ]]; then
     say "Starting legacy/X11 desktop bridge"
-    "$BRIDGE" --fps "${ELI_VR_CAPTURE_FPS:-15}" --width "${ELI_VR_CAPTURE_WIDTH:-0}" --quality "${ELI_VR_CAPTURE_QUALITY:-72}" >"$BRIDGE_LOG" 2>&1 &
+    "$BRIDGE" --fps "${ELI_VR_CAPTURE_FPS:-15}" --width "${ELI_VR_CAPTURE_WIDTH:-0}" >"$BRIDGE_LOG" 2>&1 &
     BRIDGE_PID=$!
   else
     warn "Legacy desktop bridge requested but binary is not built."

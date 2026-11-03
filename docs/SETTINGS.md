@@ -53,16 +53,14 @@ A profile sets the last four and the render scale together. The table is in [ADV
 | `desktop.enabled` | `true` | Show the screen |
 | `desktop.bridge_host` | `127.0.0.1` | Where the capture helper is. Loopback only |
 | `desktop.bridge_port` | `47831` | Its port |
-| `desktop.bridge_fps` | `15` | Frames a second asked of the helper |
-| `desktop.bridge_width` | `1280` | Width of the waiting screen shown until the first frame; the frames come at the monitor's own width (`ELI_VR_CAPTURE_WIDTH`) |
-| `desktop.jpeg_quality` | `72` | Frame quality, native helper |
-| `desktop.distance_m` | `5.6` | How far away the screen stands |
-| `desktop.width_m` | `4.2` | Its width |
-| `desktop.height_m` | `2.36` | Its height |
-| `desktop.vertical_offset_m` | `2.55` | Height of its centre |
-| `desktop.horizontal_offset_m` | `0.0` | Left or right of centre |
+| `desktop.display_mode` | `auto` | `auto`: the headset runtime's own layer where it has one, else drawn in the room; `mesh`: always drawn in the room |
+| `desktop.distance_m` | `0.0` | How far the screen stands from you; `0` is as far as the console's panels (`ui.console_distance_m`) |
+| `desktop.scale` | `1.0` | Its size: `1` is one desktop pixel to one pixel of the display, as sharp as the display can show; `0.5` is half that size |
+| `desktop.curve` | `1.0` | `1` curves it round you, `0` is flat |
+| `desktop.yaw_deg` | `0.0` | Where it is round you, from straight ahead |
+| `desktop.lift_deg` | `0.0` | How far above eye level its middle is |
 
-Grabbing the screen in the room changes the last five. The keys ending in `_reserved`, and `desktop.input_mode`, are placeholders for clicking through the screen, which is not there yet.
+Holding the screen with the grip changes the last five, and recentring the workspace sets the last two to where you are looking. Frame rate and capture width are the helper's (`ELI_VR_CAPTURE_FPS`, `ELI_VR_CAPTURE_WIDTH`, see [INSTALL.md](INSTALL.md#tuning)).
 
 ## Interface
 

@@ -108,8 +108,10 @@ session_report(){
 # The helper that feeds the desktop screen. Wayland goes through the desktop
 # portal, X11 uses the native helper.
 desktop_helper_start(){
-  local log
+  local log no_input=()
   log="$(eli_state_dir)/desktop-bridge.log"
+  # ELI_VR_DESKTOP_INPUT=0 shows the desktop and never moves the pointer or clicks
+  [[ "${ELI_VR_DESKTOP_INPUT:-1}" == "0" ]] && no_input=(--no-input)
   if [[ "${XDG_SESSION_TYPE:-}" == "wayland" ]]; then
     if ! python3 -c 'import dbus, gi; gi.require_version("Gst","1.0"); from gi.repository import Gst; Gst.init(None); assert Gst.ElementFactory.find("pipewiresrc")' >/dev/null 2>&1; then
       printf '\nWARNING: desktop screen off: Wayland capture pieces are missing. See docs/INSTALL.md.\n' >&2
@@ -117,7 +119,7 @@ desktop_helper_start(){
     fi
     PYTHONUNBUFFERED=1 python3 "$ROOT/native/desktop_portal_bridge/eli_portal_bridge.py" \
       --width "${ELI_VR_CAPTURE_WIDTH:-0}" --fps "${ELI_VR_CAPTURE_FPS:-18}" \
-      --token-file "$(eli_state_dir)/portal-restore-token" >"$log" 2>&1 &
+      --token-file "$(eli_state_dir)/portal-restore-token" ${no_input[@]+"${no_input[@]}"} >"$log" 2>&1 &
     HELPER_PID=$!
     desktop_share_wait "$log" "$HELPER_PID"
   else
@@ -127,7 +129,7 @@ desktop_helper_start(){
       return 0
     fi
     "$bin" --fps "${ELI_VR_CAPTURE_FPS:-15}" --width "${ELI_VR_CAPTURE_WIDTH:-0}" \
-      --quality "${ELI_VR_CAPTURE_QUALITY:-72}" >"$log" 2>&1 &
+      ${no_input[@]+"${no_input[@]}"} >"$log" 2>&1 &
     HELPER_PID=$!
   fi
 }

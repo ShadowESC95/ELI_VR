@@ -94,6 +94,6 @@ func _looking_at(eye: Vector3, gaze: Vector3, eli_here: bool) -> Dictionary:
                 closest = angle
                 best = {"kind": "object", "name": thing.label}
     if best["kind"] == "room" and app.desktop_surface != null and app.desktop_surface.visible:
-        if gaze.angle_to(app.desktop_surface.global_position - eye) < deg_to_rad(22.0):
+        if not app.desktop_surface.ray_hit(eye, gaze).is_empty():     # it may wrap right round
             best = {"kind": "screen", "name": "the desktop screen"}
     return best

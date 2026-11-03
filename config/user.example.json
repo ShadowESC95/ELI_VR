@@ -12,7 +12,8 @@
   },
   "desktop": {
     "enabled": true,
-    "distance_m": 4.0,
-    "width_m": 6.0
+    "distance_m": 3.0,
+    "scale": 0.75,
+    "curve": 0.6
   }
 }

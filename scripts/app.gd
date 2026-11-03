@@ -359,8 +359,11 @@ func _setup_view_rigs() -> void:
 func _setup_desktop() -> void:
     desktop_surface = DesktopSurfaceClass.new()
     desktop_surface.name = "DesktopSurface"
-    add_child(desktop_surface)
+    # in the headset it goes with you as you walk and turn, as a desktop does
+    (xr_origin if xr_active else self).add_child(desktop_surface)
     desktop_surface.setup(config, xr_active, capabilities)
+    if xr_active:
+        desktop_surface.keep_in_front(xr_origin)        # hands, pointers, the wrist menu
 
 func _setup_ui() -> void:
     if xr_active:
@@ -569,6 +572,8 @@ func _rebuild_console() -> void:
     console.name = "SpatialConsole"
     console.setup(self,registry,config)
     add_child(console)
+    if desktop_surface:
+        desktop_surface.keep_in_front(console)
     if console.has_method("set_desktop_workspace"):
         console.set_desktop_workspace(desktop_surface != null and desktop_surface.visible)
     if not _eli_mind.is_empty():
@@ -620,6 +625,8 @@ func _setup_eli() -> void:
     eli_presence.name = "EliPresence"
     add_child(eli_presence)
     eli_presence.setup(_theme_accent())
+    if desktop_surface:
+        desktop_surface.keep_in_front(eli_presence)
 
     eli_room_light = EliRoomLightClass.new()
     eli_room_light.name = "EliRoomLight"

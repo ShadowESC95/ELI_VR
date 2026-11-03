@@ -55,12 +55,17 @@ How a place looks is one script each, in `scripts/world/rooms/`, all built on `r
 ```text
 the OS's screen capture          Wayland: portal + PipeWire (Python helper)
         |                        X11, Windows, macOS: native helper (Rust)
-JPEG frames over 127.0.0.1:47831
+lossless tiles over 127.0.0.1:47831, only where the screen changed; pointer lines back
         |
-desktop/desktop_bridge_client.gd  ->  a texture on desktop/desktop_surface.gd
+desktop/desktop_bridge_client.gd  (its own thread)
+        |
+desktop/desktop_surface.gd: the tiles, then the desktop brought to the size it is seen at
+        |
+the VR runtime's own layer (cylinder or quad), seen through a hole cut in the room;
+or, where the runtime has none and in the flat window, the same shape drawn in the room
 ```
 
-The app never captures anything itself. It reads frames from a helper on the same machine, and the helper refuses to listen anywhere but loopback. This favours working everywhere over latency; a shared-texture path per OS can replace it later without the screen itself changing.
+The app never captures anything itself. It reads frames from a helper on the same machine, and the helper refuses to listen anywhere but loopback and to anyone without the key it keeps for this account. Tiles that did not change are not sent, and nothing is drawn or handed to the runtime until something does. The room's own rendering never touches the desktop's pixels in the headset: the hole is cut after the room is drawn, and hands, pointers, panels and ELI are drawn after it (`keep_in_front`).
 
 ## ELI link
 

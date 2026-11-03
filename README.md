@@ -74,13 +74,14 @@ With `auto`, ELI VR uses a headset when an OpenXR runtime is active and falls ba
 | Grip | Grab and move panels and objects (hold it; while held, the stick brings it nearer or turns it) |
 | Trigger, pointing at the desktop | Move the desktop's pointer there and click |
 | Right stick in / up / down, pointing at the desktop | Right-click / scroll |
+| Grip on the desktop | Hold it: move the hand to move it round you, pull the hand in or push it out to bring it nearer or send it further, stick up or down to make it larger or smaller, left or right to flatten or curve it |
 | Left stick | Move |
 | Right stick | Snap turn |
 | B / Y | Show or hide the spatial console |
 | Menu (left) | Wrist menu |
 | Hold A / X | Talk to ELI (with the ELI link on) |
 
-Clicking on the desktop needs the desktop helper with your desktop's permission to take the pointer: on Linux under Wayland the screen-sharing dialog asks for it the first time, and it is remembered. Without it the desktop is shown and not touched.
+Clicking on the desktop needs the desktop helper with your desktop's permission to take the pointer: on Linux under Wayland the screen-sharing dialog asks for it the first time, and it is remembered; macOS asks for Accessibility the first time you click. Without it the desktop is shown and not touched.
 
 **Leaving:** press **EXIT** on the spatial console or the wrist menu twice, or **Exit ELI VR** in the settings dock (`F1`). Started through `./launch/eli-vr.sh` or the AppImage on Linux, closing ELI VR also stops the VR runtime it started, so no GPU memory stays held.
 
@@ -123,7 +124,9 @@ Eight themes set the colour of the lights in every room, and four quality profil
 
 ## Live desktop screen
 
-The big screen in each room shows your real desktop. It needs a small capture helper running next to ELI VR; the app itself never captures anything. Frames travel over `127.0.0.1` only.
+The screen shows your real desktop, at full resolution, curved round you. In the headset it is handed to the VR runtime's own compositor as a layer of its own, as dedicated VR desktop apps do, so its pixels are sampled once through the lenses rather than through the room's rendering first. Where the runtime has no such layer it is drawn in the room instead. It starts as sharp as your headset can show it, one desktop pixel to one pixel of the display, which makes it large; hold it with the grip to resize, curve and move it, and ELI VR remembers where you left it. The room never hides it, and your hands, the pointer, the console and ELI are drawn over it.
+
+It needs a small capture helper running next to ELI VR; the app itself never captures anything. Frames travel over `127.0.0.1` only, and only to ELI VR run by the same person: the helper makes a new key each time it starts, readable by your account alone, and anything that connects without it is closed. It sends the screen whole once, then only the parts that change, and nothing while it is still.
 
 | OS | Helper | Start it with |
 |---|---|---|
@@ -134,7 +137,7 @@ The big screen in each room shows your real desktop. It needs a small capture he
 
 Start the helper, then start ELI VR. The screen reconnects on its own. On Wayland the desktop asks once which monitor to share and remembers it. Setup per OS is in [docs/INSTALL.md](docs/INSTALL.md#live-desktop-screen).
 
-The screen is view-only for now: you can move, resize and rotate it, but not click through it.
+Pointing and clicking reach your desktop on GNOME and KDE under Wayland (through the screen-sharing portal), on X11, on macOS and on Windows. On Windows it reaches the main display; another display is shown, not used. Wayland desktops whose portal cannot share the pointer (wlroots ones such as Sway) show the screen without it. Set `ELI_VR_DESKTOP_INPUT=0` before starting the helper to show the desktop and never touch it.
 
 ## With ELI v3
 

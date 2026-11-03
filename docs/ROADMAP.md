@@ -29,14 +29,13 @@ Where ELI VR is, and what comes next. Dates are not promised.
 - Rooms of ELI's own founding, beyond the one it has
 - Told on arriving what ELI made while you were away
 - A second body for the same ELI on the same protocol: a desktop avatar or a 3D web view
-- The desktop screen as an OpenXR overlay on Linux (WayVR), for sharpness and input
-- Pointer and keyboard through the desktop screen, not view only
+- A keyboard in the headset for the desktop screen
 - The Windows and macOS builds run on real machines, and the other controllers on real hardware
 - The old generated room code and its textures removed
 
 ## Later
 
-- Shared-texture desktop capture per OS, in place of JPEG frames
+- Shared-texture desktop capture per OS, in place of frames over loopback
 - Hand tracking where the runtime has it
 - A native build for standalone headsets
 - Signed and notarised builds

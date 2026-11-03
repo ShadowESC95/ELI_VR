@@ -1,19 +1,20 @@
 use anyhow::{anyhow, Context, Result};
 use clap::{Parser, Subcommand};
-use image::{
-    codecs::jpeg::JpegEncoder,
-    imageops::FilterType,
-    DynamicImage,
-};
+use enigo::{Axis, Coordinate, Direction, Enigo, Mouse, Settings};
+use image::{imageops::FilterType, DynamicImage};
 use std::{
-    io::Write,
-    net::{SocketAddr, TcpListener, TcpStream},
+    net::{SocketAddr, TcpListener},
+    sync::Arc,
     thread,
     time::{Duration, Instant},
 };
 use xcap::Monitor;
 
+mod key;
 mod licence;
+mod pointer;
+mod screen;
+mod server;
 
 #[derive(Parser, Debug)]
 #[command(name = "eli-vr-desktop-bridge", args_conflicts_with_subcommands = true)]
@@ -54,7 +55,7 @@ struct Args {
     #[arg(long, default_value = "127.0.0.1:47831")]
     bind: String,
 
-    /// Capture frames per second. Screenshot capture is intentionally conservative.
+    /// Most frames a second; a still screen sends none.
     #[arg(long, default_value_t = 15)]
     fps: u32,
 
@@ -62,9 +63,9 @@ struct Args {
     #[arg(long, default_value_t = 0)]
     width: u32,
 
-    /// JPEG quality, 1-100.
-    #[arg(long, default_value_t = 72)]
-    quality: u8,
+    /// Show the screen only; never move the pointer or click.
+    #[arg(long)]
+    no_input: bool,
 
     /// Monitor index. If omitted, choose the primary monitor or first monitor.
     #[arg(long)]
@@ -94,40 +95,94 @@ fn choose_monitor(args: &Args) -> Result<Monitor> {
         .ok_or_else(|| anyhow!("no monitor available after enumeration"))
 }
 
-fn send_loop(mut stream: TcpStream, monitor: &Monitor, args: &Args) -> Result<()> {
-    stream.set_nodelay(true).ok();
-    let fps = args.fps.clamp(1, 60);
-    let frame_time = Duration::from_secs_f64(1.0 / fps as f64);
-    let quality = args.quality.clamp(20, 95);
-
+/// Capture the screen and send what changed to ELI VR, at most `fps` times a second; nothing is
+/// captured while no one is watching.
+fn send_screen(monitor: &Monitor, args: &Args, watching: &server::Watching) -> ! {
+    let frame_time = Duration::from_secs_f64(1.0 / f64::from(args.fps.clamp(1, 60)));
+    let mut before = None;
     loop {
         let started = Instant::now();
-        let captured = monitor.capture_image().context("capture_image failed")?;
-        let (src_w, src_h) = captured.dimensions();
-        let target_w = if args.width == 0 { src_w.max(320) } else { args.width.clamp(320, src_w.max(320)) };
-        let target_h = ((target_w as f64) * (src_h as f64) / (src_w as f64))
-            .round()
-            .max(180.0) as u32;
-
-        let dynamic = DynamicImage::ImageRgba8(captured);
-        let resized = dynamic.resize(target_w, target_h, FilterType::Triangle);
-
-        let mut jpeg = Vec::<u8>::with_capacity((target_w * target_h) as usize / 4);
-        let mut encoder = JpegEncoder::new_with_quality(&mut jpeg, quality);
-        encoder
-            .encode_image(&resized)
-            .context("JPEG encode failed")?;
-
-        let len = u32::try_from(jpeg.len()).context("frame too large")?;
-        stream
-            .write_all(&len.to_be_bytes())
-            .context("client disconnected")?;
-        stream.write_all(&jpeg).context("client disconnected")?;
-
+        if server::anyone_watching(watching) {
+            match monitor.capture_image() {
+                Ok(captured) => {
+                    let (src_w, src_h) = captured.dimensions();
+                    let now = if args.width == 0 || args.width >= src_w {
+                        captured
+                    } else {
+                        let h = ((f64::from(args.width) * f64::from(src_h) / f64::from(src_w)).round() as u32).max(1);
+                        DynamicImage::ImageRgba8(captured).resize_exact(args.width, h, FilterType::Triangle).to_rgba8()
+                    };
+                    let (w, h) = now.dimensions();
+                    server::show(watching, &mut before, server::Frame { w, h, pixels: now.into_raw() });
+                }
+                Err(err) => eprintln!("capture failed: {err}"),
+            }
+        }
         let elapsed = started.elapsed();
         if elapsed < frame_time {
             thread::sleep(frame_time - elapsed);
         }
+    }
+}
+
+/// ELI VR's pointer lines, on the desktop. The pointer is taken at the first line, so a screen
+/// that is only watched never asks for the permission to control it (macOS asks the first time).
+fn pointer_hand(area: pointer::Area, input: bool) -> impl FnMut(pointer::Event) -> bool {
+    let mut hand: Option<Enigo> = None;
+    move |event| {
+        if !input {
+            return true;
+        }
+        if hand.is_none() {
+            match Enigo::new(&Settings::default()) {
+                Ok(made) => hand = Some(made),
+                Err(err) => {
+                    eprintln!("ELI VR desktop bridge: the pointer cannot be moved here: {err}");
+                    return false;
+                }
+            }
+        }
+        if let Some(hand) = hand.as_mut() {
+            if let Err(err) = act(hand, event, area) {
+                eprintln!("ELI VR desktop bridge: input not passed on: {err}");
+            }
+        }
+        true
+    }
+}
+
+fn act(hand: &mut Enigo, event: pointer::Event, area: pointer::Area) -> enigo::InputResult<()> {
+    match event {
+        pointer::Event::Move { x, y } => {
+            let (px, py) = area.place(x, y);
+            hand.move_mouse(px, py, Coordinate::Abs)
+        }
+        pointer::Event::Button { button, down } => hand.button(
+            match button {
+                pointer::Button::Left => enigo::Button::Left,
+                pointer::Button::Right => enigo::Button::Right,
+                pointer::Button::Middle => enigo::Button::Middle,
+            },
+            if down { Direction::Press } else { Direction::Release },
+        ),
+        pointer::Event::Scroll { steps } => hand.scroll(steps, Axis::Vertical),
+    }
+}
+
+/// Where the shared monitor is in the pointer's own coordinates. Windows places the pointer on
+/// the main display only, in its own units, so there the main display is the area.
+fn pointer_area(monitor: &Monitor) -> pointer::Area {
+    if cfg!(windows) {
+        let main = Enigo::new(&Settings::default()).ok().and_then(|e| e.main_display().ok());
+        if let Some((w, h)) = main {
+            return pointer::Area { x: 0, y: 0, w: w.max(1) as u32, h: h.max(1) as u32 };
+        }
+    }
+    pointer::Area {
+        x: monitor.x().unwrap_or(0),
+        y: monitor.y().unwrap_or(0),
+        w: monitor.width().unwrap_or(1).max(1),
+        h: monitor.height().unwrap_or(1).max(1),
     }
 }
 
@@ -177,24 +232,35 @@ fn main() -> Result<()> {
     }
 
     let monitor = choose_monitor(&args)?;
+    // on Windows the pointer only reaches the main display, so another screen is shown, not used
+    let input = !args.no_input && !(cfg!(windows) && !monitor.is_primary().unwrap_or(true));
+    let area = pointer_area(&monitor);
+    let key = key::issue().context("could not keep the desktop key")?;
     let listener = TcpListener::bind(bind_addr)
         .with_context(|| format!("failed to bind {}", args.bind))?;
 
     println!("ELI VR desktop bridge");
     println!("listening on {}", args.bind);
-    println!("fps={} width={} jpeg_quality={}", args.fps, args.width, args.quality);
+    println!("fps={} width={} input={}", args.fps, args.width, if input { "on" } else { "off" });
+    if cfg!(windows) && !args.no_input && !input {
+        println!("the pointer can only be moved on the main display on Windows; this screen is shown, not used");
+    }
     println!("Press Ctrl+C to stop.");
 
-    for incoming in listener.incoming() {
-        match incoming {
-            Ok(stream) => {
-                println!("Godot client connected: {:?}", stream.peer_addr().ok());
-                if let Err(err) = send_loop(stream, &monitor, &args) {
-                    eprintln!("capture client ended: {err:#}");
+    let watching = server::watching();
+    let accepting = Arc::clone(&watching);
+    thread::spawn(move || {
+        let key = Arc::new(key);
+        for incoming in listener.incoming() {
+            match incoming {
+                Ok(stream) => {
+                    let (key, watching) = (Arc::clone(&key), Arc::clone(&accepting));
+                    thread::spawn(move || server::serve(stream, &key, &watching, pointer_hand(area, input)));
                 }
+                Err(err) => eprintln!("accept error: {err}"),
             }
-            Err(err) => eprintln!("accept error: {err}"),
         }
-    }
-    Ok(())
+    });
+    send_screen(&monitor, &args, &watching)
 }
+

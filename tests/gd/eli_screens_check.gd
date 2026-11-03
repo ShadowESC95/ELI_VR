@@ -27,10 +27,13 @@ class FakeHelper extends Node:
 
 # The desktop's settings, switched off so nothing reaches a real helper.
 class DesktopSettings extends RefCounted:
+    var saved := {}
     func get_value(key, fallback = null):
-        return 2 if key == "desktop.layout_version" else (false if key == "desktop.enabled" else fallback)
-    func set_value(_key, _value) -> void:
-        pass
+        if saved.has(key):
+            return saved[key]
+        return 3 if key == "desktop.layout_version" else (false if key == "desktop.enabled" else fallback)
+    func set_value(key, value) -> void:
+        saved[key] = value
     func save_runtime() -> void:
         pass
 
@@ -250,26 +253,220 @@ func _run() -> void:
         await process_frame
     _check("models_load_once_in_the_background_and_are_kept", cached and ModelCache._held.size() >= 40 and frames < 20000,
            "kept %s, held %d after %d frames" % [cached, ModelCache._held.size(), frames])
-    var desk := DesktopSurface.new()
-    root.add_child(desk)
-    desk.setup(DesktopSettings.new(), false, {})
-    var helper := FakeHelper.new()
-    desk.bridge = helper
-    desk.global_position = Vector3(0, 2, -5)
-    desk.point(desk.to_global(Vector3(0.0, 0.0, 0.0)), "left", true)
-    desk.point(desk.to_global(Vector3(-2.1, 1.18, 0.0)), "", false, -1)
-    desk.point(desk.to_global(Vector3(9.0, 0.0, 0.0)), "left", false)
-    var sent: Array = helper.sent
-    var desk_ok: bool = sent.size() == 4 and sent[0] == {"kind": "move", "x": 0.5, "y": 0.5} \
-        and sent[1] == {"kind": "button", "button": "left", "down": true} and sent[2]["x"] == 0.0 and sent[2]["y"] == 0.0 \
-        and sent[3] == {"kind": "scroll", "steps": -1}
-    _check("pointing_at_the_desktop_moves_clicks_and_scrolls_it", desk_ok and desk.bridge_started == false, str(sent))
+    await _desktop_checks()
     _check("a_picture_eli_took_is_pinned_up_as_a_photograph", placed_at is Transform3D and wall.pin_spot("seen", 4) == null
            and pictured and link.asked == ["/v1/world/picture/31"], "placed %s, pictured %s, asked %s" % [placed_at is Transform3D, pictured, link.asked])
     _check("a_painting_is_painted_and_stands_on_an_easel_on_the_floor", styled == 5 and hung.eye_height() < 0.6
            and standing.eye_height() > 0.8 and standing._body.get_child_count() > hung._body.get_child_count(),
            "style %d, hung %s, standing %s" % [styled, hung.eye_height(), standing.eye_height()])
     quit()
+
+func _desktop_checks() -> void:
+    var eye := Camera3D.new()
+    root.add_child(eye)
+    eye.current = true
+    var settings := DesktopSettings.new()
+    settings.saved["desktop.distance_m"] = 2.0
+    var desk := DesktopSurface.new()
+    root.add_child(desk)
+    desk.setup(settings, false, {})
+    var helper := FakeHelper.new()
+    desk.bridge = helper
+    desk.visible = true                         # shown, with no helper behind it
+    var tile := Image.create(240, 240, false, Image.FORMAT_RGBA8)
+    desk._on_tiles(Vector2i(3840, 2160), [[Rect2i(0, 0, 240, 240), tile]])
+    desk.place()                                # the viewer at the origin, looking down -Z
+
+    # curved round the viewer, one desktop pixel to one display pixel, and pointed at where it shows
+    var density := desk._display_density()
+    var round_ok: bool = absf(desk.span() - 3840.0 / density) < 0.0001 and absf(desk.radius_m() - 2.0) < 0.0001 \
+        and absf(desk.seen_angle() - desk.arc()) < 0.0001 and desk._view.size == Vector2i(3840, 2160)
+    var on_curve := true
+    for vertex in desk._mesh.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]:
+        var from_axis := desk.to_global(vertex)
+        on_curve = on_curve and absf(Vector2(from_axis.x, from_axis.z).length() - 2.0) < 0.001
+    var ahead: Dictionary = desk.ray_hit(Vector3.ZERO, Vector3.FORWARD)
+    var turned := 0.6
+    var aside: Dictionary = desk.ray_hit(Vector3.ZERO, Basis(Vector3.UP, -turned) * Vector3.FORWARD)
+    var up: Dictionary = desk.ray_hit(Vector3.ZERO, Vector3(0, 0.5, -2.0))
+    var behind: Dictionary = desk.ray_hit(Vector3.ZERO, Vector3.BACK)
+    var hits_ok: bool = not ahead.is_empty() and ahead["uv"].distance_to(Vector2(0.5, 0.5)) < 0.0001 \
+        and absf(ahead["distance"] - 2.0) < 0.0001 \
+        and absf(aside["uv"].x - (0.5 + turned / desk.arc())) < 0.0001 \
+        and absf(up["uv"].y - (0.5 - 0.5 / desk.height_m())) < 0.0001 and behind.is_empty()
+    desk.scale_px = 5.0                         # larger than all the way round: it stops short
+    desk.place()
+    var never_closes: bool = desk.arc() < TAU and desk.arc() > TAU * 0.99
+    desk.scale_px = 1.0
+    desk.place()
+    _check("the_desktop_curves_round_you_one_pixel_to_one_and_is_pointed_at_where_it_shows",
+           round_ok and on_curve and hits_ok and never_closes, "round %s, on its curve %s, ahead %s aside %s up %s behind %s, never closes %s"
+           % [round_ok, on_curve, ahead, aside, up, behind, never_closes])
+
+    # the runtime's cylinder is given the same shape as the mesh that cuts its hole
+    var layer := ClassDB.instantiate("OpenXRCompositionLayerCylinder") as Node3D
+    desk.add_child(layer)
+    desk._layer = layer
+    desk._layer_kind = "OpenXRCompositionLayerCylinder"
+    desk._shape_layer()
+    var shaped: bool = absf(layer.get("radius") - desk.radius_m()) < 0.0001 and absf(layer.get("central_angle") - desk.arc()) < 0.0001 \
+        and absf(layer.get("aspect_ratio") - 3840.0 / 2160.0) < 0.0001 and layer.position.is_equal_approx(Vector3(0, 0, desk.radius_m()))
+    desk._drop_layer()
+    _check("the_runtime_layer_has_the_screens_shape", shaped, "radius %s angle %s aspect %s at %s" % [layer.get("radius"),
+           layer.get("central_angle"), layer.get("aspect_ratio"), layer.position])
+
+    desk.curve = 0.0
+    desk.place()
+    var edge := desk.width_m() * 0.5
+    var left: Dictionary = desk.ray_hit(Vector3.ZERO, Vector3(-edge * 0.999, 0, -2.0))
+    var past: Dictionary = desk.ray_hit(Vector3.ZERO, Vector3(-edge * 1.001, 0, -2.0))
+    _check("a_flat_desktop_is_pointed_at_where_it_shows", not left.is_empty() and left["uv"].x < 0.001 and past.is_empty()
+           and desk._mesh.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX].size() == 4, "left %s past %s" % [left, past])
+
+    desk.point_uv(Vector2(0.5, 0.5), "left", true)
+    desk.point_uv(Vector2(0.5, 0.5), "", false, -1)
+    var sent: Array = helper.sent
+    _check("pointing_at_the_desktop_moves_clicks_and_scrolls_it", sent == [{"kind": "move", "x": 0.5, "y": 0.5},
+           {"kind": "button", "button": "left", "down": true}, {"kind": "scroll", "steps": -1}], str(sent))
+
+    # held: the stick up for a second doubles it, left flattens it, pulling the hand in halves its distance
+    desk.curve = 0.5
+    desk.place()
+    var hand := Vector3(0.3, -0.2, -0.6)
+    desk.begin_hold(hand, Vector3.FORWARD)
+    var scale_before: float = desk.scale_px
+    for _i in 10:
+        desk.hold(hand, Vector3.FORWARD, Vector2(0.0, 1.0), 0.1)
+    for _i in 10:
+        desk.hold(hand, Vector3.FORWARD, Vector2(-1.0, 0.0), 0.04)
+    desk.hold(hand * 0.5, Vector3.FORWARD, Vector2.ZERO, 0.0)
+    var turned_with := desk.global_basis.z
+    desk.hold(hand * 0.5, Basis(Vector3.UP, 0.4) * Vector3.FORWARD, Vector2.ZERO, 0.0)
+    desk.end_hold()
+    var held_ok: bool = absf(desk.scale_px / scale_before - 2.0) < 0.001 and absf(desk.curve - 0.1) < 0.001 \
+        and absf(desk.distance - 1.0) < 0.001 and absf(desk.yaw - 0.4) < 0.001 and turned_with.is_equal_approx(Vector3.BACK) \
+        and is_equal_approx(float(settings.saved.get("desktop.scale", 0.0)), snappedf(desk.scale_px, 0.0001))
+    _check("holding_the_desktop_moves_sizes_curves_and_brings_it_nearer", held_ok,
+           "scale x%s curve %s distance %s yaw %s saved %s" % [desk.scale_px / scale_before, desk.curve, desk.distance,
+           desk.yaw, settings.saved])
+
+    # hands, panels and ELI are drawn over it; the room is not, nor the screen itself
+    var front := Node3D.new()
+    root.add_child(front)
+    var solid := MeshInstance3D.new()
+    solid.mesh = BoxMesh.new()
+    solid.material_override = StandardMaterial3D.new()
+    front.add_child(solid)
+    var words := Label3D.new()
+    front.add_child(words)
+    var shared := StandardMaterial3D.new()
+    var in_room := MeshInstance3D.new()
+    in_room.mesh = BoxMesh.new()
+    in_room.mesh.material = shared
+    root.add_child(in_room)
+    desk.keep_in_front(front)
+    var later := MeshInstance3D.new()
+    later.mesh = in_room.mesh                   # the room's own mesh and material, used again in front
+    front.add_child(later)
+    await process_frame
+    await process_frame
+    var lifted: StandardMaterial3D = solid.material_override
+    var front_ok: bool = lifted.render_priority == DesktopSurface.FRONT_PRIORITY \
+        and lifted.transparency == BaseMaterial3D.TRANSPARENCY_ALPHA_DEPTH_PRE_PASS \
+        and words.render_priority == DesktopSurface.FRONT_PRIORITY \
+        and later.get_surface_override_material(0) != null \
+        and later.get_surface_override_material(0).render_priority == DesktopSurface.FRONT_PRIORITY \
+        and shared.render_priority == 0 and shared.transparency == BaseMaterial3D.TRANSPARENCY_DISABLED \
+        and desk._mesh.material_override.render_priority == DesktopSurface.SCREEN_PRIORITY
+    _check("hands_panels_and_eli_are_drawn_over_the_desktop_and_the_room_is_not", front_ok,
+           "solid %s/%s words %s later %s shared %s/%s screen %s" % [lifted.render_priority, lifted.transparency,
+           words.render_priority, later.get_surface_override_material(0), shared.render_priority, shared.transparency,
+           desk._mesh.material_override.render_priority])
+    front.queue_free()
+    in_room.queue_free()
+    desk.queue_free()
+    eye.queue_free()
+    await _desktop_link_check()
+
+# The link to the desktop helper, against a stand-in helper here: the key first, the screen as tiles,
+# then only what changed, and pointer lines back. Its key goes in the sandbox the test was given.
+func _desktop_link_check() -> void:
+    var sandbox := OS.get_environment("ELI_VR_TEST_SANDBOX")
+    if sandbox.is_empty() or not DesktopBridgeClient.key_path().begins_with(sandbox):
+        _check("the_desktop_link_gives_the_key_and_reads_the_screen_as_tiles", false,
+               "not run: the key's folder %s is not the test's sandbox" % DesktopBridgeClient.key_path())
+        return
+    DirAccess.make_dir_recursive_absolute(DesktopBridgeClient.key_path().get_base_dir())
+    var key_file := FileAccess.open(DesktopBridgeClient.key_path(), FileAccess.WRITE)
+    key_file.store_string("the-key")
+    key_file.close()
+    var server := TCPServer.new()
+    server.listen(0, "127.0.0.1")
+    var link := DesktopBridgeClient.new()
+    root.add_child(link)
+    link.configure("127.0.0.1", server.get_local_port())
+    var got := []
+    link.tiles_arrived.connect(func(screen, tiles): got.append([screen, tiles]))
+    link.start()
+    var waited := 0
+    while not server.is_connection_available() and waited < 500:
+        waited += 1
+        await process_frame
+    var helper := server.take_connection()
+    var hello := ""
+    while helper and not hello.ends_with("\n") and waited < 1000:
+        waited += 1
+        helper.poll()
+        if helper.get_available_bytes() > 0:
+            hello += helper.get_utf8_string(helper.get_available_bytes())
+        await process_frame
+    var whole := _tile_message(4, 2, [[Rect2i(0, 0, 2, 2), 10], [Rect2i(2, 0, 2, 2), 20]])
+    var part := _tile_message(4, 2, [[Rect2i(2, 0, 2, 2), 30]])
+    if helper:
+        helper.put_data(whole)
+        helper.put_data(part)
+    while got.size() < 1 and waited < 1500:
+        waited += 1
+        await process_frame
+    while link.status_text() != "connected" and waited < 1500:
+        waited += 1
+        await process_frame
+    link.send_input({"kind": "scroll", "steps": 2})
+    var back := ""
+    while helper and not back.ends_with("\n") and waited < 2000:
+        waited += 1
+        helper.poll()
+        if helper.get_available_bytes() > 0:
+            back += helper.get_utf8_string(helper.get_available_bytes())
+        await process_frame
+    var newest := {}
+    for batch in got:
+        for t in batch[1]:
+            newest[t[0]] = t[1].get_pixel(0, 0).r8
+    var link_ok: bool = JSON.parse_string(hello) == {"kind": "hello", "key": "the-key"} and not got.is_empty() \
+        and got[0][0] == Vector2i(4, 2) and newest == {Rect2i(0, 0, 2, 2): 10, Rect2i(2, 0, 2, 2): 30} \
+        and JSON.parse_string(back) == {"kind": "scroll", "steps": 2.0}
+    _check("the_desktop_link_gives_the_key_and_reads_the_screen_as_tiles", link_ok,
+           "hello %s, tiles %s, back %s" % [hello.strip_edges(), newest, back.strip_edges()])
+    link.stop()
+    link.queue_free()
+    server.stop()
+    DirAccess.remove_absolute(DesktopBridgeClient.key_path())
+
+## An ELIT message: the screen's size, then each tile filled with one grey.
+func _tile_message(width: int, height: int, tiles: Array) -> PackedByteArray:
+    var out := StreamPeerBuffer.new()
+    out.big_endian = true
+    out.put_data("ELIT".to_ascii_buffer())
+    for n in [width, height, tiles.size()]:
+        out.put_u32(n)
+    for t in tiles:
+        var rect: Rect2i = t[0]
+        for n in [rect.position.x, rect.position.y, rect.size.x, rect.size.y]:
+            out.put_u32(n)
+        for _p in rect.size.x * rect.size.y:
+            out.put_data(PackedByteArray([t[1], t[1], t[1], 255]))
+    return out.data_array
 
 func _labels(node: Node) -> Array:
     var out := []

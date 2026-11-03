@@ -113,13 +113,13 @@ for token in ["MovablePanelClass", '"BLUE"', '"BLACK"', '"PURPLE"', '"GREEN"', '
 
 desktop = (ROOT / "scripts/desktop/desktop_surface.gd").read_text(errors="ignore")
 for token in [
-    "extends Area3D", "collision_layer = 4", "begin_grab", "end_grab",
-    "_activate_composition_layer", "display_mode == \"composition\"",
+    "extends Node3D", "begin_hold", "end_hold", "ray_hit", "keep_in_front",
+    "OpenXRCompositionLayerCylinder", "OpenXRCompositionLayerQuad", "sort_order", "desktop_hole.gdshader",
 ]:
     if token not in desktop:
         print("DESKTOP SURFACE MISSING", token); bad = True
-# Ensure the composition node is added before layer properties are set.
-if desktop.find("add_child(composition_layer)") > desktop.find('composition_layer.set("layer_viewport", viewport)'):
+# The layer goes into the tree before it is given its viewport (the 0.5.0 lifecycle error).
+if desktop.find("add_child(_layer)") > desktop.find('_layer.set("layer_viewport", _view)'):
     print("DESKTOP COMPOSITION LIFECYCLE REGRESSION"); bad = True
 
 cosmic = (ROOT / "scripts/world/cosmic_field.gd").read_text(errors="ignore")
@@ -186,12 +186,12 @@ for token in ["galaxy_blue.png", "galaxy_edge.png", "_stochastic_star_volume"]:
         print("MISSING DEEP SPACE VISUAL", token); bad=True
 
 client_text = (ROOT / "scripts/desktop/desktop_bridge_client.gd").read_text(errors="ignore")
-for token in ["RAW_MAGIC", "Image.FORMAT_RGBA8", 'frame_mode == "raw"']:
+for token in ["TILE_MAGIC", "Image.FORMAT_RGBA8", "key_path", "Thread.new()", '"kind": "hello"']:
     if token not in client_text:
-        print("MISSING RAW DESKTOP FRAME SUPPORT", token); bad=True
+        print("MISSING DESKTOP TILE LINK", token); bad=True
 
 portal_text = (ROOT / "native/desktop_portal_bridge/eli_portal_bridge.py").read_text(errors="ignore")
-for token in ["ScreenCast", "OpenPipeWireRemote", "pipewiresrc", "127.0.0.1"]:
+for token in ["ScreenCast", "OpenPipeWireRemote", "pipewiresrc", "127.0.0.1", "def admits", "def issue_key", "def changed"]:
     if token not in portal_text:
         print("MISSING WAYLAND PORTAL CAPTURE", token); bad=True
 

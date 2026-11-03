@@ -136,33 +136,38 @@ var _scroll_wait := 0.0
 var _side_before := false
 
 func _use_desktop(origin: Vector3, direction: Vector3, pressed: bool) -> void:
-    var query := PhysicsRayQueryParameters3D.create(origin, origin + direction * RAY_LENGTH)
-    query.collision_mask = 4
-    query.collide_with_areas = true
-    query.collide_with_bodies = false
-    var hit := get_world_3d().direct_space_state.intersect_ray(query)
-    var screen = hit.get("collider")
-    if screen == null or not screen.has_method("point") or not screen.is_visible_in_tree():
+    var screen: Node = null
+    var hit := {}
+    for desktop in get_tree().get_nodes_in_group("eli_desktop"):
+        var meets: Dictionary = desktop.ray_hit(origin, direction)
+        if not meets.is_empty() and (hit.is_empty() or float(meets["distance"]) < float(hit["distance"])):
+            screen = desktop
+            hit = meets
+    if screen == null:
         return
-    var at: Vector3 = hit["position"]
+    var reach: float = maxf(0.05, float(hit["distance"]))
     reticle.visible = true
-    reticle.position = Vector3(0.0, 0.0, -origin.distance_to(at))
-    _set_beam_length(maxf(0.05, origin.distance_to(at)))
+    reticle.position = Vector3(0.0, 0.0, -reach)
+    _set_beam_length(reach)
+    var holding := XRWorldManipulator.is_holding(controller)
     var right_hand := str(controller.tracker) == "right_hand"
-    var side: bool = right_hand and controller.is_button_pressed("primary_click")
-    var stick: float = controller.get_vector2("primary").y if right_hand else 0.0
+    var side: bool = right_hand and controller.is_button_pressed("primary_click") and not holding
+    var stick: float = controller.get_vector2("primary").y if right_hand and not holding else 0.0
     var steps := 0
     _scroll_wait = maxf(0.0, _scroll_wait - get_physics_process_delta_time())
-    if absf(stick) > 0.5 and _scroll_wait <= 0.0 and not controller.is_button_pressed("grip_click"):
+    if absf(stick) > 0.5 and _scroll_wait <= 0.0:
         steps = -1 if stick > 0.0 else 1
         _scroll_wait = 0.12
-    if pressed != trigger_before:
-        screen.point(at, "left", pressed, steps)
+    var uv: Vector2 = hit["uv"]
+    if holding:                         # the grip is moving it: no clicks meanwhile
+        screen.point_uv(uv)
+    elif pressed != trigger_before:
+        screen.point_uv(uv, "left", pressed, steps)
         controller.trigger_haptic_pulse("haptic", 0.0, 0.25, 0.03, 0.0)
     elif side != _side_before:
-        screen.point(at, "right", side, steps)
+        screen.point_uv(uv, "right", side, steps)
     else:
-        screen.point(at, "", false, steps)
+        screen.point_uv(uv, "", false, steps)
     _side_before = side
 
 func _select_pose_node() -> Node3D:

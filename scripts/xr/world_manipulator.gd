@@ -19,6 +19,12 @@ const LET_GO := 0.35
 
 const MAX_GRAB_DISTANCE := 90.0
 
+## Which controllers are holding something now, so walking and turning leave their stick alone.
+static var _holding := {}
+
+static func is_holding(hand: XRController3D) -> bool:
+    return hand != null and bool(_holding.get(hand.get_instance_id(), false))
+
 func setup(
     p_controller: XRController3D,
     p_aim_tracking: XRController3D,
@@ -52,6 +58,11 @@ func _physics_process(delta: float) -> void:
             var origin: Vector3 = pointer_origin.global_position if pointer_origin else pose.global_position
             var direction: Vector3 = -pose.global_transform.basis.z.normalized()
             var stick: Vector2 = controller.get_vector2("primary")
+            if grabbed.has_method("hold"):
+                grabbed.hold(origin, direction, stick, delta)
+                grip_before = grip_now
+                _holding[controller.get_instance_id()] = true
+                return
 
             grab_distance = clampf(
                 grab_distance - stick.y * delta * 8.0,
@@ -68,6 +79,7 @@ func _physics_process(delta: float) -> void:
                 grabbed.rotate_y(-stick.x * delta * 1.8)
 
     grip_before = grip_now
+    _holding[controller.get_instance_id()] = grabbed != null and grip_now
 
 func _try_begin_grab() -> void:
     var pose: Node3D = _pose_node()
@@ -85,6 +97,15 @@ func _try_begin_grab() -> void:
     query.collide_with_bodies = false
 
     var hit: Dictionary = get_viewport().get_world_3d().direct_space_state.intersect_ray(query)
+    # the desktop has no collider: it is asked where the ray meets it, and taken if that is nearer
+    for desktop in get_tree().get_nodes_in_group("eli_desktop"):
+        var meets: Dictionary = desktop.ray_hit(origin, direction)
+        if not meets.is_empty() and (not hit.has("position") or float(meets["distance"]) < origin.distance_to(hit["position"])):
+            grabbed = desktop
+            desktop.begin_hold(origin, direction)
+            controller.trigger_haptic_pulse("haptic", 0.0, 0.45, 0.06, 0.0)
+            print("ELI VR WORLD GRAB: ", desktop.name)
+            return
     if not hit.has("collider"):
         return
 
@@ -104,7 +125,9 @@ func _try_begin_grab() -> void:
     print("ELI VR WORLD GRAB: ", grabbed.name)
 
 func _release() -> void:
-    if grabbed and grabbed.has_method("end_grab"):
+    if grabbed and grabbed.has_method("end_hold"):
+        grabbed.end_hold()
+    elif grabbed and grabbed.has_method("end_grab"):
         grabbed.end_grab()
     if grabbed:
         controller.trigger_haptic_pulse("haptic", 0.0, 0.22, 0.035, 0.0)

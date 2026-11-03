@@ -368,10 +368,12 @@ All three helpers read the same optional variables:
 | Variable | Default | Meaning |
 |---|---|---|
 | `ELI_VR_CAPTURE_WIDTH` | 0: the monitor's own width | Width of the frames sent to the screen; a smaller number sends less |
-| `ELI_VR_CAPTURE_FPS` | 18 (Wayland), 15 (others) | Frames per second |
-| `ELI_VR_CAPTURE_QUALITY` | 72 | JPEG quality, native helper only |
+| `ELI_VR_CAPTURE_FPS` | 18 (Wayland), 15 (others) | Most frames a second; a still screen sends none |
+| `ELI_VR_DESKTOP_INPUT` | 1 | `0`: show the desktop and never move its pointer or click |
 
-Frames only ever travel over `127.0.0.1:47831`. The helper refuses to listen on anything else.
+Frames only ever travel over `127.0.0.1:47831`. The helper refuses to listen on anything else, and only ELI VR run by the same account can connect: each time it starts, the helper makes a new key and keeps it where only that account can read it (`$XDG_RUNTIME_DIR/eli-vr-desktop-key` on Linux, `~/Library/Application Support/ELI VR/desktop-key` on macOS, `%LOCALAPPDATA%\ELI VR\desktop-key` on Windows). The screen is sent lossless, whole once and then only where it changed.
+
+Pointing at the desktop and clicking reach it through GNOME's or KDE's screen-sharing portal on Wayland, and through the system's own input on X11, macOS (which asks for **Accessibility** permission the first time) and Windows (the main display only). Wayland desktops whose portal has no pointer sharing, such as Sway and other wlroots ones, show the screen without it.
 
 ---
 

@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import shutil
 import subprocess
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -20,6 +21,10 @@ class Alive(unittest.TestCase):
         if not godot:
             raise unittest.SkipTest("Godot is not installed here")
         env = {k: v for k, v in os.environ.items() if k not in ("DISPLAY", "WAYLAND_DISPLAY")}
+        # the desktop link's key goes in a folder of the test's own, never the session's
+        sandbox = tempfile.mkdtemp(prefix="eli-vr-test-")
+        cls.addClassCleanup(shutil.rmtree, sandbox, True)
+        env.update(XDG_RUNTIME_DIR=sandbox, HOME=sandbox, LOCALAPPDATA=sandbox, ELI_VR_TEST_SANDBOX=sandbox)
         out = ""
         for check in ("eli_alive_check.gd", "eli_screens_check.gd"):
             out += subprocess.run([godot, "--headless", "--xr-mode", "off", "--path", str(ROOT),
@@ -112,6 +117,20 @@ class Screens(Alive):
 
     def test_the_desktop_can_be_pointed_at_clicked_and_scrolled(self) -> None:
         self.check("pointing_at_the_desktop_moves_clicks_and_scrolls_it")
+
+    def test_the_desktop_curves_round_you_and_is_pointed_at_where_it_shows(self) -> None:
+        self.check("the_desktop_curves_round_you_one_pixel_to_one_and_is_pointed_at_where_it_shows")
+        self.check("a_flat_desktop_is_pointed_at_where_it_shows")
+        self.check("the_runtime_layer_has_the_screens_shape")
+
+    def test_holding_the_desktop_moves_sizes_curves_and_brings_it_nearer(self) -> None:
+        self.check("holding_the_desktop_moves_sizes_curves_and_brings_it_nearer")
+
+    def test_hands_panels_and_eli_are_drawn_over_the_desktop(self) -> None:
+        self.check("hands_panels_and_eli_are_drawn_over_the_desktop_and_the_room_is_not")
+
+    def test_the_desktop_link_gives_the_key_and_reads_the_screen_as_tiles(self) -> None:
+        self.check("the_desktop_link_gives_the_key_and_reads_the_screen_as_tiles")
 
 
 if __name__ == "__main__":
