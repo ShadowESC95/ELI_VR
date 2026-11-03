@@ -24,6 +24,7 @@ const SENTENCES := {
     "incompatible": "This ELI v3 and this ELI VR speak different versions",
     "unsupported": "This ELI v3 is too old for that",
     "not_heard": "ELI did not catch that",
+    "no_sound": "No microphone here gave any sound",
     "bad_request": "ELI could not make sense of the request",
     "server_error": "ELI ran into a problem",
     "bad_reply": "ELI's answer could not be read",

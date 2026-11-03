@@ -6,6 +6,7 @@ and the key is kept in a folder of the test's own.
 """
 import importlib.util
 import os
+import shutil
 import socket
 import stat
 import struct
@@ -108,6 +109,45 @@ class Input(unittest.TestCase):
             theirs.close()
         self.assertEqual(handed, [])
         self.assertIsNone(self.bridge.client)
+
+
+class SharedWithoutThePointer(unittest.TestCase):
+    """GNOME's sharing dialog can grant the screen with "Allow Remote Interaction" off: the session
+    then refuses every pointer call. The helper notices from the devices it was granted."""
+
+    def setUp(self):
+        self.helper = _load()
+        self.run_dir = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.run_dir, True)
+        self.bridge = self.helper.Bridge("127.0.0.1:0", 0, 18, str(self.run_dir / "token"))
+        self.bridge.session = "/org/freedesktop/portal/desktop/session/1_1/eli"
+        self.bridge.bus = mock.MagicMock()
+        self.bridge.portal = mock.MagicMock()
+        self.started = []
+        self.bridge.start_portal = lambda: self.started.append(self.bridge.take_input)
+        self.enterContext(mock.patch.object(self.helper.dbus, "Interface", lambda obj, iface: mock.MagicMock()))
+
+    def test_a_remembered_choice_without_the_pointer_is_dropped_and_asked_again(self):
+        self.bridge.remote_token_file().write_text("old")
+        self.bridge.restored = True
+        self.bridge.on_start(0, {"devices": 0, "restore_token": "old", "streams": [(7, {})]})
+        self.assertFalse(self.bridge.remote_token_file().exists(), "the remembered choice is forgotten")
+        self.assertEqual(self.started, [True], "asked again, with the pointer")
+        self.assertIsNone(self.bridge.node_id, "the stream of the closed session is not used")
+
+    def test_a_fresh_choice_without_the_pointer_shows_the_screen_and_is_not_remembered(self):
+        self.bridge.start_gstreamer = lambda fd, node: None
+        self.bridge.on_start(0, {"devices": 0, "restore_token": "new", "streams": [(7, {"size": (1920, 1080)})]})
+        self.assertFalse(self.bridge.take_input)
+        self.assertFalse(self.bridge.remote_token_file().exists())
+        self.assertFalse(self.bridge.token_file.exists(), "a screen-only token would skip the pointer for ever")
+        self.assertEqual(self.bridge.node_id, 7, "the screen is shown")
+
+    def test_a_choice_with_the_pointer_is_kept(self):
+        self.bridge.start_gstreamer = lambda fd, node: None
+        self.bridge.on_start(0, {"devices": 3, "restore_token": "new", "streams": [(7, {"size": (1920, 1080)})]})
+        self.assertTrue(self.bridge.take_input)
+        self.assertEqual(self.bridge.remote_token_file().read_text(), "new")
 
 
 class Screen(unittest.TestCase):

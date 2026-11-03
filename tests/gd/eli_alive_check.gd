@@ -97,4 +97,42 @@ func _run() -> void:
     _motion.set_here(false, "workshop", "Core Room")
     await _frames(0.1)
     _check("gone_when_you_leave", not _presence.visible, "visible=%s" % _presence.visible)
+    _voice_checks()
     quit()
+
+# Stands in for the app's settings, keeping what is set.
+class Kept extends RefCounted:
+    var saved := {}
+    func get_value(key, fallback = null):
+        return saved.get(key, fallback)
+    func set_value(key, value) -> void:
+        saved[key] = value
+    func save_runtime() -> void:
+        pass
+
+# Which microphone is talked through, and that one giving only silence is passed over. Nothing is
+# recorded here: the frames are put in by hand.
+func _voice_checks() -> void:
+    var listed := ["Default", "alsa_input.usb-Some_Headset_Audio-00.mono", "alsa_input.usb-Desk_Microphone-00.mono",
+                   "alsa_input.pci-0000_00_1f.3.analog-stereo"]
+    var headset := EliVoice._words("Some Headset (Runtime)")
+    var by_headset := EliVoice.order_microphones(listed, ["", ""], headset)
+    var by_name := EliVoice.order_microphones(listed, ["alsa_input.usb-Desk_Microphone-00.mono", "gone"], headset)
+    var flat := EliVoice.order_microphones(listed, [], [])
+    _check("the_headsets_own_microphone_is_tried_before_the_default", by_headset[0] == listed[1] and by_headset[1] == "Default"
+           and by_name[0] == listed[2] and by_name[1] == listed[1] and flat[0] == "Default" and flat.size() == 4,
+           "headset %s named %s flat %s" % [by_headset, by_name, flat])
+
+    var settings := Kept.new()
+    var voice := EliVoice.new()
+    root.add_child(voice)
+    voice.setup(null, null, settings)
+    voice._inputs = ["Default", listed[1]]
+    voice._frames = PackedVector2Array([Vector2.ZERO, Vector2.ZERO, Vector2.ZERO])
+    var silent := not voice._heard_anything()
+    voice._input_at = 1
+    voice._frames.append(Vector2(0.0, 0.00003))     # the quietest a real microphone is
+    var heard := voice._heard_anything()
+    _check("a_microphone_giving_only_silence_is_passed_over_and_the_one_heard_is_kept", silent and heard
+           and settings.saved.get("eli_bridge.microphone_found") == listed[1], "silent %s heard %s kept %s" % [silent, heard, settings.saved])
+    voice.queue_free()

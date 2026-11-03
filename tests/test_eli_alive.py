@@ -59,6 +59,10 @@ class Alive(unittest.TestCase):
     def test_leaving_the_room_yourself_is_not_eli_leaving(self) -> None:
         self.check("gone_when_you_leave")
 
+    def test_eli_hears_you_through_the_headsets_microphone_or_one_that_gives_sound(self) -> None:
+        self.check("the_headsets_own_microphone_is_tried_before_the_default")
+        self.check("a_microphone_giving_only_silence_is_passed_over_and_the_one_heard_is_kept")
+
 
 class Screens(Alive):
     """The screens in the rooms show ELI's real log and state, and nothing made up."""

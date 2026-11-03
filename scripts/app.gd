@@ -662,7 +662,7 @@ func _setup_eli() -> void:
         eli_voice = EliVoiceClass.new()
         eli_voice.name = "EliVoice"
         add_child(eli_voice)
-        eli_voice.setup(eli_link, eli_presence)
+        eli_voice.setup(eli_link, eli_presence, config)
         eli_voice.state_changed.connect(_on_eli_voice_state)
         eli_voice.heard.connect(func(_text): eli_senses.report_now())
         eli_voice.failed.connect(_on_eli_failed)

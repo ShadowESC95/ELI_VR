@@ -88,6 +88,7 @@ Holding the screen with the grip changes the last five, and recentring the works
 | `eli_bridge.enabled` | `false` | The link to ELI v3. Off: ELI VR runs on its own |
 | `eli_bridge.endpoint` | `http://127.0.0.1:8081` | ELI v3's local server. Loopback only; the port a running ELI v3 says it serves on is used, and `ELI_API_PORT` overrides it |
 | `eli_bridge.voice` | `true` | Push to talk |
+| `eli_bridge.microphone` | (none) | The microphone to talk through, by the name the log prints (`ELI VR VOICE: listening through ...`). Without it: the one that last gave sound, else the headset's own, else the system's default, else the others; one that gives only digital silence is passed over in the same press |
 | `eli_bridge.model` | empty | A model of ELI's, by name, asked for when ELI has nothing loaded yet. Empty means whichever ELI has |
 | `eli_bridge.token_env` | `ELI_VR_TOKEN` | Name of an environment variable holding ELI's API token, if you set one |
 

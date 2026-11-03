@@ -36,6 +36,8 @@ SCREENCAST = "org.freedesktop.portal.ScreenCast"
 REMOTE = "org.freedesktop.portal.RemoteDesktop"
 BUTTONS = {"left": 0x110, "right": 0x111, "middle": 0x112}       # BTN_LEFT, BTN_RIGHT, BTN_MIDDLE
 REQUEST = "org.freedesktop.portal.Request"
+SESSION = "org.freedesktop.portal.Session"
+POINTER = 2                # in the devices a RemoteDesktop session was granted
 PROPERTIES = "org.freedesktop.DBus.Properties"
 MAGIC = b"ELIT"
 TILES_ACROSS = 16          # a screen of any width is cut into this many columns of square tiles
@@ -125,6 +127,8 @@ class Bridge:
         self.take_input = take_input        # ask for the pointer as well as the screen
         self.node_id = None
         self.source_size = None
+        self.restored = False               # the pointer's permission came from a remembered choice
+        self.asked_again = False
         self.key = None                     # made when the helper starts
         self.fresh = False                  # the client has not been sent the whole screen yet
         self.before = None                  # (width, height, pixels) last captured
@@ -211,7 +215,11 @@ class Bridge:
                 steps = int(event.get("steps", 0))
                 if steps:
                     remote.NotifyPointerAxisDiscrete(self.session, none, dbus.UInt32(0), dbus.Int32(steps))
-        except (dbus.DBusException, TypeError, ValueError) as exc:
+        except dbus.DBusException as exc:
+            # the session does not take the pointer: once is enough to know it
+            print(f"ELI portal: the pointer is not reaching the desktop ({exc}); the screen is shown, not used", flush=True)
+            self.take_input = False
+        except (TypeError, ValueError) as exc:
             print(f"ELI portal: input not passed on: {exc}", flush=True)
         return False
 
@@ -277,6 +285,7 @@ class Bridge:
                 token = self.remote_token_file().read_text().strip() if self.remote_token_file().exists() else ""
                 if token:
                     devices['restore_token'] = token
+                    self.restored = True
             self.request('SelectDevices', self.on_devices, args=(self.session,), options=devices, interface=REMOTE)
             return
         self.select_sources()
@@ -318,6 +327,23 @@ class Bridge:
             print(f"ELI portal: Start rejected/cancelled ({int(response)})", flush=True)
             self.loop.quit(); return
         restore = results.get('restore_token')
+        if self.take_input and not int(results.get('devices', 0)) & POINTER:
+            # GNOME's dialog has "Allow Remote Interaction" off until it is switched on
+            if self.restored and not self.asked_again:
+                print("ELI portal: the remembered choice shares the screen without the pointer; asking again", flush=True)
+                self.asked_again, self.restored = True, False
+                self.remote_token_file().unlink(missing_ok=True)
+                try:
+                    dbus.Interface(self.bus.get_object(PORTAL_BUS, self.session), SESSION).Close()
+                except dbus.DBusException:
+                    pass
+                self.session = None
+                return self.start_portal()
+            print("ELI portal: the screen is shared but not the pointer (in the sharing dialog, \"Allow Remote "
+                  "Interaction\" was off); the screen is shown, not used, and the dialog asks again next time", flush=True)
+            self.take_input = False
+            self.remote_token_file().unlink(missing_ok=True)
+            restore = None
         if restore:
             kept = self.remote_token_file() if self.take_input else self.token_file
             kept.parent.mkdir(parents=True, exist_ok=True)

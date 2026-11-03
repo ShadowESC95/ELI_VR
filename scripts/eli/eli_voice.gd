@@ -4,6 +4,13 @@ extends Node
 # Push to talk. While the button is held the microphone is recorded; on
 # release the clip goes to ELI, and its answer comes back as text and speech.
 # The microphone is only open while the button is down.
+#
+# Which microphone: the one named in eli_bridge.microphone, else the one that
+# last gave sound, else the headset's own (its name shares a word with the name
+# the VR runtime gives the headset), else the system's default, else the rest. A
+# microphone that gives nothing but digital silence for the first MIN_SECONDS of
+# a press is dead (a digital input with nothing plugged in, a muted device), and
+# the next is tried in the same press; the one that gives sound is remembered.
 
 signal state_changed(state: String)   # idle | listening | thinking | speaking
 signal heard(text: String)
@@ -19,13 +26,19 @@ var link
 var presence
 var state := "idle"
 
+var config
 var _mic: AudioStreamPlayer
 var _capture: AudioEffectCapture
 var _frames := PackedVector2Array()
+var _inputs: Array = []         # the microphones to try this press, best first
+var _input_at := 0
+var _sounded := false           # the microphone in use has given some sound this press
+var _looked := 0                # frames of it already looked at for sound
 
-func setup(p_link, p_presence) -> void:
+func setup(p_link, p_presence, p_config = null) -> void:
     link = p_link
     presence = p_presence
+    config = p_config
 
     var bus := AudioServer.get_bus_index(MIC_BUS)
     if bus == -1:
@@ -49,19 +62,24 @@ func start_listening() -> void:
     if not link.connected:
         failed.emit(EliResult.bad("unreachable", "", 0, true))
         return
-    _frames.clear()
-    _capture.clear_buffer()
-    _mic.play()
+    _inputs = microphones()
+    _input_at = 0
+    _sounded = false
+    _listen_through(_inputs[0] if not _inputs.is_empty() else "")
     _set_state("listening")
 
 func stop_listening() -> void:
     if state != "listening":
         return
     _drain()
+    _heard_anything()
     _mic.stop()
     var rate := AudioServer.get_mix_rate()
     if float(_frames.size()) / rate < MIN_SECONDS:
         _set_state("idle")
+        return
+    if not _sounded:
+        _fail(EliResult.bad("no_sound", "tried " + ", ".join(_inputs.slice(0, _input_at + 1))))
         return
     converse(_to_wav(_frames, int(rate)))
 
@@ -69,8 +87,82 @@ func _process(_delta: float) -> void:
     if state != "listening":
         return
     _drain()
+    if not _heard_anything() and float(_frames.size()) / AudioServer.get_mix_rate() >= MIN_SECONDS \
+            and _input_at + 1 < _inputs.size():
+        _input_at += 1
+        print("ELI VR VOICE: %s gave no sound; trying %s" % [_inputs[_input_at - 1], _inputs[_input_at]])
+        _listen_through(_inputs[_input_at])
     if float(_frames.size()) / AudioServer.get_mix_rate() >= MAX_SECONDS:
         stop_listening()
+
+func _listen_through(device: String) -> void:
+    _mic.stop()
+    if not device.is_empty() and AudioServer.input_device != device:
+        AudioServer.input_device = device
+    _frames.clear()
+    _capture.clear_buffer()
+    _looked = 0
+    _mic.play()
+
+## Whether the microphone in use has given any sound this press; the first time it does, it is
+## the one remembered for next time.
+func _heard_anything() -> bool:
+    if _sounded:
+        return true
+    for i in range(_looked, _frames.size()):
+        if _frames[i] != Vector2.ZERO:
+            _sounded = true
+            break
+    _looked = _frames.size()
+    if _sounded:
+        var device: String = _inputs[_input_at] if _input_at < _inputs.size() else AudioServer.input_device
+        print("ELI VR VOICE: listening through ", device)
+        if config and str(config.get_value("eli_bridge.microphone_found", "")) != device:
+            config.set_value("eli_bridge.microphone_found", device)
+            config.save_runtime()
+    return _sounded
+
+## The microphones there are, in the order they are tried.
+func microphones() -> Array:
+    var named := [str(config.get_value("eli_bridge.microphone", "")), str(config.get_value("eli_bridge.microphone_found", ""))] \
+        if config else []
+    return order_microphones(Array(AudioServer.get_input_device_list()), named, _headset_words())
+
+## `listed` in the order to try them: the `named` ones there are, then those sharing a word with
+## the headset's name, then the system's default, then the rest.
+static func order_microphones(listed: Array, named: Array, headset: Array) -> Array:
+    var order: Array = []
+    for name in named:
+        if name in listed and name not in order:
+            order.append(name)
+    for name in listed:
+        if name not in order and not headset.is_empty() and not _words(name).filter(func(w): return w in headset).is_empty():
+            order.append(name)
+    if "Default" in listed and "Default" not in order:
+        order.append("Default")
+    for name in listed:
+        if name not in order:
+            order.append(name)
+    return order
+
+## The words of the name the VR runtime gives the headset (empty outside the headset).
+func _headset_words() -> Array:
+    var xr := XRServer.primary_interface
+    if xr == null or not xr.is_initialized():
+        return []
+    return _words(str(xr.get_system_info().get("OpenXRSystemName", "")))
+
+static func _words(text: String) -> Array:
+    var out: Array = []
+    var word := ""
+    for c in (text.to_lower() + " "):
+        if (c >= "a" and c <= "z") or (c >= "0" and c <= "9"):
+            word += c
+        else:
+            if word.length() >= 3 and word not in out:
+                out.append(word)
+            word = ""
+    return out
 
 func _drain() -> void:
     var available := _capture.get_frames_available()
@@ -82,6 +174,8 @@ func converse(wav: PackedByteArray) -> void:
     _set_state("thinking")
     var caught: EliResult = await link.transcribe(wav)
     if not caught.ok:
+        if caught.kind == "not_heard" and _sounded and caught.detail.is_empty():
+            caught.detail = "heard through " + str(_inputs[_input_at] if _input_at < _inputs.size() else AudioServer.input_device)
         _fail(caught)
         return
     await converse_text(str(caught.payload))

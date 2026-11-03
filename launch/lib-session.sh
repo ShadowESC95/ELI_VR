@@ -138,16 +138,29 @@ desktop_helper_start(){
 # before the headset starts, so the question is not left unseen on the monitor.
 # The choice is remembered, and later sessions start sharing without asking.
 desktop_share_wait(){
-  local log="$1" pid="$2" limit=8
-  if [[ ! -s "$(eli_state_dir)/portal-restore-token" ]]; then
-    limit="${ELI_VR_SHARE_WAIT:-120}"
-    printf '\n==> Choose the screen to show in VR in the dialog on your monitor (asked once).\n'
+  local log="$1" pid="$2" limit=8 long="${ELI_VR_SHARE_WAIT:-120}" waited=0 token
+  # with the pointer, the remembered choice is the RemoteDesktop one
+  token="$(eli_state_dir)/portal-restore-token"
+  [[ "${ELI_VR_DESKTOP_INPUT:-1}" == "0" ]] || token="$token.remote"
+  if [[ ! -s "$token" ]]; then
+    limit="$long"
+    share_asked
   fi
-  for _ in $(seq 1 "$((limit * 5))"); do
+  while (( waited < limit * 5 )); do
     kill -0 "$pid" 2>/dev/null || return 0
     grep -qE 'capture streaming|rejected|cancelled|no PipeWire|fatal|GStreamer error' "$log" 2>/dev/null && return 0
+    if (( limit < long )) && grep -q 'asking again' "$log" 2>/dev/null; then
+      limit="$long"                  # a remembered choice without the pointer: the dialog is up again
+      share_asked
+    fi
     sleep 0.2
+    waited=$((waited + 1))
   done
+}
+
+share_asked(){
+  printf '\n==> Choose the screen to show in VR in the dialog on your monitor (asked once).\n'
+  printf '    Switch on "Allow Remote Interaction" there to click on it from the headset.\n'
 }
 
 desktop_helper_stop(){
