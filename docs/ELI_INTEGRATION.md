@@ -162,7 +162,7 @@ A failure has a kind, and the status line and the line under ELI say which:
 | Key | Default | Meaning |
 |---|---|---|
 | `eli_bridge.enabled` | `"auto"` | The link: on where ELI v3 is installed or started ELI VR; `true` or `false` to decide |
-| `eli_bridge.endpoint` | `http://127.0.0.1:8081` | ELI v3's local server. 8081 is ELI's default port; if you moved it in ELI's settings, change this to match, or set `ELI_API_PORT`. Only loopback addresses are accepted. |
+| `eli_bridge.endpoint` | `http://127.0.0.1:8081` | ELI v3's local server. 8081 is ELI's default port. Started on its own, ELI VR uses the port a running ELI v3 says it serves on (`server.json` in ELI v3's data folder; ELI v3 moves to the next free port when another program, ELI v2 among them, holds 8081). `ELI_API_PORT` overrides both; a moved port can also be set here. Only loopback addresses are accepted. |
 | `eli_bridge.voice` | `true` | Push to talk |
 | `eli_bridge.model` | empty | A model of ELI's, by name, to ask for when ELI has nothing loaded yet. Empty: whichever ELI has |
 | `eli_bridge.token_env` | `ELI_VR_TOKEN` | Name of an environment variable holding ELI's API token, if you set one |

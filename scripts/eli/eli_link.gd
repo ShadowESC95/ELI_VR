@@ -54,9 +54,12 @@ func configure(config, policy) -> void:
     if base_url.is_empty() or base_url == OLD_PLACEHOLDER:
         base_url = DEFAULT_ENDPOINT
     base_url = base_url.replace("ws://", "http://").replace("wss://", "https://")
-    # ELI's port can be moved off 8081. When ELI starts us it says which one.
+    # ELI's port can be moved off 8081. When ELI starts us it says which one; otherwise a
+    # running ELI v3 says where it serves (another program, ELI v2 among them, may hold 8081).
     var port := OS.get_environment("ELI_API_PORT")
-    if base_url == DEFAULT_ENDPOINT and port.is_valid_int():
+    if not port.is_valid_int():
+        port = str(EliBundle.v3_serving_port())
+    if base_url == DEFAULT_ENDPOINT and port.is_valid_int() and int(port) > 0:
         base_url = "%s:%s" % [LOOPBACK, port]
 
     var token_env := str(config.get_value("eli_bridge.token_env", "ELI_VR_TOKEN"))

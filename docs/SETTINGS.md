@@ -88,7 +88,7 @@ Grabbing the screen in the room changes the last five. The keys ending in `_rese
 | Key | Default | Meaning |
 |---|---|---|
 | `eli_bridge.enabled` | `false` | The link to ELI v3. Off: ELI VR runs on its own |
-| `eli_bridge.endpoint` | `http://127.0.0.1:8081` | ELI v3's local server. Loopback only; `ELI_API_PORT` overrides the port |
+| `eli_bridge.endpoint` | `http://127.0.0.1:8081` | ELI v3's local server. Loopback only; the port a running ELI v3 says it serves on is used, and `ELI_API_PORT` overrides it |
 | `eli_bridge.voice` | `true` | Push to talk |
 | `eli_bridge.model` | empty | A model of ELI's, by name, asked for when ELI has nothing loaded yet. Empty means whichever ELI has |
 | `eli_bridge.token_env` | `ELI_VR_TOKEN` | Name of an environment variable holding ELI's API token, if you set one |

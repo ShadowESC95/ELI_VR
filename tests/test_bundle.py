@@ -187,6 +187,41 @@ class SelfRegistering(Sandbox):
                          "off unless asked for, a double-clicked ELI VR had ELI dormant in every room")
 
 
+class FindingEli(Sandbox):
+    """ELI VR started on its own looked only at port 8081; with ELI v2 on it, VR found v2 (which
+    has no rooms) and ELI stayed dormant. A running ELI v3 says where it serves."""
+
+    def _port(self) -> str:
+        import shutil
+        import subprocess
+        godot = os.environ.get("GODOT_BIN") or shutil.which("godot") or shutil.which("godot4")
+        if not godot:
+            self.skipTest("Godot is not installed here")
+        script = self.tmp / "port.gd"
+        script.write_text('extends SceneTree\nfunc _init():\n    print("PORT=%d" % EliBundle.v3_serving_port())\n    quit()\n')
+        env = dict(os.environ)
+        env.pop("DISPLAY", None)
+        env.pop("WAYLAND_DISPLAY", None)
+        out = subprocess.run([godot, "--headless", "--xr-mode", "off", "--path", str(ROOT), "--script", str(script)],
+                             env=env, capture_output=True, text=True, timeout=300).stdout
+        return next((line[5:] for line in out.splitlines() if line.startswith("PORT=")), "")
+
+    def test_the_port_eli_v3_says_it_serves_on_is_the_one_used(self) -> None:
+        folder = self.tmp / "data" / "ELI_v3"
+        folder.mkdir(parents=True)
+        (folder / "server.json").write_text(json.dumps({"product": "eli_v3", "port": 8082, "pid": 1}))
+        self.assertEqual(self._port(), "8082")
+
+    def test_a_note_from_anything_but_eli_v3_is_not_trusted(self) -> None:
+        folder = self.tmp / "data" / "ELI_v3"
+        folder.mkdir(parents=True)
+        (folder / "server.json").write_text(json.dumps({"product": "eli_v2", "port": 8081}))
+        self.assertEqual(self._port(), "0")
+
+    def test_without_a_note_nothing_is_assumed(self) -> None:
+        self.assertEqual(self._port(), "0")
+
+
 class Feelings(unittest.TestCase):
     def test_every_expression_eli_v3_sends_has_a_colour(self) -> None:
         """ELI v3's world gives ELI one of these expressions (its tone palette, and its own state:

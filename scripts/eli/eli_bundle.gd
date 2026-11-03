@@ -25,6 +25,17 @@ static func v3_data_dir() -> String:
                 data = OS.get_environment("HOME").path_join(".local/share")
             return data.path_join("ELI_v3")
 
+## The port a running ELI v3 says it serves on (ELI v3 writes server.json in its folder while it
+## serves); 0 when none says so.
+static func v3_serving_port() -> int:
+    var text := FileAccess.get_file_as_string(v3_data_dir().path_join("server.json"))
+    if text.is_empty():
+        return 0
+    var note = JSON.parse_string(text)
+    if typeof(note) != TYPE_DICTIONARY or str(note.get("product", "")) != "eli_v3":
+        return 0
+    return int(note.get("port", 0))
+
 static func eli_v3_installed() -> bool:
     return DirAccess.dir_exists_absolute(v3_data_dir())
 
