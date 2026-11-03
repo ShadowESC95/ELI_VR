@@ -35,6 +35,7 @@ var _parts: Array = []
 var _parts_key := ""
 var _moving: Array = []        # [node, spin radians a second, bob metres, pulse, material, rest height]
 var pinned := false            # the room has a place for this kind of record, and it stands there
+const WRITTEN := ["claim", "memory"]   # records that, pinned, are written out where they stand
 var _pin := Transform3D.IDENTITY
 var _made_height := 1.0
 
@@ -89,7 +90,7 @@ func pin_to(spot: Transform3D) -> void:
     _pin = spot
     _target = spot.origin
     basis = spot.basis
-    if moved and kind == "claim":
+    if moved and kind in WRITTEN:
         _shape()
 
 # A belief pinned up: a sheet of paper with what ELI believes written on it, and a red pin.
@@ -105,35 +106,7 @@ func _sheet() -> void:
     sheet.mesh = quad
     sheet.material_override = paper
     _body.add_child(sheet)
-    var ink := Color(0.08, 0.07, 0.07)
-    var title := Label3D.new()
-    title.text = label
-    title.font_size = 34
-    title.pixel_size = 0.0016
-    title.modulate = ink
-    title.outline_size = 0
-    title.shaded = false
-    title.width = 0.56 / 0.0016
-    title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-    title.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-    title.vertical_alignment = VERTICAL_ALIGNMENT_TOP
-    title.position = Vector3(0, 0.34, 0.002)
-    title.render_priority = 1
-    _body.add_child(title)
-    var words := Label3D.new()
-    words.text = meaning
-    words.font_size = 26
-    words.pixel_size = 0.0013
-    words.modulate = ink.lightened(0.15)
-    words.outline_size = 0
-    words.shaded = false
-    words.width = 0.56 / 0.0013
-    words.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-    words.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-    words.vertical_alignment = VERTICAL_ALIGNMENT_TOP
-    words.position = Vector3(0, 0.18, 0.002)
-    words.render_priority = 1
-    _body.add_child(words)
+    _write(Color(0.08, 0.07, 0.07), 0.56, Vector3(0, 0.34, 0.002), 0.0016, 0.0013)
     var pin := MeshInstance3D.new()
     var head := SphereMesh.new()
     head.radius = 0.022
@@ -147,10 +120,91 @@ func _sheet() -> void:
     pin.position = Vector3(0, 0.37, 0.02)
     _body.add_child(pin)
 
+# What a written record says: its name, and below it what it means, in a column `width` metres wide
+# whose top middle is `top`. Left-aligned text in a Label3D starts at the label's position, so the
+# labels stand at the column's left edge (at the middle, the writing ran off the page).
+func _write(ink: Color, width: float, top: Vector3, title_pixel: float, words_pixel: float) -> void:
+    top.x -= width * 0.5
+    var title := Label3D.new()
+    title.text = label
+    title.font_size = 34
+    title.pixel_size = title_pixel
+    title.modulate = ink
+    title.outline_size = 0
+    title.shaded = false
+    title.width = width / title_pixel
+    title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    title.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+    title.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+    title.position = top
+    title.render_priority = 1
+    _body.add_child(title)
+    var words := Label3D.new()
+    words.text = meaning
+    words.font_size = 26
+    words.pixel_size = words_pixel
+    words.modulate = ink.lightened(0.15)
+    words.outline_size = 0
+    words.shaded = false
+    words.width = width / words_pixel
+    words.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    words.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+    words.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+    # below the name, however many lines it wraps to, measured in the font it is drawn in
+    var font: Font = title.font if title.font != null else ThemeDB.fallback_font
+    var name_height := font.get_multiline_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, width / title_pixel,
+                                                       title.font_size).y * title_pixel
+    words.position = top - Vector3(0, maxf(0.16 * title_pixel / 0.0016, name_height + 0.012), 0)
+    words.render_priority = 1
+    _body.add_child(words)
+
+# A memory kept in the Memory Archive: a book stood face out on the shelf, leaning back a little,
+# what ELI remembers written on a plate on its cover and its page edges lit in the memory's colour.
+func _cover() -> void:
+    _name_tag.visible = false
+    _material = null
+    var leather := StandardMaterial3D.new()
+    leather.albedo_color = Color(0.2, 0.12, 0.08).lerp(colour, 0.12)
+    leather.roughness = 0.6
+    var pages := StandardMaterial3D.new()
+    pages.albedo_color = Color(0.92, 0.88, 0.78)
+    pages.emission_enabled = true
+    pages.emission = colour * clampf(glow, 0.0, 1.0)
+    pages.emission_energy_multiplier = 1.2
+    var paper := StandardMaterial3D.new()
+    paper.albedo_color = Color(0.93, 0.9, 0.82)
+    paper.roughness = 0.95
+    var book := Node3D.new()
+    book.rotation.x = -0.12
+    _body.add_child(book)
+    for part in [[Vector3(0.36, 0.46, 0.012), Vector3(0, 0.23, 0.024), leather],     # the front board
+                 [Vector3(0.36, 0.46, 0.012), Vector3(0, 0.23, -0.024), leather],    # the back board
+                 [Vector3(0.012, 0.46, 0.06), Vector3(-0.174, 0.23, 0.0), leather],  # the spine
+                 [Vector3(0.34, 0.44, 0.036), Vector3(0.008, 0.23, 0.0), pages]]:    # the pages between
+        var block := MeshInstance3D.new()
+        var mesh := BoxMesh.new()
+        mesh.size = part[0]
+        block.mesh = mesh
+        block.position = part[1]
+        block.material_override = part[2]
+        block.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+        book.add_child(block)
+    var plate := MeshInstance3D.new()
+    var quad := QuadMesh.new()
+    quad.size = Vector2(0.3, 0.39)
+    plate.mesh = quad
+    plate.material_override = paper
+    plate.position = Vector3(0.006, 0.23, 0.031)
+    book.add_child(plate)
+    var held := _body
+    _body = book                    # the writing goes on the book, leaning with it
+    _write(Color(0.1, 0.07, 0.05), 0.27, Vector3(0.006, 0.405, 0.032), 0.0011, 0.0009)
+    _body = held
+
 func eye_height() -> float:
     if not _parts.is_empty():
         return _made_height * 0.5
-    if pinned and kind == "claim":
+    if pinned and kind in WRITTEN:
         return 0.0
     return {"orb": 0.9, "pillar": 1.1, "lamp": 1.0, "beacon": 1.6, "tree": 1.2, "arch": 1.1,
             "ring": 0.9, "board": 0.9, "crystal": 0.7}.get(shape, 0.35) * size
@@ -212,6 +266,9 @@ func _shape() -> void:
     _name_tag.visible = true
     if kind == "claim" and pinned:
         _sheet()
+        return
+    if kind == "memory" and pinned:
+        _cover()
         return
     if not _parts.is_empty():
         _material = null

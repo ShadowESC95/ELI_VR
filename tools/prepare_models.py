@@ -14,7 +14,8 @@ Expected in the folder:
 
 Every file a glTF names must be there, inside that model's folder; nothing else is
 copied. assets/models/models.json records what each model is and who made it, and
-assets/CREDITS.md lists them.
+assets/CREDITS.md lists them. Models already in assets/models/ and not in the folder
+are kept as they are, so a folder of new downloads adds to what is there.
 """
 from __future__ import annotations
 
@@ -47,15 +48,22 @@ def main() -> int:
     src = Path(sys.argv[1])
     catalogue = json.loads((src / "models.json").read_text(encoding="utf-8"))
     MODELS.mkdir(parents=True, exist_ok=True)
-    manifest = {}
+    listed = MODELS / "models.json"
+    manifest = json.loads(listed.read_text(encoding="utf-8")) if listed.exists() else {}
+    # a model whose folder is gone is no longer here
+    manifest = {name: entry for name, entry in manifest.items() if (MODELS / name).is_dir()}
     for folder in sorted(p for p in src.iterdir() if p.is_dir()):
         model = folder.name
         gltf = folder / f"{model}_1k.gltf"
         if not gltf.exists() or model not in catalogue:
             continue
         dest = MODELS / model
-        shutil.rmtree(dest, ignore_errors=True)
-        dest.mkdir(parents=True)
+        dest.mkdir(parents=True, exist_ok=True)
+        # what the model no longer names goes; Godot's import settings beside the files stay
+        keep = {gltf.name, *named_files(gltf)}
+        for old in [f for f in dest.rglob("*") if f.is_file() and not f.name.endswith(".import")]:
+            if old.relative_to(dest).as_posix() not in keep:
+                old.unlink()
         shutil.copy2(gltf, dest / gltf.name)
         for rel in named_files(gltf):
             if not (folder / rel).is_file():
@@ -71,7 +79,8 @@ def main() -> int:
             "triangles": info.get("polycount"),
         }
         print(f"{model}: {1 + len(named_files(gltf))} files")
-    (MODELS / "models.json").write_text(json.dumps(manifest, indent=1) + "\n", encoding="utf-8")
+    listed.write_text(json.dumps(dict(sorted(manifest.items())), indent=1) + "\n",
+                      encoding="utf-8")
     print(f"{len(manifest)} models in {MODELS.relative_to(ROOT)}")
     return 0
 

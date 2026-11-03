@@ -12,6 +12,7 @@ var accent := Color("#63ddff")
 var secondary := Color("#6f8995")
 var shadows := true
 var motes := true
+var detail := 1.0               # graphics.world_detail_scale: how much small detail a room fills itself with
 
 var _turning: Array = []        # [node, axis, radians per second]
 var _blinking: Array = []       # [node, seconds per cycle, offset]
@@ -22,6 +23,7 @@ func build(theme: Dictionary, config) -> void:
     secondary = Color(str(theme.get("secondary", "#6f8995")))
     shadows = bool(config.get_value("graphics.shadows", true))
     motes = bool(config.get_value("graphics.particles", true))
+    detail = clampf(float(config.get_value("graphics.world_detail_scale", 1.0)), 0.25, 4.0)
     _build()
 
 func _build() -> void:

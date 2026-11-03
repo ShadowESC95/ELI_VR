@@ -1,0 +1,641 @@
+{
+  "asset": {
+    "generator": "Khronos glTF Blender I/O v5.2.40",
+    "version": "2.0"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "mesh": 0,
+      "name": "vintage_wooden_drawer_01_body"
+    },
+    {
+      "mesh": 1,
+      "name": "vintage_wooden_drawer_01_drawer01"
+    },
+    {
+      "mesh": 2,
+      "name": "vintage_wooden_drawer_01_drawer02",
+      "translation": [
+        0,
+        0,
+        0.028249116614460945
+      ]
+    },
+    {
+      "mesh": 3,
+      "name": "vintage_wooden_drawer_01_drawer03",
+      "translation": [
+        0,
+        0,
+        0.09542723000049591
+      ]
+    },
+    {
+      "mesh": 4,
+      "name": "vintage_wooden_drawer_01_drawer04",
+      "translation": [
+        0,
+        0,
+        0.0359339602291584
+      ]
+    },
+    {
+      "mesh": 5,
+      "name": "vintage_wooden_drawer_01_drawer05"
+    },
+    {
+      "mesh": 6,
+      "name": "vintage_wooden_drawer_01_drawer06",
+      "translation": [
+        0,
+        0,
+        0.03935064375400543
+      ]
+    }
+  ],
+  "materials": [
+    {
+      "doubleSided": true,
+      "name": "vintage_wooden_drawer_01",
+      "normalTexture": {
+        "index": 0
+      },
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 1
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Cube.120",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1,
+            "TEXCOORD_0": 2
+          },
+          "indices": 3,
+          "material": 0
+        }
+      ]
+    },
+    {
+      "name": "Cube.128",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 4,
+            "NORMAL": 5,
+            "TEXCOORD_0": 6
+          },
+          "indices": 7,
+          "material": 0
+        }
+      ]
+    },
+    {
+      "name": "Cube.129",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 8,
+            "NORMAL": 9,
+            "TEXCOORD_0": 10
+          },
+          "indices": 11,
+          "material": 0
+        }
+      ]
+    },
+    {
+      "name": "Cube.131",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 12,
+            "NORMAL": 13,
+            "TEXCOORD_0": 14
+          },
+          "indices": 15,
+          "material": 0
+        }
+      ]
+    },
+    {
+      "name": "Cube.135",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 16,
+            "NORMAL": 17,
+            "TEXCOORD_0": 18
+          },
+          "indices": 19,
+          "material": 0
+        }
+      ]
+    },
+    {
+      "name": "Cube.125",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 20,
+            "NORMAL": 21,
+            "TEXCOORD_0": 22
+          },
+          "indices": 23,
+          "material": 0
+        }
+      ]
+    },
+    {
+      "name": "Cube.133",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 24,
+            "NORMAL": 25,
+            "TEXCOORD_0": 26
+          },
+          "indices": 27,
+          "material": 0
+        }
+      ]
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "source": 0
+    },
+    {
+      "sampler": 0,
+      "source": 1
+    },
+    {
+      "sampler": 0,
+      "source": 2
+    }
+  ],
+  "images": [
+    {
+      "mimeType": "image/jpeg",
+      "name": "vintage_wooden_drawer_01_nor_gl",
+      "uri": "textures/vintage_wooden_drawer_01_nor_gl_1k.jpg"
+    },
+    {
+      "mimeType": "image/jpeg",
+      "name": "vintage_wooden_drawer_01_diff",
+      "uri": "textures/vintage_wooden_drawer_01_diff_1k.jpg"
+    },
+    {
+      "mimeType": "image/jpeg",
+      "name": "vintage_wooden_drawer_01_metal-vintage_wooden_drawer_01_rough",
+      "uri": "textures/vintage_wooden_drawer_01_arm_1k.jpg"
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 1923,
+      "max": [
+        0.8575569987297058,
+        1.0902026891708374,
+        0.4433315694332123
+      ],
+      "min": [
+        -0.8575569987297058,
+        -0.0006366074085235596,
+        -0.4403294324874878
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 1923,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 1923,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5123,
+      "count": 6192,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5126,
+      "count": 495,
+      "max": [
+        -0.29808393120765686,
+        0.989265501499176,
+        0.47115615010261536
+      ],
+      "min": [
+        -0.8079947233200073,
+        0.5620533227920532,
+        -0.4152342975139618
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 5,
+      "componentType": 5126,
+      "count": 495,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 6,
+      "componentType": 5126,
+      "count": 495,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 7,
+      "componentType": 5123,
+      "count": 1560,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 8,
+      "componentType": 5126,
+      "count": 495,
+      "max": [
+        0.2549559772014618,
+        0.9886398911476135,
+        0.4744814336299896
+      ],
+      "min": [
+        -0.25495484471321106,
+        0.5614277124404907,
+        -0.4119090437889099
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 9,
+      "componentType": 5126,
+      "count": 495,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 10,
+      "componentType": 5126,
+      "count": 495,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 11,
+      "componentType": 5123,
+      "count": 1560,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 12,
+      "componentType": 5126,
+      "count": 495,
+      "max": [
+        0.8073593974113464,
+        0.9883922934532166,
+        0.47115620970726013
+      ],
+      "min": [
+        0.29744860529899597,
+        0.5611801147460938,
+        -0.4152342677116394
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 13,
+      "componentType": 5126,
+      "count": 495,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 14,
+      "componentType": 5126,
+      "count": 495,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 15,
+      "componentType": 5123,
+      "count": 1560,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 16,
+      "componentType": 5126,
+      "count": 495,
+      "max": [
+        -0.2981465458869934,
+        0.559219479560852,
+        0.4730578362941742
+      ],
+      "min": [
+        -0.8080573081970215,
+        0.13200731575489044,
+        -0.41333264112472534
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 17,
+      "componentType": 5126,
+      "count": 495,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 18,
+      "componentType": 5126,
+      "count": 495,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 19,
+      "componentType": 5123,
+      "count": 1560,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 20,
+      "componentType": 5126,
+      "count": 495,
+      "max": [
+        0.2549554109573364,
+        0.559219479560852,
+        0.46865880489349365
+      ],
+      "min": [
+        -0.2549554109573364,
+        0.13200731575489044,
+        -0.4177316725254059
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 21,
+      "componentType": 5126,
+      "count": 495,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 22,
+      "componentType": 5126,
+      "count": 495,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 23,
+      "componentType": 5123,
+      "count": 1560,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 24,
+      "componentType": 5126,
+      "count": 495,
+      "max": [
+        0.8067337274551392,
+        0.5592327117919922,
+        0.4742807149887085
+      ],
+      "min": [
+        0.2968229651451111,
+        0.13202054798603058,
+        -0.4121097922325134
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 25,
+      "componentType": 5126,
+      "count": 495,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 26,
+      "componentType": 5126,
+      "count": 495,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 27,
+      "componentType": 5123,
+      "count": 1560,
+      "type": "SCALAR"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteLength": 23076,
+      "byteOffset": 0,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 23076,
+      "byteOffset": 23076,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 15384,
+      "byteOffset": 46152,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 12384,
+      "byteOffset": 61536,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteLength": 5940,
+      "byteOffset": 73920,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 5940,
+      "byteOffset": 79860,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 3960,
+      "byteOffset": 85800,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 3120,
+      "byteOffset": 89760,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteLength": 5940,
+      "byteOffset": 92880,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 5940,
+      "byteOffset": 98820,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 3960,
+      "byteOffset": 104760,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 3120,
+      "byteOffset": 108720,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteLength": 5940,
+      "byteOffset": 111840,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 5940,
+      "byteOffset": 117780,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 3960,
+      "byteOffset": 123720,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 3120,
+      "byteOffset": 127680,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteLength": 5940,
+      "byteOffset": 130800,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 5940,
+      "byteOffset": 136740,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 3960,
+      "byteOffset": 142680,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 3120,
+      "byteOffset": 146640,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteLength": 5940,
+      "byteOffset": 149760,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 5940,
+      "byteOffset": 155700,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 3960,
+      "byteOffset": 161640,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 3120,
+      "byteOffset": 165600,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteLength": 5940,
+      "byteOffset": 168720,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 5940,
+      "byteOffset": 174660,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 3960,
+      "byteOffset": 180600,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 3120,
+      "byteOffset": 184560,
+      "target": 34963
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 187680,
+      "uri": "vintage_wooden_drawer_01.bin"
+    }
+  ]
+}

@@ -76,6 +76,15 @@ class Screens(Alive):
     def test_the_basement_board_shows_the_log(self) -> None:
         self.check("board_shows_the_log")
 
+    def test_elis_memories_stand_face_out_on_the_archive_shelves(self) -> None:
+        self.check("memories_stand_on_the_shelf")
+        self.check("only_memories_have_a_place")
+        self.check("no_book_where_a_memory_stands")
+
+    def test_a_memory_is_written_on_its_cover_inside_the_page(self) -> None:
+        self.check("a_memory_is_written_on_its_cover")
+        self.check("writing_starts_inside_the_page")
+
 
 if __name__ == "__main__":
     unittest.main()

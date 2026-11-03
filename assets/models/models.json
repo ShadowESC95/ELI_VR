@@ -1,4 +1,31 @@
 {
+ "ArmChair_01": {
+  "name": "Arm Chair 01",
+  "authors": [
+   "Kirill Sannikov"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "ArmChair_01",
+  "triangles": 5626
+ },
+ "GothicCabinet_01": {
+  "name": "Gothic Cabinet 01",
+  "authors": [
+   "Kirill Sannikov"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "GothicCabinet_01",
+  "triangles": 12170
+ },
+ "Rockingchair_01": {
+  "name": "Rockingchair 01",
+  "authors": [
+   "Jorge Camacho"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "Rockingchair_01",
+  "triangles": 11866
+ },
  "SchoolChair_01": {
   "name": "School Chair 01",
   "authors": [
@@ -26,6 +53,15 @@
   "polyhaven_id": "WoodenChair_01",
   "triangles": 19992
  },
+ "WoodenTable_01": {
+  "name": "Wooden Table 01",
+  "authors": [
+   "Ethan Place"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "WoodenTable_01",
+  "triangles": 952
+ },
  "bench_vice_01": {
   "name": "Bench Vice 01",
   "authors": [
@@ -35,6 +71,24 @@
   "licence": "CC0 1.0",
   "polyhaven_id": "bench_vice_01",
   "triangles": 2864
+ },
+ "binder_notebook": {
+  "name": "Binder Notebook",
+  "authors": [
+   "DaDrood"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "binder_notebook",
+  "triangles": 18077
+ },
+ "book_encyclopedia_set_01": {
+  "name": "Book Encyclopedia Set 01",
+  "authors": [
+   "John Malcolm"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "book_encyclopedia_set_01",
+  "triangles": 67306
  },
  "caged_hanging_light": {
   "name": "Caged Hanging Light",
@@ -90,6 +144,15 @@
   "licence": "CC0 1.0",
   "polyhaven_id": "desk_lamp_arm_01",
   "triangles": 25710
+ },
+ "drawer_cabinet": {
+  "name": "Drawer Cabinet",
+  "authors": [
+   "Ulan Cabanilla"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "drawer_cabinet",
+  "triangles": 26406
  },
  "drill_press_01": {
   "name": "Drill Press 01",
@@ -162,6 +225,15 @@
   "licence": "CC0 1.0",
   "polyhaven_id": "magnifying_glass_01",
   "triangles": 7240
+ },
+ "marble_bust_01": {
+  "name": "Marble Bust 01",
+  "authors": [
+   "Rico Cilliers"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "marble_bust_01",
+  "triangles": 17456
  },
  "metal_office_desk": {
   "name": "Metal Office Desk",
@@ -308,6 +380,43 @@
   "licence": "CC0 1.0",
   "polyhaven_id": "vintage_cabinet_01",
   "triangles": 61096
+ },
+ "vintage_grandfather_clock_01": {
+  "name": "Vintage Grandfather Clock 01",
+  "authors": [
+   "James Ray Cock",
+   "Yann Kervran"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "vintage_grandfather_clock_01",
+  "triangles": 12604
+ },
+ "vintage_oil_lamp": {
+  "name": "Vintage Oil Lamp",
+  "authors": [
+   "Monsta3D"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "vintage_oil_lamp",
+  "triangles": 7208
+ },
+ "vintage_wooden_drawer_01": {
+  "name": "Vintage Wooden Drawer 01",
+  "authors": [
+   "James Ray Cock"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "vintage_wooden_drawer_01",
+  "triangles": 5184
+ },
+ "wooden_bookshelf_worn": {
+  "name": "Wooden Bookshelf Worn",
+  "authors": [
+   "Ulan Cabanilla"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "wooden_bookshelf_worn",
+  "triangles": 10106
  },
  "worn_metal_rack": {
   "name": "Worn Metal Rack",

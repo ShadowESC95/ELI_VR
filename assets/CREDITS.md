@@ -67,16 +67,23 @@ Each set is the 1K version, repacked as colour, normal (OpenGL convention) and o
 
 | Folder | Poly Haven model | Made by |
 |---|---|---|
+| `ArmChair_01` | Arm Chair 01 | Kirill Sannikov |
+| `GothicCabinet_01` | Gothic Cabinet 01 | Kirill Sannikov |
+| `Rockingchair_01` | Rockingchair 01 | Jorge Camacho |
 | `SchoolChair_01` | School Chair 01 | Ethan Place |
 | `Television_01` | Television 01 | Gabriel Radić |
 | `WoodenChair_01` | Wooden Chair 01 | Jake Mobley |
+| `WoodenTable_01` | Wooden Table 01 | Ethan Place |
 | `bench_vice_01` | Bench Vice 01 | Antanas Kep, Yann Kervran |
+| `binder_notebook` | Binder Notebook | DaDrood |
+| `book_encyclopedia_set_01` | Book Encyclopedia Set 01 | John Malcolm |
 | `caged_hanging_light` | Caged Hanging Light | Ulan Cabanilla |
 | `ceiling_fan` | Ceiling Fan | Ulan Cabanilla |
 | `circuit_board` | Circuit Board | Benny Weimer |
 | `classic_laptop` | Classic Laptop | Arrangemonk |
 | `clipboard` | Clipboard | ProgrammerOnCoffee |
 | `desk_lamp_arm_01` | Desk Lamp Arm 01 | Kuutti Siitonen, Yann Kervran |
+| `drawer_cabinet` | Drawer Cabinet | Ulan Cabanilla |
 | `drill_press_01` | Drill Press 01 | Viktor |
 | `filmstrip_projector_8mm` | Filmstrip Projector 8mm | PeterM |
 | `hanging_industrial_lamp` | Hanging Industrial Lamp | Kuutti Siitonen |
@@ -85,6 +92,7 @@ Each set is the 1K version, repacked as colour, normal (OpenGL convention) and o
 | `industrial_wall_lamp` | Industrial Wall Lamp | Kuutti Siitonen |
 | `industrial_wall_sconce` | Industrial Wall Sconce | Ulan Cabanilla |
 | `magnifying_glass_01` | Magnifying Glass 01 | Nazar Borodavka |
+| `marble_bust_01` | Marble Bust 01 | Rico Cilliers |
 | `metal_office_desk` | Metal Office Desk | Ulan Cabanilla |
 | `metal_tool_chest` | Metal Tool Chest | John Hutcheson, Yann Kervran |
 | `metal_toolbox` | Metal Toolbox | Mateusz Sadek |
@@ -101,4 +109,8 @@ Each set is the 1K version, repacked as colour, normal (OpenGL convention) and o
 | `television_02` | Television 02 | Benny Weimer |
 | `tool_cart` | Tool Cart | Savva Zakharov |
 | `vintage_cabinet_01` | Vintage Cabinet 01 | Rico Cilliers |
+| `vintage_grandfather_clock_01` | Vintage Grandfather Clock 01 | James Ray Cock, Yann Kervran |
+| `vintage_oil_lamp` | Vintage Oil Lamp | Monsta3D |
+| `vintage_wooden_drawer_01` | Vintage Wooden Drawer 01 | James Ray Cock |
+| `wooden_bookshelf_worn` | Wooden Bookshelf Worn | Ulan Cabanilla |
 | `worn_metal_rack` | Worn Metal Rack | Luca B |
