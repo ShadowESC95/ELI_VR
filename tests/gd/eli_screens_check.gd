@@ -157,6 +157,35 @@ func _run() -> void:
     var away: float = bay._leds.get_shader_parameter("busy")
     _check("the_racks_work_as_hard_as_eli", is_equal_approx(hard, 0.9) and is_equal_approx(easy, 0.1) and away < easy,
            "%s %s %s" % [hard, easy, away])
+
+    # what ELI may place: every real thing, by id, with what it is and how big
+    var offered := EliProps.catalogue()
+    var chair_offer := offered.filter(func(p): return p["id"] == "ArmChair_01")
+    _check("eli_is_told_the_real_things_there_are", offered.size() >= 40 and chair_offer.size() == 1
+           and chair_offer[0]["name"] == "arm chair" and float(chair_offer[0]["size"][1]) > 0.9, str(chair_offer))
+    var chair = Thing.new()
+    root.add_child(chair)
+    chair.build({"id": "c", "name": "Arm Chair", "kind": "built",
+                 "form": {"shape": "prop", "prop": "ArmChair_01", "size": 1.0, "pos": [2.0, 0.0, 1.0], "turn": 90.0}})
+    var turned: bool = is_equal_approx(chair._body.rotation.y, deg_to_rad(90.0))
+    var drawn: bool = chair._body.get_child_count() == 1 and not chair._name_tag.visible and absf(chair.eye_height() - 0.535) < 0.05
+    var missing = Thing.new()
+    root.add_child(missing)
+    missing.build({"id": "m", "name": "Sofa", "kind": "built", "form": {"shape": "prop", "prop": "no_such_sofa", "pos": [0, 0, 0]}})
+    _check("a_real_thing_is_its_model_turned_as_eli_turned_it", turned and drawn and missing.shape == "orb",
+           "turned %s, drawn %s, missing as %s" % [turned, drawn, missing.shape])
+    var hung = Thing.new()
+    root.add_child(hung)
+    hung.build({"id": "p1", "name": "Dusk", "kind": "built", "form": {"shape": "painting", "size": 1.0, "pos": [0.0, 1.6, 4.0],
+                "turn": 180.0, "art": {"style": "horizon", "colours": ["#8b6cf0", "#f5b942"]}}})
+    var standing = Thing.new()
+    root.add_child(standing)
+    standing.build({"id": "p2", "name": "Dawn", "kind": "built", "form": {"shape": "painting", "size": 1.0, "pos": [1.0, 0.0, 4.0]}})
+    var canvas: MeshInstance3D = hung._body.get_child(0)
+    var styled: int = (canvas.material_override as ShaderMaterial).get_shader_parameter("style")
+    _check("a_painting_is_painted_and_stands_on_an_easel_on_the_floor", styled == 5 and hung.eye_height() < 0.6
+           and standing.eye_height() > 0.8 and standing._body.get_child_count() > hung._body.get_child_count(),
+           "style %d, hung %s, standing %s" % [styled, hung.eye_height(), standing.eye_height()])
     quit()
 
 func _labels(node: Node) -> Array:

@@ -54,6 +54,8 @@ How well the model fits beside VR is ELI v3's own loader's work; if the model do
 
 **A thing need not come from a list.** Beside the sixteen named shapes, a thing can be made part by part, up to twenty-four parts: box, ball, cylinder, cone, torus, capsule, prism, a lathe (a profile of `[radius, height]` points turned round), an extrude (an outline pulled up into a solid), a tube (along a path of points), text. Each part has its own place, turn, size, colour, metal, roughness, glow, clearness, and may spin, bob or pulse.
 
+**Real things, and pictures of its own.** Once linked, ELI VR tells ELI v3 (`POST /v1/world/body`, capability `props`) the real things it can draw: every model in `assets/models/`, each with what it is and its size in metres. ELI can place any of them in any room by its id (`"prop": "ArmChair_01"`), at its real size or scaled, set it on something (`height`) and turn it (`turn`, degrees: 0 straight ahead, 90 to the right); a real thing nobody turned faces the middle of the room. ELI can also paint: the shape `painting` with `art`, a style (rings, stripes, waves, cells, blooms, horizon, rays, drift) and two to four colours. A painting hangs where ELI puts it, and one set on the floor stands on an easel. Needs ELI v3 3.0.147 or newer.
+
 **Nor need the room.** In ELI's own room the sky can be one by name or painted: `sky_top`, `sky_horizon`, `stars`, and a `sun` with a height, a bearing, a colour and a size. The ground can be any colour, and `terrain` raises it into hills round the flat middle.
 
 A model of three billion parameters or more is offered all of this. A smaller one is held to the named shapes: it can manage those, and free parts from a very small model are noise. `ELI_WORLD_FREEFORM=1` or `0` on ELI v3 overrides the judgement.
@@ -224,7 +226,7 @@ ELI v3 carries an edition pack for ELI VR (`eli/editions/vr/`), the same shape a
 ## Not there yet
 
 - ELI is a light, not a figure.
-- ELI builds from parts and colours, not yet from textures or pictures of its own. Only ELI's own room can be given a new sky, ground or mist; the rooms of the house take ELI's light, and what they were built with cannot be moved or changed.
+- ELI's pictures are its own patterns in its own colours, not images of things. Only ELI's own room can be given a new sky, ground or mist; the rooms of the house take ELI's light, and what they were built with cannot be moved or changed.
 - A very small model keeps to the named shapes, says little worth hearing about what it made, and unasked often makes nothing. That is the model, not a rule.
 - Free parts and a painted sky have been drawn from edits sent by hand. No model large enough to be offered them has been tried yet.
 - ELI building of its own accord has been tested with ELI v3's own engine and a stand-in for the model, not yet left running over days.

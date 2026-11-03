@@ -15,7 +15,10 @@ Expected in the folder:
 Every file a glTF names must be there, inside that model's folder; nothing else is
 copied. assets/models/models.json records what each model is and who made it, and
 assets/CREDITS.md lists them. Models already in assets/models/ and not in the folder
-are kept as they are, so a folder of new downloads adds to what is there.
+are kept as they are, so a folder of new downloads adds to what is there. Then measure
+them, so ELI knows how big each one is:
+
+    godot --headless --path . --script tools/measure_models.gd
 """
 from __future__ import annotations
 
@@ -71,15 +74,17 @@ def main() -> int:
             (dest / rel).parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(folder / rel, dest / rel)
         info = catalogue[model]
+        measured = (manifest.get(model) or {}).get("size")
         manifest[model] = {
             "name": info.get("name", model),
             "authors": sorted((info.get("authors") or {}).keys()),
             "licence": "CC0 1.0",
             "polyhaven_id": model,      # the page is polyhaven.com/a/<id>; see assets/CREDITS.md
             "triangles": info.get("polycount"),
+            **({"size": measured} if measured else {}),
         }
         print(f"{model}: {1 + len(named_files(gltf))} files")
-    listed.write_text(json.dumps(dict(sorted(manifest.items())), indent=1) + "\n",
+    listed.write_text(json.dumps(dict(sorted(manifest.items())), indent=1, ensure_ascii=False) + "\n",
                       encoding="utf-8")
     print(f"{len(manifest)} models in {MODELS.relative_to(ROOT)}")
     return 0

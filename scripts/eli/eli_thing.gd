@@ -40,6 +40,9 @@ var pinned := false            # the room has a place for this kind of record, a
 const WRITTEN := ["claim", "memory", "found", "written", "playing"]
 const TYPED := ["DejaVu Sans Mono", "Liberation Mono", "Menlo", "Consolas", "Courier New", "monospace"]
 var lines: Array = []               # what a written record says, line by line, when ELI sends it so
+var prop := ""                      # a real thing the body has (assets/models/<prop>), when that is what it is
+var art := {}                       # a painting's style and colours
+const ART_STYLES := ["rings", "stripes", "waves", "cells", "blooms", "horizon", "rays", "drift"]
 var _text_key := ""
 var _pin := Transform3D.IDENTITY
 var _made_height := 1.0
@@ -64,6 +67,8 @@ func refresh(data: Dictionary, first: bool = false) -> void:
     var form: Dictionary = data.get("form", {})
     var look := [str(form.get("shape", "orb")), str(form.get("colour", "#9fd8ff")),
                  float(form.get("size", 1.0)), float(form.get("glow", 0.25))]
+    var real := str(form.get("prop", ""))
+    var painted: Dictionary = form.get("art", {}) if typeof(form.get("art")) == TYPE_DICTIONARY else {}
     label = str(data.get("name", label))
     meaning = str(data.get("meaning", ""))
     made_by = str(data.get("made_by", ""))
@@ -74,7 +79,10 @@ func refresh(data: Dictionary, first: bool = false) -> void:
     if first:
         position = _target
     var parts_key := JSON.stringify(form.get("parts", []))
-    if first or parts_key != _parts_key or look != [shape, "#" + colour.to_html(false), size, glow]:
+    if first or parts_key != _parts_key or look != [shape, "#" + colour.to_html(false), size, glow] \
+            or real != prop or painted != art:
+        prop = real
+        art = painted
         shape = look[0]
         colour = Color(look[1])
         size = look[2]
@@ -84,6 +92,9 @@ func refresh(data: Dictionary, first: bool = false) -> void:
         _shape()
     elif pinned and kind in WRITTEN and _words_key() != _text_key:
         _shape()                    # the same record says something new: another song on the radio
+    # which way its front faces: ELI's degrees round from straight ahead (0 ahead, 90 to the right);
+    # a model's front is its +z, and straight ahead is -z
+    _body.rotation.y = deg_to_rad(180.0 - float(form.get("turn"))) if form.get("turn") != null and not pinned else 0.0
     _name_tag.text = label
     _name_tag.modulate = colour.lightened(0.55)
     _name_tag.position = Vector3(0, eye_height() * 2.0 + 0.28, 0)
@@ -294,7 +305,96 @@ func _radio() -> void:
     if not paused:
         _moving.append([dot, 0.0, 0.0, 0.6, light, dot.position.y, 1.4])
 
+# A real thing the body has, at its real size times `size`. A model the body does not have is a
+# plain orb, so nothing ELI placed goes missing.
+func _real() -> void:
+    var scene := EliProps.model(prop)
+    if scene == null:
+        shape = "orb"
+        _shape()
+        return
+    _material = null
+    var model := scene.instantiate() as Node3D
+    model.scale = Vector3.ONE * size
+    _body.add_child(model)
+    _made_height = 1.0
+    for entry in EliProps.catalogue():
+        if entry["id"] == prop:
+            _made_height = float(entry["size"][1]) * size
+    _name_tag.visible = false           # a chair is a chair: its name shows when you point at it
+
+# A painting of ELI's own, framed: its foot is the frame's lower edge, its front faces where ELI
+# turned it. Set on the floor, it stands on an easel. With no art given, a style and colours of
+# its own from its id and its colour.
+func _painting() -> void:
+    _material = null
+    var wide := 1.0 * size
+    var tall := 0.75 * size
+    var lift := 0.0
+    if _target.y < 0.3:
+        lift = 0.8
+        var wood := StandardMaterial3D.new()
+        wood.albedo_color = Color(0.45, 0.32, 0.2)
+        wood.roughness = 0.7
+        for leg in [[Vector3(-0.35, 0.0, 0.12), -0.12], [Vector3(0.35, 0.0, 0.12), 0.12], [Vector3(0.0, 0.0, -0.45), 0.0]]:
+            var rod := MeshInstance3D.new()
+            var stick := CylinderMesh.new()
+            stick.top_radius = 0.018
+            stick.bottom_radius = 0.022
+            stick.height = 1.75
+            rod.mesh = stick
+            rod.material_override = wood
+            rod.position = leg[0] + Vector3(0, 0.85, 0) + (Vector3(0, 0, 0.22) if leg[0].z < 0 else Vector3.ZERO)
+            rod.rotation = Vector3(0.27 if leg[0].z < 0 else -0.1, 0.0, leg[1])
+            _body.add_child(rod)
+        var ledge := MeshInstance3D.new()
+        var shelf := BoxMesh.new()
+        shelf.size = Vector3(wide + 0.1, 0.04, 0.08)
+        ledge.mesh = shelf
+        ledge.material_override = wood
+        ledge.position = Vector3(0, lift - 0.02, 0.04)
+        _body.add_child(ledge)
+    var style := str(art.get("style", ""))
+    var tints: Array = art.get("colours", [])
+    if not style in ART_STYLES:
+        style = ART_STYLES[absi(thing_id.hash()) % ART_STYLES.size()]
+    if tints.size() < 2:
+        tints = [colour.darkened(0.6).to_html(false), colour.to_html(false), colour.lightened(0.5).to_html(false)]
+    var palette := PackedVector3Array()
+    for i in 4:
+        var c := Color(str(tints[mini(i, tints.size() - 1)]))
+        palette.append(Vector3(c.r, c.g, c.b))
+    var canvas := MeshInstance3D.new()
+    var quad := QuadMesh.new()
+    quad.size = Vector2(wide, tall)
+    canvas.mesh = quad
+    canvas.material_override = MaterialKit.shader("res://assets/shaders/painting.gdshader", {
+        "style": ART_STYLES.find(style), "colours": palette, "count": mini(tints.size(), 4),
+        "seed": float(absi(thing_id.hash()) % 997) * 0.1,
+    })
+    canvas.position = Vector3(0, lift + tall * 0.5 + 0.05 * size, 0.012)
+    _body.add_child(canvas)
+    var frame := StandardMaterial3D.new()
+    frame.albedo_color = Color(0.32, 0.22, 0.12) if glow < 0.5 else Color(0.78, 0.6, 0.28)
+    frame.metallic = 0.0 if glow < 0.5 else 0.7
+    frame.roughness = 0.55
+    var rim := 0.05 * size
+    for side in [[Vector3(wide + rim * 2.0, rim, 0.04), Vector3(0, rim * 0.5, 0)],
+                 [Vector3(wide + rim * 2.0, rim, 0.04), Vector3(0, tall + rim * 1.5, 0)],
+                 [Vector3(rim, tall + rim * 2.0, 0.04), Vector3(-(wide + rim) * 0.5, tall * 0.5 + rim, 0)],
+                 [Vector3(rim, tall + rim * 2.0, 0.04), Vector3((wide + rim) * 0.5, tall * 0.5 + rim, 0)]]:
+        var bar := MeshInstance3D.new()
+        var box := BoxMesh.new()
+        box.size = side[0]
+        bar.mesh = box
+        bar.material_override = frame
+        bar.position = side[1] + Vector3(0, lift, 0)
+        _body.add_child(bar)
+    _made_height = lift + tall + rim * 2.0
+
 func eye_height() -> float:
+    if shape == "prop" or shape == "painting":
+        return _made_height * 0.5
     if not _parts.is_empty():
         return _made_height * 0.5
     if pinned and kind in WRITTEN:
@@ -373,6 +473,12 @@ func _shape() -> void:
         return
     if kind == "playing" and pinned:
         _radio()
+        return
+    if shape == "prop" and not prop.is_empty():
+        _real()
+        return
+    if shape == "painting":
+        _painting()
         return
     if not _parts.is_empty():
         _material = null

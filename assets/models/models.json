@@ -6,7 +6,12 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "ArmChair_01",
-  "triangles": 5626
+  "triangles": 5626,
+  "size": [
+   0.85,
+   1.07,
+   0.77
+  ]
  },
  "GothicCabinet_01": {
   "name": "Gothic Cabinet 01",
@@ -15,7 +20,12 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "GothicCabinet_01",
-  "triangles": 12170
+  "triangles": 12170,
+  "size": [
+   1.72,
+   2.36,
+   1.13
+  ]
  },
  "Rockingchair_01": {
   "name": "Rockingchair 01",
@@ -24,7 +34,12 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "Rockingchair_01",
-  "triangles": 11866
+  "triangles": 11866,
+  "size": [
+   0.71,
+   0.99,
+   0.83
+  ]
  },
  "SchoolChair_01": {
   "name": "School Chair 01",
@@ -33,16 +48,26 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "SchoolChair_01",
-  "triangles": 5072
+  "triangles": 5072,
+  "size": [
+   0.57,
+   1.01,
+   0.68
+  ]
  },
  "Television_01": {
   "name": "Television 01",
   "authors": [
-   "Gabriel Radi\u0107"
+   "Gabriel Radić"
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "Television_01",
-  "triangles": 1918
+  "triangles": 1918,
+  "size": [
+   0.6,
+   0.46,
+   0.47
+  ]
  },
  "WoodenChair_01": {
   "name": "Wooden Chair 01",
@@ -51,7 +76,12 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "WoodenChair_01",
-  "triangles": 19992
+  "triangles": 19992,
+  "size": [
+   0.69,
+   2.27,
+   0.66
+  ]
  },
  "WoodenTable_01": {
   "name": "Wooden Table 01",
@@ -60,7 +90,12 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "WoodenTable_01",
-  "triangles": 952
+  "triangles": 952,
+  "size": [
+   1.8,
+   0.55,
+   0.66
+  ]
  },
  "bench_vice_01": {
   "name": "Bench Vice 01",
@@ -70,7 +105,12 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "bench_vice_01",
-  "triangles": 2864
+  "triangles": 2864,
+  "size": [
+   0.2,
+   0.29,
+   0.4
+  ]
  },
  "binder_notebook": {
   "name": "Binder Notebook",
@@ -79,7 +119,12 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "binder_notebook",
-  "triangles": 18077
+  "triangles": 18077,
+  "size": [
+   0.58,
+   0.03,
+   0.2
+  ]
  },
  "book_encyclopedia_set_01": {
   "name": "Book Encyclopedia Set 01",
@@ -88,7 +133,12 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "book_encyclopedia_set_01",
-  "triangles": 67306
+  "triangles": 67306,
+  "size": [
+   0.55,
+   0.24,
+   0.16
+  ]
  },
  "boombox": {
   "name": "Boombox",
@@ -97,7 +147,12 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "boombox",
-  "triangles": 10168
+  "triangles": 10168,
+  "size": [
+   0.72,
+   0.47,
+   0.19
+  ]
  },
  "caged_hanging_light": {
   "name": "Caged Hanging Light",
@@ -106,7 +161,12 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "caged_hanging_light",
-  "triangles": 22893
+  "triangles": 22893,
+  "size": [
+   1.16,
+   0.75,
+   0.31
+  ]
  },
  "ceiling_fan": {
   "name": "Ceiling Fan",
@@ -115,7 +175,12 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "ceiling_fan",
-  "triangles": 16356
+  "triangles": 16356,
+  "size": [
+   1.46,
+   0.52,
+   1.46
+  ]
  },
  "circuit_board": {
   "name": "Circuit Board",
@@ -124,7 +189,12 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "circuit_board",
-  "triangles": 14430
+  "triangles": 14430,
+  "size": [
+   0.4,
+   0.08,
+   0.4
+  ]
  },
  "classic_laptop": {
   "name": "Classic Laptop",
@@ -133,7 +203,12 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "classic_laptop",
-  "triangles": 14450
+  "triangles": 14450,
+  "size": [
+   0.65,
+   0.54,
+   0.49
+  ]
  },
  "clipboard": {
   "name": "Clipboard",
@@ -142,7 +217,12 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "clipboard",
-  "triangles": 6176
+  "triangles": 6176,
+  "size": [
+   0.23,
+   0.04,
+   0.34
+  ]
  },
  "desk_lamp_arm_01": {
   "name": "Desk Lamp Arm 01",
@@ -152,7 +232,12 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "desk_lamp_arm_01",
-  "triangles": 25710
+  "triangles": 25710,
+  "size": [
+   0.2,
+   0.89,
+   0.61
+  ]
  },
  "drawer_cabinet": {
   "name": "Drawer Cabinet",
@@ -161,7 +246,12 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "drawer_cabinet",
-  "triangles": 26406
+  "triangles": 26406,
+  "size": [
+   1.14,
+   1.88,
+   0.49
+  ]
  },
  "drill_press_01": {
   "name": "Drill Press 01",
@@ -170,7 +260,12 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "drill_press_01",
-  "triangles": 58526
+  "triangles": 58526,
+  "size": [
+   0.37,
+   0.9,
+   0.6
+  ]
  },
  "filmstrip_projector_8mm": {
   "name": "Filmstrip Projector 8mm",
@@ -179,7 +274,12 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "filmstrip_projector_8mm",
-  "triangles": 32697
+  "triangles": 32697,
+  "size": [
+   0.25,
+   0.35,
+   0.6
+  ]
  },
  "hanging_industrial_lamp": {
   "name": "Hanging Industrial Lamp",
@@ -188,7 +288,12 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "hanging_industrial_lamp",
-  "triangles": 9530
+  "triangles": 9530,
+  "size": [
+   0.55,
+   1.36,
+   0.55
+  ]
  },
  "industrial_microscope": {
   "name": "Industrial Microscope",
@@ -197,7 +302,12 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "industrial_microscope",
-  "triangles": 16598
+  "triangles": 16598,
+  "size": [
+   0.21,
+   0.46,
+   0.5
+  ]
  },
  "industrial_storage_cart": {
   "name": "Industrial Storage Cart",
@@ -206,7 +316,12 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "industrial_storage_cart",
-  "triangles": 18902
+  "triangles": 18902,
+  "size": [
+   1.6,
+   1.38,
+   1.1
+  ]
  },
  "industrial_wall_lamp": {
   "name": "Industrial Wall Lamp",
@@ -215,7 +330,12 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "industrial_wall_lamp",
-  "triangles": 4446
+  "triangles": 4446,
+  "size": [
+   0.27,
+   0.43,
+   0.14
+  ]
  },
  "industrial_wall_sconce": {
   "name": "Industrial Wall Sconce",
@@ -224,7 +344,12 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "industrial_wall_sconce",
-  "triangles": 9826
+  "triangles": 9826,
+  "size": [
+   0.15,
+   0.34,
+   0.25
+  ]
  },
  "magnifying_glass_01": {
   "name": "Magnifying Glass 01",
@@ -233,7 +358,12 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "magnifying_glass_01",
-  "triangles": 7240
+  "triangles": 7240,
+  "size": [
+   0.13,
+   0.27,
+   0.03
+  ]
  },
  "marble_bust_01": {
   "name": "Marble Bust 01",
@@ -242,7 +372,12 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "marble_bust_01",
-  "triangles": 17456
+  "triangles": 17456,
+  "size": [
+   0.27,
+   0.51,
+   0.3
+  ]
  },
  "metal_office_desk": {
   "name": "Metal Office Desk",
@@ -251,7 +386,12 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "metal_office_desk",
-  "triangles": 6898
+  "triangles": 6898,
+  "size": [
+   2.0,
+   0.79,
+   0.95
+  ]
  },
  "metal_tool_chest": {
   "name": "Metal Tool Chest",
@@ -261,7 +401,12 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "metal_tool_chest",
-  "triangles": 14576
+  "triangles": 14576,
+  "size": [
+   0.69,
+   0.65,
+   0.41
+  ]
  },
  "metal_toolbox": {
   "name": "Metal Toolbox",
@@ -270,7 +415,12 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "metal_toolbox",
-  "triangles": 14228
+  "triangles": 14228,
+  "size": [
+   0.4,
+   0.35,
+   0.29
+  ]
  },
  "modular_electric_cables": {
   "name": "Modular Electric Cables",
@@ -279,7 +429,12 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "modular_electric_cables",
-  "triangles": 42078
+  "triangles": 42078,
+  "size": [
+   2.08,
+   0.76,
+   0.21
+  ]
  },
  "mounted_fluorescent_lights": {
   "name": "Mounted Fluorescent Lights",
@@ -288,7 +443,12 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "mounted_fluorescent_lights",
-  "triangles": 17820
+  "triangles": 17820,
+  "size": [
+   0.91,
+   0.04,
+   0.65
+  ]
  },
  "office_notepads": {
   "name": "Office Notepads",
@@ -297,7 +457,12 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "office_notepads",
-  "triangles": 666
+  "triangles": 666,
+  "size": [
+   1.1,
+   0.02,
+   0.66
+  ]
  },
  "plastic_crate_01": {
   "name": "Plastic Crate 01",
@@ -306,7 +471,12 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "plastic_crate_01",
-  "triangles": 18320
+  "triangles": 18320,
+  "size": [
+   0.3,
+   0.26,
+   0.41
+  ]
  },
  "plastic_crate_02": {
   "name": "Plastic Crate 02",
@@ -315,7 +485,12 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "plastic_crate_02",
-  "triangles": 5840
+  "triangles": 5840,
+  "size": [
+   0.51,
+   0.25,
+   0.41
+  ]
  },
  "portable_welding_cart": {
   "name": "Portable Welding Cart",
@@ -324,7 +499,12 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "portable_welding_cart",
-  "triangles": 29418
+  "triangles": 29418,
+  "size": [
+   0.84,
+   1.56,
+   0.65
+  ]
  },
  "power_box_01": {
   "name": "Power Box 01",
@@ -334,7 +514,12 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "power_box_01",
-  "triangles": 21272
+  "triangles": 21272,
+  "size": [
+   0.46,
+   0.5,
+   0.4
+  ]
  },
  "retro_multimeter": {
   "name": "Retro Multimeter",
@@ -343,7 +528,12 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "retro_multimeter",
-  "triangles": 13356
+  "triangles": 13356,
+  "size": [
+   0.22,
+   0.28,
+   0.2
+  ]
  },
  "side_table_01": {
   "name": "Side Table 01",
@@ -352,7 +542,12 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "side_table_01",
-  "triangles": 2756
+  "triangles": 2756,
+  "size": [
+   0.55,
+   0.55,
+   0.45
+  ]
  },
  "steel_frame_shelves_01": {
   "name": "Steel Frame Shelves 01",
@@ -361,7 +556,12 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "steel_frame_shelves_01",
-  "triangles": 4348
+  "triangles": 4348,
+  "size": [
+   10.97,
+   21.41,
+   5.02
+  ]
  },
  "steel_frame_shelves_02": {
   "name": "Steel Frame Shelves 02",
@@ -370,7 +570,12 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "steel_frame_shelves_02",
-  "triangles": 4348
+  "triangles": 4348,
+  "size": [
+   0.59,
+   2.14,
+   0.5
+  ]
  },
  "television_02": {
   "name": "Television 02",
@@ -379,7 +584,12 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "television_02",
-  "triangles": 2310
+  "triangles": 2310,
+  "size": [
+   0.4,
+   0.41,
+   0.35
+  ]
  },
  "tool_cart": {
   "name": "Tool Cart",
@@ -388,7 +598,12 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "tool_cart",
-  "triangles": 29394
+  "triangles": 29394,
+  "size": [
+   1.27,
+   0.96,
+   0.75
+  ]
  },
  "vintage_cabinet_01": {
   "name": "Vintage Cabinet 01",
@@ -397,7 +612,12 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "vintage_cabinet_01",
-  "triangles": 61096
+  "triangles": 61096,
+  "size": [
+   2.02,
+   2.24,
+   0.67
+  ]
  },
  "vintage_grandfather_clock_01": {
   "name": "Vintage Grandfather Clock 01",
@@ -407,7 +627,12 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "vintage_grandfather_clock_01",
-  "triangles": 12604
+  "triangles": 12604,
+  "size": [
+   0.63,
+   2.19,
+   0.43
+  ]
  },
  "vintage_oil_lamp": {
   "name": "Vintage Oil Lamp",
@@ -416,7 +641,12 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "vintage_oil_lamp",
-  "triangles": 7208
+  "triangles": 7208,
+  "size": [
+   0.22,
+   0.8,
+   0.22
+  ]
  },
  "vintage_wooden_drawer_01": {
   "name": "Vintage Wooden Drawer 01",
@@ -425,7 +655,12 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "vintage_wooden_drawer_01",
-  "triangles": 5184
+  "triangles": 5184,
+  "size": [
+   1.72,
+   1.09,
+   1.01
+  ]
  },
  "wooden_bookshelf_worn": {
   "name": "Wooden Bookshelf Worn",
@@ -434,7 +669,12 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "wooden_bookshelf_worn",
-  "triangles": 10106
+  "triangles": 10106,
+  "size": [
+   1.37,
+   2.06,
+   0.58
+  ]
  },
  "worn_metal_rack": {
   "name": "Worn Metal Rack",
@@ -443,6 +683,11 @@
   ],
   "licence": "CC0 1.0",
   "polyhaven_id": "worn_metal_rack",
-  "triangles": 6372
+  "triangles": 6372,
+  "size": [
+   0.92,
+   1.9,
+   0.6
+  ]
  }
 }

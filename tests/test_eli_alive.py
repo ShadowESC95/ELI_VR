@@ -96,6 +96,11 @@ class Screens(Alive):
     def test_the_upgrade_bay_racks_blink_as_hard_as_eli_is_working(self) -> None:
         self.check("the_racks_work_as_hard_as_eli")
 
+    def test_eli_can_place_real_things_and_paint_its_own_pictures(self) -> None:
+        self.check("eli_is_told_the_real_things_there_are")
+        self.check("a_real_thing_is_its_model_turned_as_eli_turned_it")
+        self.check("a_painting_is_painted_and_stands_on_an_easel_on_the_floor")
+
 
 if __name__ == "__main__":
     unittest.main()

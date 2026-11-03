@@ -23,7 +23,7 @@ const OLD_PLACEHOLDER := "ws://127.0.0.1:47832"
 const RETRY_SECONDS := 5.0
 const SURFACE := "eli_vr"
 const PROTOCOL_VERSIONS := [1, 2]
-const WANTS := ["world-state", "room-events", "scene", "say", "building", "undo", "own-room", "mind"]
+const WANTS := ["world-state", "room-events", "scene", "say", "building", "undo", "own-room", "mind", "props"]
 const WELCOME_SECONDS := 4.0
 const CLOSE_UNAUTHORISED := 4401
 const CLOSE_INCOMPATIBLE := 4406
@@ -139,6 +139,15 @@ func _agree(version: int, has: Array, from: String) -> void:
         problem = EliResult.bad("unsupported", "This ELI v3 is older: presence and talking only")
     print("ELI link: world protocol %d%s" % [version, "" if from.is_empty() else " (%s)" % from])
     link_changed.emit(connected)
+    if can("props"):
+        report_body.call_deferred()
+
+# Once a link is agreed: the real things ELI VR can draw, for ELI to place in its rooms.
+func report_body() -> EliResult:
+    if not can("props"):
+        return EliResult.bad("unsupported")
+    var body := JSON.stringify({"surface": SURFACE, "props": EliProps.catalogue()})
+    return await _post("/v1/world/body", body.to_utf8_buffer(), "application/json", 15.0)
 
 func _open() -> void:
     _retry = RETRY_SECONDS
