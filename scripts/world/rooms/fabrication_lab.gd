@@ -9,17 +9,19 @@ var _print: MeshInstance3D
 var _head: Node3D
 var _crates: Array = []
 var _arm: Array = []
+var _leds: ShaderMaterial          # the racks' status lights: how busy ELI is sets their pace
 
 func _build() -> void:
-    var env := environment(Color(0.42, 0.45, 0.5).lerp(accent, 0.08), 1.0)
+    # little light from nowhere: the panels in the roof and the lamps on the work give the room its shape
+    var env := environment(Color(0.42, 0.45, 0.5).lerp(accent, 0.08), 0.55)
     env.background_mode = Environment.BG_COLOR
     env.background_color = Color(0.02, 0.022, 0.026)
 
     var tiles := MaterialKitClass.surface("lab_tiles", 1.8, Color(0.86, 0.88, 0.9), 0.5)
-    var white := StandardMaterial3D.new()
-    white.albedo_color = Color(0.84, 0.86, 0.88)
-    white.roughness = 0.5
-    hall(14.0, 6.4, tiles, white, white)
+    # panelled walls and roof, seams and fixings and all, kept light
+    var panels := MaterialKitClass.painted("hull_panels", 2.2, Color(0.86, 0.88, 0.91), 0.5)
+    var roof := MaterialKitClass.painted("hull_panels", 2.8, Color(0.74, 0.76, 0.8), 0.7)
+    hall(14.0, 6.4, tiles, panels, roof)
     add(MeshKitClass.annulus(2.94, 3.03, 128), strip({"energy": 1.5, "wave": 0.12}), Vector3(0, 0.006, 0))
     # light coves where wall meets floor and roof, in the theme's colour
     add(MeshKitClass.lathe(PackedVector2Array([Vector2(13.96, 0.12), Vector2(13.96, 0.22)]), 96), strip({"energy": 1.6, "wave": 0.04}))
@@ -38,6 +40,7 @@ func _build() -> void:
     _glass_screens()
     _equipment()
     _boards()
+    _compute_racks()
     probe(Vector3(28, 6.4, 28), Vector3(0, 3.2, 0), true)
 
 func _printer() -> void:
@@ -171,7 +174,61 @@ func _boards() -> void:
         else:
             _improving = screen
 
+# Across the far wall, behind the portals: the racks ELI thinks on, glass-fronted, their status
+# lights blinking as hard as ELI is working.
+func _compute_racks() -> void:
+    var graphite := MaterialKitClass.painted("hull_panels", 1.2, Color(0.11, 0.12, 0.14), 0.45)
+    var steel := MaterialKitClass.metal("brushed_metal", 0.6, Color(0.55, 0.57, 0.6), 0.6)
+    var smoked := MaterialKitClass.glass(Color(0.05, 0.07, 0.09), 0.55)
+    const RADIUS := 13.0
+    const WIDE := 0.66
+    var arc := deg_to_rad(64.0)
+    var count := int(RADIUS * arc / (WIDE + 0.04))
+    var lights: Array = []           # [transform, colour, phase, rate]
+    var rng := RandomNumberGenerator.new()
+    rng.seed = 2600
+    const COLOURS := [Color(0.3, 1.0, 0.45), Color(0.3, 1.0, 0.45), Color(0.35, 0.75, 1.0), Color(1.0, 0.7, 0.2)]
+    for n in count:
+        var bearing := -arc * 0.5 + arc * (float(n) + 0.5) / float(count)
+        var out := Vector3(sin(bearing), 0.0, -cos(bearing))
+        var rack := Node3D.new()
+        rack.position = out * RADIUS
+        rack.rotation.y = -bearing                   # its front towards the middle
+        add_child(rack)
+        box(Vector3(WIDE, 2.2, 1.0), graphite, Vector3(0, 1.1, 0), rack)
+        box(Vector3(WIDE - 0.06, 2.04, 0.02), smoked, Vector3(0, 1.12, 0.51), rack)
+        box(Vector3(0.025, 1.6, 0.03), steel, Vector3(WIDE * 0.5 - 0.06, 1.15, 0.53), rack)     # the handle
+        box(Vector3(WIDE + 0.05, 0.08, 0.42), steel, Vector3(0, 2.46, 0.05), rack)             # the cable tray
+        for row in 22:
+            for col in 3:
+                var at := Vector3(-0.2 + 0.12 * col + rng.randf_range(-0.01, 0.01), 0.3 + 0.08 * row, 0.5)
+                var place: Transform3D = rack.transform * Transform3D(Basis.IDENTITY.scaled(Vector3(0.032, 0.016, 0.008)), at)
+                lights.append([place, COLOURS[rng.randi() % COLOURS.size()], rng.randf(), rng.randf_range(0.4, 3.0)])
+    var batch := MultiMesh.new()
+    batch.transform_format = MultiMesh.TRANSFORM_3D
+    batch.use_colors = true
+    batch.use_custom_data = true
+    batch.mesh = BoxMesh.new()
+    batch.instance_count = lights.size()
+    for i in lights.size():
+        batch.set_instance_transform(i, lights[i][0])
+        batch.set_instance_color(i, lights[i][1])
+        batch.set_instance_custom_data(i, Color(lights[i][2], lights[i][3], 0.0, 0.0))
+    var leds := MultiMeshInstance3D.new()
+    leds.multimesh = batch
+    _leds = MaterialKitClass.shader("res://assets/shaders/rack_leds.gdshader", {"busy": 0.3, "energy": 2.2})
+    leds.material_override = _leds
+    leds.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    add_child(leds)
+    for k in 3:
+        var b := -arc * 0.35 + arc * 0.35 * float(k)
+        lamp(Vector3(sin(b), 0.0, -cos(b)) * (RADIUS - 1.6) + Vector3(0, 2.6, 0), Color(0.6, 0.85, 1.0), 0.9, 4.5)
+
 func show_eli(eli: Dictionary) -> void:
+    if _leds != null:
+        var awareness: Dictionary = (eli.get("state", {}) as Dictionary).get("awareness", {})
+        var busy := maxf(float(awareness.get("cognitive_load", 0.0)), float(awareness.get("tool_activity", 0.0)))
+        _leds.set_shader_parameter("busy", clampf(busy, 0.0, 1.0) if bool(eli.get("connected", false)) else 0.05)
     if _goals == null:
         return
     if not bool(eli.get("connected", false)):

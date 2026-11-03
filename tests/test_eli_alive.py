@@ -93,6 +93,9 @@ class Screens(Alive):
         self.check("a_finding_is_printed_with_its_lines")
         self.check("the_radio_says_what_is_playing")
 
+    def test_the_upgrade_bay_racks_blink_as_hard_as_eli_is_working(self) -> None:
+        self.check("the_racks_work_as_hard_as_eli")
+
 
 if __name__ == "__main__":
     unittest.main()

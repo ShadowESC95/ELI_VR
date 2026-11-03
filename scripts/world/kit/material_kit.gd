@@ -35,6 +35,21 @@ static func surface(name: String, tile: float = 1.0, tint: Color = Color.WHITE, 
     m.uv1_triplanar = wrap
     return m
 
+# A surface painted over: the set's seams, fixings and dents (its normal map and occlusion) under a
+# coat of `paint`. For white lab panels from a scanned metal set, which by itself is dark bare metal.
+static func painted(name: String, tile: float = 1.0, paint: Color = Color.WHITE, roughness: float = 0.55) -> StandardMaterial3D:
+    var m := StandardMaterial3D.new()
+    m.albedo_color = paint
+    m.roughness = roughness
+    m.metallic = 0.0
+    m.normal_enabled = true
+    m.normal_texture = load("res://assets/materials/%s_normal.jpg" % name)
+    m.ao_enabled = true
+    m.ao_texture = load("res://assets/materials/%s_orm.jpg" % name)
+    m.ao_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_RED
+    m.uv1_scale = Vector3(1.0 / tile, 1.0 / tile, 1.0)
+    return m
+
 # Glass and ice: see-through, with a sheen.
 static func glass(colour: Color, clarity: float = 0.35, glow: float = 0.0) -> StandardMaterial3D:
     var m := StandardMaterial3D.new()

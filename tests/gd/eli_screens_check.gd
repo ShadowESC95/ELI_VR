@@ -9,6 +9,7 @@ const Thing = preload("res://scripts/eli/eli_thing.gd")
 const EvidenceWall = preload("res://scripts/world/rooms/evidence_studio.gd")
 const Workshop = preload("res://scripts/world/rooms/workshop_bay.gd")
 const Core = preload("res://scripts/world/rooms/orbital_core.gd")
+const UpgradeBay = preload("res://scripts/world/rooms/fabrication_lab.gd")
 
 # Stands in for the app's settings: every value as its default.
 class Settings extends RefCounted:
@@ -144,6 +145,18 @@ func _run() -> void:
     var printed := _labels(printout).map(func(l): return (l as Label3D).text)
     _check("a_finding_is_printed_with_its_lines", "Searched: when do the tides turn" in printed
            and "Tide times explained\n    example.org" in printed, str(printed))
+
+    var bay = UpgradeBay.new()
+    root.add_child(bay)
+    bay.build({}, Settings.new())
+    bay.show_eli({"connected": true, "state": {"awareness": {"cognitive_load": 0.9, "tool_activity": 0.2}}})
+    var hard: float = bay._leds.get_shader_parameter("busy")
+    bay.show_eli({"connected": true, "state": {"awareness": {"cognitive_load": 0.1, "tool_activity": 0.0}}})
+    var easy: float = bay._leds.get_shader_parameter("busy")
+    bay.show_eli({"connected": false})
+    var away: float = bay._leds.get_shader_parameter("busy")
+    _check("the_racks_work_as_hard_as_eli", is_equal_approx(hard, 0.9) and is_equal_approx(easy, 0.1) and away < easy,
+           "%s %s %s" % [hard, easy, away])
     quit()
 
 func _labels(node: Node) -> Array:
