@@ -285,7 +285,7 @@ func _run() -> void:
 # by a stand-in link, into the sandbox folder the test was given.
 func _models_check() -> void:
     var sandbox := OS.get_environment("ELI_VR_TEST_SANDBOX")
-    if sandbox.is_empty() or not ProjectSettings.globalize_path(EliModels.FOLDER).begins_with(sandbox):
+    if sandbox.is_empty() or not _in_sandbox(ProjectSettings.globalize_path(EliModels.FOLDER), sandbox):
         _check("a_model_eli_brought_in_is_fetched_once_measured_and_drawn", false,
                "not run: %s is not in the test's sandbox" % ProjectSettings.globalize_path(EliModels.FOLDER))
         return
@@ -461,7 +461,7 @@ func _desktop_checks() -> void:
 # then only what changed, and pointer lines back. Its key goes in the sandbox the test was given.
 func _desktop_link_check() -> void:
     var sandbox := OS.get_environment("ELI_VR_TEST_SANDBOX")
-    if sandbox.is_empty() or not DesktopBridgeClient.key_path().begins_with(sandbox):
+    if sandbox.is_empty() or not _in_sandbox(DesktopBridgeClient.key_path(), sandbox):
         _check("the_desktop_link_gives_the_key_and_reads_the_screen_as_tiles", false,
                "not run: the key's folder %s is not the test's sandbox" % DesktopBridgeClient.key_path())
         return
@@ -521,6 +521,11 @@ func _desktop_link_check() -> void:
     link.queue_free()
     server.stop()
     DirAccess.remove_absolute(DesktopBridgeClient.key_path())
+
+## Whether a path is under the test's sandbox folder: Windows gives one with forward slashes and the
+## other with backslashes, and spells the drive either way.
+func _in_sandbox(path: String, sandbox: String) -> bool:
+    return path.replace("\\", "/").to_lower().begins_with(sandbox.replace("\\", "/").to_lower())
 
 ## An ELIT message: the screen's size, then each tile filled with one grey.
 func _tile_message(width: int, height: int, tiles: Array) -> PackedByteArray:

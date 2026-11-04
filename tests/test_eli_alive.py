@@ -24,7 +24,8 @@ class Alive(unittest.TestCase):
         # the desktop link's key goes in a folder of the test's own, never the session's
         sandbox = tempfile.mkdtemp(prefix="eli-vr-test-")
         cls.addClassCleanup(shutil.rmtree, sandbox, True)
-        env.update(XDG_RUNTIME_DIR=sandbox, HOME=sandbox, LOCALAPPDATA=sandbox, ELI_VR_TEST_SANDBOX=sandbox)
+        env.update(XDG_RUNTIME_DIR=sandbox, XDG_DATA_HOME=sandbox, HOME=sandbox, LOCALAPPDATA=sandbox, APPDATA=sandbox,
+                   ELI_VR_TEST_SANDBOX=sandbox)
         out = ""
         for check in ("eli_alive_check.gd", "eli_screens_check.gd"):
             out += subprocess.run([godot, "--headless", "--xr-mode", "off", "--path", str(ROOT),

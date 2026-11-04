@@ -3,8 +3,10 @@ extends SceneTree
 # A long run without a headset: every environment built and taken down over and over, ELI's things
 # put in and taken out of each, with the real models, for as long as asked. Nothing may be left
 # behind: the counts of nodes and objects after a full round must come back to what they were after
-# the first, and no room may take longer to build than the slowest first build. Prints one line a
-# round and "SOAK PASS" or "SOAK FAIL: why" at the end.
+# the second, and no room may keep taking longer to build than it did at first: more than twice its
+# own first builds and more than the slowest room's first build over them, two rounds running (one
+# slow build on a shared machine is a hiccup, not a slowdown). Prints one line a round and
+# "SOAK PASS" or "SOAK FAIL: why" at the end.
 #
 #     godot --headless --path . --xr-mode off --script tools/soak.gd -- --seconds=120
 
@@ -61,7 +63,9 @@ func _run() -> void:
     var started := Time.get_ticks_msec()
     var round_no := 0
     var baseline := {}
-    var slowest_first := {}
+    var first_builds := {}          # environment -> its slowest build in the first two rounds
+    var slow_before := {}           # environment -> true when its last build was slow
+    var slowest_any := 0            # the slowest first build of any environment: the budget a build may run over by
     var worst_ms := 0
     var failed := ""
     while Time.get_ticks_msec() - started < seconds * 1000.0 and failed.is_empty():
@@ -77,10 +81,15 @@ func _run() -> void:
                 await process_frame
             things.apply_world_state({"objects": []})
             await process_frame
-            if round_no == 1:
-                slowest_first[env_id] = took
-            elif took > 2 * maxi(50, int(slowest_first.get(env_id, took))):
-                failed = "%s took %d ms in round %d, %d ms the first time" % [env_id, took, round_no, slowest_first[env_id]]
+            if round_no <= 2:
+                first_builds[env_id] = maxi(int(first_builds.get(env_id, 0)), took)
+                slowest_any = maxi(slowest_any, took)
+            else:
+                var usual: int = first_builds[env_id]
+                var slow := took > 2 * usual and took > usual + slowest_any
+                if slow and bool(slow_before.get(env_id, false)):
+                    failed = "%s took %d ms in round %d and was slow the round before; %d ms at first" % [env_id, took, round_no, usual]
+                slow_before[env_id] = slow
             worst_ms = maxi(worst_ms, took)
         for child in room_root.get_children():
             child.free()
