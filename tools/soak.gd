@@ -18,6 +18,12 @@ const EliThingsClass = preload("res://scripts/eli/eli_things.gd")
 func _initialize() -> void:
     _run.call_deferred()
 
+## Frames until `done` says so, or `seconds` of real time have passed.
+func _until(done: Callable, seconds: float) -> void:
+    var give_up := Time.get_ticks_msec() + int(seconds * 1000.0)
+    while not done.call() and Time.get_ticks_msec() < give_up:
+        await process_frame
+
 func _world(round_no: int, room_id: String) -> Dictionary:
     # a world message with a few of ELI's things in this room, different every round
     var objects := []
@@ -80,7 +86,8 @@ func _run() -> void:
             for _f in 3:
                 await process_frame
             things.apply_world_state({"objects": []})
-            await process_frame
+            # a thing leaves over a moment of real time, which a slow machine's frames may not cover
+            await _until(func() -> bool: return things.get_child_count() == 0, 5.0)
             if round_no <= 2:
                 first_builds[env_id] = maxi(int(first_builds.get(env_id, 0)), took)
                 slowest_any = maxi(slowest_any, took)
