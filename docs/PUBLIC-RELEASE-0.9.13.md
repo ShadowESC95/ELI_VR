@@ -1,0 +1,9 @@
+# ELI VR 0.9.13 — ELI makes games
+
+**ELI makes up games for the room you are in.** Say "let's play a game", "set up a catch game", "hide something for me to find", "challenge me", or press ELI: PLAY on the console (G on the keyboard). Through ELI v3 (3.0.150), ELI composes a small game the way it composes a thing: with whichever model is loaded, held to an exact shape, from the room, where you stand, what is on its mind and how you did last time. Five kinds: targets to hit (pointed at and triggered, or touched; still, drifting or orbiting you), things to catch as they come down, pieces to sort onto their mats, lights to hit in the order shown, and something hidden to find by looking at it. What the pieces are, their colours, how many, how long, how quick and what ELI says are ELI's; how many are up at once, how fast they move and how long each stays follow from those numbers and the room.
+
+**The pieces are ELI's things.** Each piece is a built thing in ELI's world marked with its part, judged by the world's policy like anything ELI makes; a board ahead of you keeps the score and the time; ELI's lines are spoken at the start and the end and shown at a hit or a miss. When the game ends, or you stop it, or you leave the room, ELI VR tells ELI's world how it went. ELI keeps the score on the game, clears the pieces, writes the game in its journal, remembers it, and may make something of the moment later; the next game is told how the last went. From ELI v3's own window, "let's play a game in VR" sets one up where you stand in the headset.
+
+**Checked on its own.** The headless checks play each of the five kinds through on ELI's real things with a stand-in for ELI v3, on Linux, Windows and macOS in the release workflow.
+
+Not yet: pieces made part by part, or games of other shapes than these five; the flat-window mouse on the desktop screen; more in the Core deck, Simulation Lab and Debug Basement.
