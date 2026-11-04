@@ -1,4 +1,4 @@
-# ELI VR 0.9.10 — ELI brings things in, real rooms outdoors, checks on every system
+# ELI VR 0.9.11 — ELI brings things in, real rooms outdoors, checks on every system
 
 **ELI brings real things into its rooms.** Through ELI v3 (3.0.149), ELI can fetch a model of a thing by what it is from Poly Haven's free library ("fetch a model of a pine tree"), or import a glTF file from your computer ("import the model at ~/things/lamp.glb"), and when it builds of its own accord it may bring in something it does not have. ELI VR fetches each model once over the local link, measures it, tells ELI its real size and draws it. ELI VR itself still downloads nothing.
 
@@ -11,3 +11,5 @@
 **Checks run on every system, not just here.** The Godot checks that used to skip without Godot now run on Linux, Windows and macOS in the release workflow, and a two-minute soak builds and takes down every environment over and over, failing if anything is left behind or a room slows.
 
 Not yet: the games ELI makes for you, the flat-window mouse on the desktop screen, and more in the Core deck, Simulation Lab and Debug Basement.
+
+0.9.10 was tagged but never published: its first run of the checks on Windows and macOS found two faults in the checks themselves, fixed here.
