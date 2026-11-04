@@ -406,6 +406,8 @@ func _unhandled_key_input(event: InputEvent) -> void:
             eli_build()
         KEY_G:
             eli_play_request()
+        KEY_R:
+            eli_play_request("set up the range")
         KEY_Z:
             eli_undo()
         KEY_F6:
@@ -448,6 +450,8 @@ func apply_console_action(kind: String, value: String) -> void:
                 eli_build()
             elif value == "play":
                 eli_play_request()
+            elif value == "range":
+                eli_play_request("set up the range")
             elif value == "undo":
                 eli_undo()
         "system":
@@ -861,16 +865,17 @@ func eli_speak(words: String) -> void:
         await eli_presence.say(speech.payload)
         eli_presence.set_mode("idle")
 
-## ELI: PLAY on the console, or G: ELI makes up a game for this room (as if you had asked aloud).
-func eli_play_request() -> void:
+## ELI: PLAY on the console, or G: ELI sets a game for this room (as if you had asked aloud); ELI:
+## RANGE, or R, the range: a table of guns beside you and targets ahead.
+func eli_play_request(said: String = "let's play a game here") -> void:
     if eli_link == null or not eli_link.can("games"):
         _eli_say_briefly("this ELI v3 has no games" if eli_link and eli_link.connected else "ELI is not running")
         return
     if eli_voice == null or eli_voice.state != "idle":
         return
-    _eli_say_briefly("making up a game...", 60.0)
+    _eli_say_briefly("setting up the range..." if "range" in said else "setting a game...", 60.0)
     eli_senses.report_now()
-    await eli_voice.converse_text("let's play a game here")
+    await eli_voice.converse_text(said)
 
 func eli_undo() -> void:
     if eli_link == null or not eli_link.can("undo"):

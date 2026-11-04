@@ -6,6 +6,7 @@ extends RoomBase
 # shoals, bubbles rise.
 
 var _shoals: Array = []
+var _land: LandKit
 
 func _build() -> void:
     var water := Color(0.02, 0.17, 0.24)
@@ -30,13 +31,11 @@ func _build() -> void:
     probe()
 
 func _seabed() -> void:
-    var noise := FastNoiseLite.new()
-    noise.seed = 52
-    noise.frequency = 0.03
-    noise.fractal_octaves = 3
-    var sand := MaterialKitClass.surface("sand", 3.0, Color(0.5, 0.62, 0.6), 0.95)
+    # sand with the weeded rock of the reef showing where the bed rises, the light playing over both
+    var sand := LandKit.blend("sand", 3.0, Color(0.5, 0.62, 0.6), "moss_rock", 2.0, Color(0.55, 0.7, 0.66),
+        {"slope_from": 0.18, "slope_to": 0.42, "breakup": 0.5, "far_blend": 30.0, "ripples": 0.6, "ripple_width": 0.55})
     sand.next_pass = MaterialKitClass.shader("res://assets/shaders/caustics.gdshader", {"energy": 0.16})
-    add(MeshKitClass.terrain(300.0, 120, noise, 7.0, 12.0, 14.0, 22.0, -0.2), sand)
+    _land = LandKit.lay(self, sand, 52, 0.03, 3, 300.0, 120, 7.0, 12.0, 14.0, 22.0, -0.2)
 
     var stone := MaterialKitClass.surface("moss_rock", 2.0, Color(0.55, 0.7, 0.66), 1.0, true)
     stone.next_pass = MaterialKitClass.shader("res://assets/shaders/caustics.gdshader", {"energy": 0.12})
@@ -45,9 +44,15 @@ func _seabed() -> void:
     for i in 24:
         var angle := rng.randf() * TAU
         var distance := rng.randf_range(12.5, 48.0)
+        var x := cos(angle) * distance
+        var z := sin(angle) * distance
         var boulder := add(MeshKitClass.rock(700 + i, rng.randf_range(0.6, 3.4), 0.38, 10), stone,
-            Vector3(cos(angle) * distance, rng.randf_range(-0.3, 1.2), sin(angle) * distance))
+            Vector3(x, _land.y_at(x, z) + rng.randf_range(-0.3, 0.6), z))
         boulder.rotation.y = rng.randf() * TAU
+    # seagrass on the bed, leaning in the current
+    var grass := LandKit.sway_material("reed", Color(0.7, 1.0, 0.75), 0.45, 0.4, 0.06)
+    for kind in 2:
+        _land.cover(self, LandKit.tuft("reed", 71 + kind), grass, int(180 * detail), 12.5, 40.0, rng, 0.8, 1.6, 0.05)
 
 func _surface_and_shafts() -> void:
     # the underside of the surface, far overhead

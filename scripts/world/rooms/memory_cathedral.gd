@@ -35,6 +35,7 @@ func _build() -> void:
     for degrees in [30.0, 150.0, 90.0]:
         _reading_corner(deg_to_rad(degrees), degrees == 90.0)
     _along_the_walls(white)
+    _notice_board()
     _sconces()
     if motes:
         # memories that have come loose
@@ -212,9 +213,42 @@ func _memory_slot_near(x: float, width: float) -> bool:
             return true
     return false
 
+# By the librarian's desk, a notice board for the thoughts of this hall: the memories ELI brought to
+# mind for its replies and what became of them, the ones it kept, promoted or let go, each a sheet
+# the user can take down and ask about.
+const NOTICE_AT := Vector3(-2.6, 0.0, 10.4)
+const NOTICE_PLACES := [Vector3(-0.38, 0.95, 0.05), Vector3(0.38, 0.95, 0.05), Vector3(-0.38, 0.1, 0.05), Vector3(0.38, 0.1, 0.05),
+                        Vector3(-0.38, -0.75, 0.05), Vector3(0.38, -0.75, 0.05)]
+
+func _notice_at() -> Transform3D:
+    return Transform3D(Basis(Vector3.UP, atan2(-NOTICE_AT.x, -NOTICE_AT.z)), NOTICE_AT + Vector3(0, 1.55, 0))
+
+func _notice_board() -> void:
+    var wood := MaterialKitClass.surface("planks", 1.6, Color(0.42, 0.3, 0.22), 0.9)
+    var cork := MaterialKitClass.surface("planks", 1.2, Color(0.7, 0.52, 0.34), 1.0, true)
+    var board := Node3D.new()
+    board.transform = _notice_at()
+    add_child(board)
+    box(Vector3(1.6, 2.5, 0.06), cork, Vector3.ZERO, board)
+    box(Vector3(1.7, 0.08, 0.1), wood, Vector3(0, 1.29, 0), board)
+    box(Vector3(1.7, 0.08, 0.1), wood, Vector3(0, -1.29, 0), board)
+    for x in [-0.72, 0.72]:
+        rod(0.03, 2.9, wood, Vector3(x, -0.1, 0.0), board)
+    var heading := Label3D.new()
+    heading.text = "WHAT ELI RECALLED"
+    heading.font_size = 40
+    heading.pixel_size = 0.0028
+    heading.modulate = Color(1.0, 0.88, 0.7)
+    heading.outline_size = 6
+    heading.position = Vector3(0, 1.4, 0.04)
+    board.add_child(heading)
+    lamp(board.transform * Vector3(0, 0.6, 1.0), Color(1.0, 0.8, 0.55), 0.7, 4.0)
+
 # Where the `index`th of ELI's memories stands: face out on the eye-level shelf of the bays
-# ahead, the nearest first.
+# ahead, the nearest first; its thoughts of recall go on the notice board.
 func pin_spot(kind: String, index: int) -> Variant:
+    if kind == "thought":
+        return _notice_at() * Transform3D(Basis.IDENTITY, NOTICE_PLACES[index]) if index >= 0 and index < NOTICE_PLACES.size() else null
     if kind != "memory" or index < 0 or index >= MEMORY_BAYS.size() * MEMORY_SLOTS:
         return null
     var place := Vector3(_memory_x(index % MEMORY_SLOTS), EYE_SHELF + 0.025, SHELF_FRONT - 0.12)

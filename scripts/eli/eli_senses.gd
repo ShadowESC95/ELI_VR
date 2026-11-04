@@ -8,7 +8,9 @@ extends Node
 # and that is how ELI can answer "where are we" or "what am I looking at".
 #
 # Positions go out as [right, up, forward] in metres from the middle of the
-# room's floor, the same way round as the things ELI builds.
+# room's floor, the same way round as the things ELI builds. A record of ELI's
+# in your hand (a thought sheet, a belief, a memory, a finding) goes out with
+# the scene too, so ELI knows what you are holding when you ask about it.
 
 const EVERY_SECONDS := 5.0
 const LOOK_DEGREES := 14.0
@@ -76,6 +78,9 @@ func scene() -> Dictionary:
         },
         "things": things.near(eye, 10) if things != null else [],
     }
+    var held: Dictionary = things.held_record() if things != null else {}
+    if not held.is_empty():
+        out["holding"] = held
     return out
 
 # The nearest thing to the middle of the user's view, if anything is in it.

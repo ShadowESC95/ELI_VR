@@ -77,6 +77,19 @@ class Alive(unittest.TestCase):
     def test_a_game_elis_world_takes_down_ends_quietly(self) -> None:
         self.check("a_game_taken_down_by_elis_world_ends_without_a_word")
 
+    def test_the_range_begins_with_guns_on_the_table_and_shots_score_by_their_ring(self) -> None:
+        self.check("the_range_begins_with_the_guns_on_the_table_and_a_target_up")
+        self.check("a_shot_scores_by_the_ring_it_hits")
+
+    def test_bolts_fly_beams_rest_and_rails_go_through(self) -> None:
+        self.check("a_bolt_flies_and_hits_what_it_meets_and_one_that_meets_nothing_is_gone")
+        self.check("a_beam_must_rest_on_a_target_and_a_rail_goes_through_every_target_on_its_line")
+
+    def test_a_gun_let_go_goes_back_and_the_result_tells_each_guns_part(self) -> None:
+        self.check("a_gun_let_go_goes_back_to_the_table")
+        self.check("the_range_tells_each_guns_part_in_the_result")
+        self.check("a_click_on_a_flat_screen_fires_the_first_gun")
+
 
 class Screens(Alive):
     """The screens in the rooms show ELI's real log and state, and nothing made up."""
@@ -92,6 +105,14 @@ class Screens(Alive):
 
     def test_a_terminal_follows_one_strand_of_the_log(self) -> None:
         self.check("strand_keeps_its_kind")
+
+    def test_elis_thoughts_are_lines_with_their_decision_chance_and_outcome(self) -> None:
+        self.check("thoughts_are_lines")
+        self.check("thoughts_keep_their_kind")
+        self.check("thoughts_keep_their_room")
+
+    def test_the_debug_basement_board_shows_what_eli_tried(self) -> None:
+        self.check("board_shows_what_eli_tried")
 
     def test_without_eli_a_screen_says_so_and_shows_nothing_else(self) -> None:
         self.check("says_when_not_connected")
@@ -152,6 +173,16 @@ class Screens(Alive):
 
     def test_a_model_eli_brought_in_is_fetched_once_measured_and_drawn(self) -> None:
         self.check("a_model_eli_brought_in_is_fetched_once_measured_and_drawn")
+
+    def test_elis_thought_sheets_hang_in_six_rooms_and_the_one_in_hand_is_reported(self) -> None:
+        self.check("thought_sheets_have_places_in_six_rooms")
+        self.check("a_thought_sheet_is_written_under_its_kinds_tab")
+        self.check("the_sheet_in_the_users_hand_is_reported_as_its_record")
+
+    def test_the_land_carries_what_stands_on_it(self) -> None:
+        self.check("the_land_knows_its_height_and_what_stands_on_it_stands_on_it")
+        self.check("ground_cover_blades_are_drawn_and_the_guns_have_their_sounds")
+        self.check("the_forest_stands_on_its_floor_with_boughs_and_cover")
 
 
 if __name__ == "__main__":

@@ -40,14 +40,16 @@ var piece := {}                # its part in a game ELI set (EliPlay): the game,
 var driven := false            # a game is moving it: where ELI's world says it stands is left alone
 var _gone := false             # out of sight for now (a piece not yet up, or hit)
 var _flash_left := 0.0
+var turn := 0.0                 # which way its front faces, in ELI's degrees round from straight ahead
 # Records that, pinned, are written out where they stand: a belief, a memory, what ELI found for
-# you, what it wrote, and what it is playing.
-const WRITTEN := ["claim", "memory", "found", "written", "playing", "seen"]
+# you, what it wrote, what it is playing, a picture it saw, and a thought it had.
+const WRITTEN := ["claim", "memory", "found", "written", "playing", "seen", "thought"]
 const TYPED := ["DejaVu Sans Mono", "Liberation Mono", "Menlo", "Consolas", "Courier New", "monospace"]
 var lines: Array = []               # what a written record says, line by line, when ELI sends it so
 var prop := ""                      # a real thing the body has (assets/models/<prop>), when that is what it is
 var picture := ""                   # the path ELI v3 serves a picture this record shows at
 var art := {}                       # a painting's style and colours
+var thought := {}                   # a thought sheet's own measures: its kind, chance, decision, status, outcome
 const ART_STYLES := ["rings", "stripes", "waves", "cells", "blooms", "horizon", "rays", "drift"]
 var _text_key := ""
 var _pin := Transform3D.IDENTITY
@@ -82,6 +84,7 @@ func refresh(data: Dictionary, first: bool = false) -> void:
     lines = data.get("lines", []) if typeof(data.get("lines")) == TYPE_ARRAY else []
     picture = str(data.get("picture", ""))
     piece = data.get("piece", {}) if typeof(data.get("piece")) == TYPE_DICTIONARY else {}
+    thought = data.get("thought", {}) if typeof(data.get("thought")) == TYPE_DICTIONARY else {}
     var pos: Array = form.get("pos", [0.0, 0.0, 0.0])
     if not driven:
         _target = _pin.origin if pinned else EliSenses.from_protocol(pos)
@@ -103,7 +106,8 @@ func refresh(data: Dictionary, first: bool = false) -> void:
         _shape()                    # the same record says something new: another song on the radio
     # which way its front faces: ELI's degrees round from straight ahead (0 ahead, 90 to the right);
     # a model's front is its +z, and straight ahead is -z
-    _body.rotation.y = deg_to_rad(180.0 - float(form.get("turn"))) if form.get("turn") != null and not pinned else 0.0
+    turn = float(form.get("turn")) if form.get("turn") != null else 0.0
+    _body.rotation.y = deg_to_rad(180.0 - turn) if form.get("turn") != null and not pinned else 0.0
     _name_tag.text = label
     _name_tag.modulate = colour.lightened(0.55)
     _name_tag.position = Vector3(0, eye_height() * 2.0 + 0.28, 0)
@@ -147,6 +151,17 @@ func flash(seconds: float) -> void:
 func footprint() -> float:
     return 0.6 * size if shape == "mat" else 0.35 * size
 
+## A target's face: how far from its middle a shot still hits it (its rings share that radius).
+func target_radius() -> float:
+    return 0.35 * size
+
+## The record this is, as ELI is told of it when the user holds it: its id, kind, name and what it
+## says, line by line. {} for a thing ELI built or a piece of a game: those are not records.
+func record() -> Dictionary:
+    if kind.is_empty() or kind in ["built", "game"] or not piece.is_empty():
+        return {}
+    return {"id": thing_id, "kind": kind, "name": label, "lines": lines if not lines.is_empty() else ([meaning] if not meaning.is_empty() else [])}
+
 ## Stand at a place the room keeps for records of this kind (a belief pinned to the Evidence Wall).
 func pin_to(spot: Transform3D) -> void:
     var moved := not pinned or not spot.is_equal_approx(_pin)
@@ -156,6 +171,40 @@ func pin_to(spot: Transform3D) -> void:
     basis = spot.basis
     if moved and kind in WRITTEN:
         _shape()
+
+# A thought ELI had, pinned up: a sheet in its kind's colour, the kind on a tab at its top, with
+# what ELI thought, decided and why, how sure it was and what became of it written down it.
+func _thought_sheet() -> void:
+    var kind_of := str(thought.get("kind", ""))
+    var tint := EliReadout._colour_of(kind_of, Color("#d9e4f2"))
+    _paper(Color(0.95, 0.94, 0.9).lerp(colour, 0.3), "pin", false)
+    var tab := MeshInstance3D.new()
+    var strip := BoxMesh.new()
+    strip.size = Vector3(0.2, 0.06, 0.012)
+    tab.mesh = strip
+    tab.material_override = MaterialKit.light(tint, 1.2)
+    tab.position = Vector3(-0.21, 0.405, 0.004)
+    tab.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    _body.add_child(tab)
+    var word := Label3D.new()
+    word.text = kind_of.to_upper()
+    word.font_size = 22
+    word.pixel_size = 0.0011
+    word.modulate = Color(0.08, 0.07, 0.07)
+    word.outline_size = 0
+    word.shaded = false
+    word.position = Vector3(-0.21, 0.405, 0.012)
+    word.render_priority = 2
+    _body.add_child(word)
+    var settled := str(thought.get("status", "")) == "settled"
+    var dot := MeshInstance3D.new()                      # a settled thought's pin is the kind's colour, an open one's is red
+    var head := SphereMesh.new()
+    head.radius = 0.014
+    head.height = 0.028
+    dot.mesh = head
+    dot.material_override = MaterialKit.light(tint if settled else Color(0.85, 0.08, 0.06), 1.4)
+    dot.position = Vector3(0.24, 0.405, 0.02)
+    _body.add_child(dot)
 
 # A belief pinned up: a sheet of paper with what ELI believes written on it, and a red pin.
 func _sheet() -> void:
@@ -484,14 +533,14 @@ func _painting() -> void:
     _made_height = lift + tall + rim * 2.0
 
 func eye_height() -> float:
-    if shape == "prop" or shape == "painting":
+    if shape == "prop" or shape == "painting" or shape == "arm":
         return _made_height * 0.5
     if not _parts.is_empty():
         return _made_height * 0.5
     if pinned and kind in WRITTEN:
         return 0.0
     return {"orb": 0.9, "pillar": 1.1, "lamp": 1.0, "beacon": 1.6, "tree": 1.2, "arch": 1.1,
-            "ring": 0.9, "board": 0.9, "crystal": 0.7, "mat": 0.05}.get(shape, 0.35) * size
+            "ring": 0.9, "board": 0.9, "crystal": 0.7, "mat": 0.05, "target": 0.35}.get(shape, 0.35) * size
 
 func begin_grab() -> void:
     super.begin_grab()
@@ -574,6 +623,9 @@ func _shape() -> void:
         return
     if kind == "seen" and pinned:
         _photo()
+        return
+    if kind == "thought" and pinned:
+        _thought_sheet()
         return
     if shape == "prop" and not prop.is_empty():
         _real()
@@ -665,6 +717,27 @@ func _shape() -> void:
             rim.inner_radius = 0.56 * s
             rim.outer_radius = 0.64 * s
             _mesh(rim, Vector3(0, 0.03, 0))
+        "target":
+            # a ringed target on a pole from the floor: its face (three rings, the middle in its colour)
+            # looks along its front, which ELI's world turns to the user; the rings share its radius
+            var face_y := 0.35 * s
+            var r := target_radius()
+            _cyl(0.02 * s, 0.025 * s, maxf(0.1, position.y + face_y - r), Vector3(0, (face_y - r - position.y) * 0.5, 0), Color(0.2, 0.2, 0.22))
+            var paper := StandardMaterial3D.new()
+            paper.albedo_color = Color(0.93, 0.92, 0.88)
+            paper.roughness = 0.9
+            var red := StandardMaterial3D.new()
+            red.albedo_color = Color(0.8, 0.12, 0.08)
+            red.roughness = 0.8
+            for ring in [[r, paper, 0.0], [r * 2.0 / 3.0, red, 0.004], [r / 3.0, _material, 0.008]]:
+                var disc := CylinderMesh.new()
+                disc.top_radius = ring[0]
+                disc.bottom_radius = ring[0]
+                disc.height = 0.012
+                disc.radial_segments = 32
+                var face := _mesh(disc, Vector3(0, face_y, ring[2]))
+                face.material_override = ring[1]
+                face.rotation.x = PI * 0.5
         _:
             _ball(0.34 * s, Vector3(0, 0.9 * s, 0))
             if glow >= 0.5:

@@ -2,10 +2,14 @@ class_name MountainObservatoryRoom
 extends RoomBase
 
 # The Reflection Chamber: a stone terrace on a mountain plateau at dawn, with
-# a ring of still water round it that holds the sky. The place around you is
-# a photograph of a real one, laid on the ground so it stays put as you move.
+# a ring of still water round it that holds the sky. Round the terrace the
+# plateau's own ground: pale rock with scrub in its hollows and dry grass on
+# the flats, boulders and quiver trees standing on it, settling into the
+# photograph of the real place that stands beyond.
 
 const DAWN := Vector3(0.754, 0.242, -0.611)
+
+var _land: LandKit
 
 func _build() -> void:
     var env := environment(Color(0.5, 0.45, 0.55), 1.0)
@@ -15,6 +19,7 @@ func _build() -> void:
     glow(DAWN.normalized() * 880.0, Color(1.0, 0.75, 0.5), 300.0, 1.1, 0.6)
 
     _terrace()
+    _ground()
     _stones()
     _instrument()
     flock(Vector3(30, 34, -70), 46.0, 6, 0.1)
@@ -57,31 +62,31 @@ func _terrace() -> void:
         stone.rotation.y = -angle + PI * 0.5
         stone.scale = Vector3(1.0, 0.8 + 0.4 * fmod(float(i) * 0.37, 1.0), 1.0)
 
+# The plateau round the terrace: pale rock, scrub-green in the hollows, rising a little and settling
+# into the photograph's ground before the photograph stands up as the view.
+func _ground() -> void:
+    var plateau := LandKit.blend("rock", 2.4, Color(0.98, 0.86, 0.76), "moss_rock", 2.0, Color(0.85, 0.9, 0.72),
+        {"over_on_slopes": 0.0, "slope_from": 0.04, "slope_to": 0.16, "breakup": 0.6, "far_blend": 20.0})
+    _land = LandKit.lay(self, plateau, 12, 0.035, 3, 92.0, 92, 2.2, 10.2, 8.0, 0.0, -0.15, 18.0)
+    var rng := RandomNumberGenerator.new()
+    rng.seed = 29
+    var dry := LandKit.sway_material("dry", Color(1.0, 0.95, 0.8), 0.04, 0.8)
+    for kind in 2:
+        _land.cover(self, LandKit.tuft("dry", 51 + kind), dry, int(220 * detail), 10.3, 34.0, rng, 0.8, 1.6, 0.03)
+
 # Real boulders, trees and shrubs of a dry mountain plateau (scanned, assets/models), scattered
-# beyond the outer walk; nothing stands on the terrace itself.
+# beyond the outer walk on the ground at its height; nothing stands on the terrace itself.
 const BOULDERS := ["namaqualand_boulder_02", "namaqualand_boulder_03", "namaqualand_boulder_05", "namaqualand_boulder_06", "boulder_01"]
 const TREES := ["searsia_lucida", "quiver_tree_01", "quiver_tree_02", "didelta_spinosa"]
 
 func _stones() -> void:
     var rng := RandomNumberGenerator.new()
     rng.seed = 12
-    for i in 18:
-        var angle := rng.randf() * TAU
-        var distance := rng.randf_range(11.5, 34.0)
-        prop(BOULDERS[i % BOULDERS.size()], Vector3(cos(angle) * distance, -0.14 + rng.randf_range(-0.1, 0.05), sin(angle) * distance),
-             rng.randf() * 360.0, rng.randf_range(0.8, 1.6))
-    for i in 9:
-        var angle := rng.randf() * TAU
-        var distance := rng.randf_range(13.0, 30.0)
-        prop(TREES[i % TREES.size()], Vector3(cos(angle) * distance, -0.14, sin(angle) * distance), rng.randf() * 360.0,
-             rng.randf_range(0.9, 1.4))
-    for i in 24:
-        var angle := rng.randf() * TAU
-        var distance := rng.randf_range(10.2, 36.0)
-        prop("shrub_04" if i % 3 else "dry_branches_medium_01", Vector3(cos(angle) * distance, -0.14, sin(angle) * distance),
-             rng.randf() * 360.0, rng.randf_range(1.2, 2.6))
-    for at in [Vector3(-10.5, -0.14, -5.0), Vector3(11.0, -0.14, 3.5)]:
-        prop("namaqualand_stones_01", at, rng.randf() * 360.0, 1.6)
+    _land.scatter(self, BOULDERS, 18, 11.5, 34.0, rng, 0.8, 1.6, -0.08, true)
+    _land.scatter(self, TREES, 9, 13.0, 30.0, rng, 0.9, 1.4, -0.04)
+    _land.scatter(self, ["shrub_04", "shrub_04", "dry_branches_medium_01"], 24, 10.2, 36.0, rng, 1.2, 2.6, -0.04, true)
+    for at in [Vector3(-10.5, -0.04, -5.0), Vector3(11.0, -0.04, 3.5)]:
+        _land.on(self, "namaqualand_stones_01", at, rng.randf() * 360.0, 1.6, true)
     prop("stone_fire_pit", Vector3(4.6, 0.0, 3.8), 0.0, 1.0)
 
 func _instrument() -> void:

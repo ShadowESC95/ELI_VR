@@ -44,7 +44,7 @@ func _rig() -> void:
     var rail_metal := MaterialKitClass.metal("brushed_metal", 0.6, Color(0.8, 0.8, 0.84), 0.8)
     deck(9.0, boards, steel)
 
-    # legs down into the water, braced
+    # legs down into the water, braced, the sea breaking white round each
     var leg := CylinderMesh.new()
     leg.top_radius = 0.34
     leg.bottom_radius = 0.4
@@ -52,6 +52,7 @@ func _rig() -> void:
     for i in 6:
         var angle := TAU * float(i) / 6.0
         add(leg, steel, Vector3(cos(angle) * 7.6, -5.0, sin(angle) * 7.6))
+        _foam(Vector3(cos(angle) * 7.6, -2.55, sin(angle) * 7.6), 0.38, 1.3, float(i))
 
     var post := CylinderMesh.new()
     post.top_radius = 0.022
@@ -157,16 +158,25 @@ func _stores() -> void:
         glow(at + Vector3(0, 1.9, 0), cool, 0.7, 1.0, 0.7)
         lamp(at + Vector3(0, 1.85, 0), cool, 0.8, 6.0)
 
-# Rocks breaking the water near the legs, part under, part over the swell.
+# Rocks breaking the water near the legs, part under, part over the swell, the sea foaming round them.
 func _shoals() -> void:
     var rng := RandomNumberGenerator.new()
     rng.seed = 23
     for i in 7:
         var angle := rng.randf_range(0.6, 5.4)
         var distance := rng.randf_range(13.0, 26.0)
-        prop("coast_rocks_05" if i % 2 else "sand_rocks_small_01",
-             Vector3(cos(angle) * distance, -2.6 - rng.randf_range(0.1, 0.5), sin(angle) * distance),
-             rng.randf() * 360.0, rng.randf_range(1.4, 2.8))
+        var size := rng.randf_range(1.4, 2.8)
+        var at := Vector3(cos(angle) * distance, -2.6 - rng.randf_range(0.1, 0.5), sin(angle) * distance)
+        prop("coast_rocks_05" if i % 2 else "sand_rocks_small_01", at, rng.randf() * 360.0, size)
+        _foam(Vector3(at.x, -2.55, at.z), 0.6 * size, 2.0 * size, 10.0 + float(i))
+
+# Foam at the waterline round something standing in the sea: a ring from `inner` to `outer` metres.
+func _foam(at: Vector3, inner: float, outer: float, seed_value: float) -> void:
+    var ring := add(MeshKitClass.annulus(inner, outer, 48), MaterialKitClass.shader("res://assets/shaders/foam.gdshader", {
+        "inner": inner, "outer": outer, "seed": seed_value, "energy": 0.7,
+    }), at)
+    ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    _floating.append([ring, at.y, seed_value * 0.7, 0.0])
 
 func _far_rocks() -> void:
     var dark := MaterialKitClass.surface("rock", 30.0, Color(0.16, 0.14, 0.16), 1.0, true)

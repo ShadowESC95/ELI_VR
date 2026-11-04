@@ -96,6 +96,15 @@ func _deck(strange: Color) -> void:
         arc.visible = false
         _arcs.append(arc)
 
+# What surprised ELI, and what it was told two ways, pinned to the pylons round the deck, one sheet
+# each, facing the middle: the user can take one down and ask ELI about it.
+func pin_spot(kind: String, index: int) -> Variant:
+    if kind != "thought" or index < 0 or index >= 6:
+        return null
+    var angle := TAU * float(index) / 6.0
+    var at := Vector3(cos(angle), 0.0, sin(angle)) * 8.25
+    return Transform3D(Basis(Vector3.UP, atan2(-at.x, -at.z)), at + Vector3(0, 1.3, 0))
+
 func _animate(_delta: float) -> void:
     # an arc jumps now and then, never the same one twice running
     for i in _arcs.size():

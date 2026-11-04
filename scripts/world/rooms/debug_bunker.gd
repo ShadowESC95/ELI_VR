@@ -38,6 +38,7 @@ func _build() -> void:
     _roof(wall)
     _wiring()
     _log_board()
+    _tried_board()
     _stores()
     _services()
     if motes:
@@ -211,6 +212,38 @@ func _services() -> void:
     prop("WetFloorSign_01", Vector3(cos(PI / 8.0 + TAU * 2.0 / 8.0), 0.0, sin(PI / 8.0 + TAU * 2.0 / 8.0)) * 5.6, -40.0)
     prop("security_camera_02", Vector3(0.0, 4.3, -14.3), 0.0)
 
+# Left of the log, a cork board where the thoughts of what ELI tried are pinned: each action that
+# failed, with its cause and what ELI did about it, a sheet the user can take down and ask about.
+const TRIED_BEARING := -28.0
+const TRIED_PLACES := [Vector3(-0.85, 0.45, 0.09), Vector3(0.0, 0.45, 0.09), Vector3(0.85, 0.45, 0.09),
+                       Vector3(-0.85, -0.5, 0.09), Vector3(0.0, -0.5, 0.09), Vector3(0.85, -0.5, 0.09)]
+
+func _tried_board_at() -> Transform3D:
+    var a := deg_to_rad(TRIED_BEARING)
+    return Transform3D(Basis(Vector3.UP, -a), Vector3(sin(a), 0.0, -cos(a)) * 14.55 + Vector3(0, 2.2, 0))
+
+func _tried_board() -> void:
+    var cork := MaterialKitClass.surface("planks", 1.2, Color(0.6, 0.46, 0.32), 1.0, true)
+    var board := Node3D.new()
+    board.transform = _tried_board_at()
+    add_child(board)
+    box(Vector3(2.9, 2.3, 0.08), cork, Vector3.ZERO, board)
+    var heading := Label3D.new()
+    heading.text = "WHAT ELI TRIED"
+    heading.font_size = 44
+    heading.pixel_size = 0.003
+    heading.modulate = Color(0.4, 1.0, 0.6)
+    heading.outline_size = 6
+    heading.position = Vector3(0, 1.35, 0.05)
+    board.add_child(heading)
+    lamp(board.transform * Vector3(0, 0.3, 1.2), Color(0.4, 1.0, 0.6), 0.7, 4.0)
+
+# The thoughts of what ELI tried are pinned on the board beside the log.
+func pin_spot(kind: String, index: int) -> Variant:
+    if kind != "thought" or index < 0 or index >= TRIED_PLACES.size():
+        return null
+    return _tried_board_at() * Transform3D(Basis.IDENTITY, TRIED_PLACES[index])
+
 # ELI's whole log, on the wall ahead where nothing else stands.
 func _log_board() -> void:
     _board = InfoScreen.make(Vector2(4.0, 2.2), "ELI's log", Color(0.4, 1.0, 0.6), 60)
@@ -227,11 +260,13 @@ func show_eli(eli: Dictionary) -> void:
         for t in _terminals:
             t.show_idle("not connected")
         return
-    var everything := EliReadout.log_lines(eli, Color(0.4, 1.0, 0.6))
+    # what failed and what ELI did about it (its thoughts of kind action), then the log
+    var everything := EliReadout.thought_lines(eli, Color(0.4, 1.0, 0.6), ["action"], "", 56)
+    everything.append_array(EliReadout.log_lines(eli, Color(0.4, 1.0, 0.6)))
     if everything.is_empty():
         _board.show_idle("nothing in the log yet")
     else:
-        _board.show_lines(EliReadout.tail(everything, _board.rows()))
+        _board.show_lines(EliReadout.tail(everything, _board.rows()) if everything.size() > _board.rows() and not EliReadout.thought_lines(eli, Color(0.4, 1.0, 0.6), ["action"], "", 56).is_empty() else EliReadout.tail(everything, _board.rows()))
     for i in _terminals.size():
         var kinds: Array = STRANDS[i][1]
         var lines := EliReadout.log_lines(eli, _terminals[i].tint, func(kind): return kind in kinds)

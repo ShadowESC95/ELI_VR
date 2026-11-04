@@ -15,6 +15,7 @@ signal taken(thing)
 signal dropped(thing)
 
 const ThingClass = preload("res://scripts/eli/eli_thing.gd")
+const ArmClass = preload("res://scripts/eli/eli_arm.gd")
 # The mobile renderer lights a mesh with eight lamps at most, and the rooms
 # have their own. Only the brightest few of ELI's things carry a real light.
 const MAX_LAMPS := 4
@@ -66,6 +67,16 @@ func game_here() -> Dictionary:
             return data
     return {}
 
+## The record of ELI's the user holds in a hand (a thought, a belief, a memory, a finding), as ELI is
+## told of it with the scene; {} when they hold none, or hold a thing that is not a record.
+func held_record() -> Dictionary:
+    for thing in _things.values():
+        if is_instance_valid(thing) and thing.held():
+            var record: Dictionary = thing.record()
+            if not record.is_empty():
+                return record
+    return {}
+
 ## The pieces (and mats) of a game, by their index in it, up or not.
 func pieces_of(game_id: String) -> Array:
     var out := _things.values().filter(func(t): return is_instance_valid(t) and str(t.piece.get("game", "")) == game_id)
@@ -102,7 +113,8 @@ func _apply(objects: Array) -> void:
             if _settled and _forms.get(id, form) != form:
                 changed.emit(_things[id])
         else:
-            var thing = ThingClass.new()
+            var form_of: Dictionary = data.get("form", {})
+            var thing = ArmClass.new() if str(form_of.get("shape", "")) == "arm" else ThingClass.new()
             add_child(thing)
             thing.build(data)
             thing.let_go.connect(_on_let_go)

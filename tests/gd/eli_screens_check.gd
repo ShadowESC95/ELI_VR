@@ -10,6 +10,9 @@ const EvidenceWall = preload("res://scripts/world/rooms/evidence_studio.gd")
 const Workshop = preload("res://scripts/world/rooms/workshop_bay.gd")
 const Core = preload("res://scripts/world/rooms/orbital_core.gd")
 const UpgradeBay = preload("res://scripts/world/rooms/fabrication_lab.gd")
+const Anomaly = preload("res://scripts/world/rooms/anomaly_void.gd")
+const Things = preload("res://scripts/eli/eli_things.gd")
+const Forest = preload("res://scripts/world/rooms/forest_sanctuary.gd")
 
 # Stands in for the app's settings: every value as its default.
 class Settings extends RefCounted:
@@ -112,6 +115,25 @@ func _run() -> void:
     room.show_eli(eli)
     said = _texts(room._board).filter(func(t): return t != "")
     _check("board_shows_the_log", said.size() == 3 and said[2].ends_with("NOTE_SAVE worked."), str(said))
+
+    # ELI's thoughts (the feed's "thoughts"): what it decided, why, how sure, what became of it
+    var thoughtful := {"connected": true, "mind": "", "mode": "idle", "state": {"log": [], "thoughts": [
+        {"kind": "action", "room": "debug_basement", "what": "open app for spotify failed", "why": ["the app was not found"],
+         "chance": 0.2, "decision": "tried", "reason": "open url had worked instead", "status": "open", "outcome": "",
+         "when": 1_790_000_200.0, "words": "Open app for spotify failed."},
+        {"kind": "recall", "room": "memory_archive", "what": "you prefer early starts", "why": [], "chance": 0.72,
+         "decision": "shown", "reason": "readiest to mind", "status": "settled", "outcome": "right", "when": 1_790_000_100.0, "words": ""}]}}
+    var thought := EliReadout.thought_lines(thoughtful, tint)
+    _check("thoughts_are_lines", thought.size() == 6 and str(thought[0][0]).ends_with("open app for spotify failed")
+           and str(thought[1][0]) == "  tried: open url had worked instead" and str(thought[2][0]) == "  chance 20%"
+           and str(thought[5][0]) == "  chance 72% · proved right", str(thought))
+    var only_actions := EliReadout.thought_lines(thoughtful, tint, ["action"])
+    _check("thoughts_keep_their_kind", only_actions.size() == 3 and only_actions[0][1] == EliReadout.TROUBLE, str(only_actions))
+    _check("thoughts_keep_their_room", EliReadout.thought_lines(thoughtful, tint, [], "memory_archive").size() == 3, "")
+    room.show_eli(thoughtful)
+    said = _texts(room._board).filter(func(t): return t != "")
+    _check("board_shows_what_eli_tried", said.size() >= 3 and said[0].ends_with("open app for spotify failed")
+           and said[1] == "  tried: open url had worked instead", str(said))
 
     var archive = Archive.new()
     root.add_child(archive)
@@ -278,7 +300,122 @@ func _run() -> void:
     _check("a_painting_is_painted_and_stands_on_an_easel_on_the_floor", styled == 5 and hung.eye_height() < 0.6
            and standing.eye_height() > 0.8 and standing._body.get_child_count() > hung._body.get_child_count(),
            "style %d, hung %s, standing %s" % [styled, hung.eye_height(), standing.eye_height()])
+    await _thought_checks(wall)
+    _land_checks()
     quit()
+
+# ELI's thoughts hang as sheets: six rooms keep places for them, a sheet is written with its lines
+# under its kind's tab, and the one in the user's hand is reported as the record it is.
+func _thought_checks(wall) -> void:
+    var homes := {"evidence_wall": wall, "debug_basement": DebugBunker, "upgrade_bay": UpgradeBay, "core_room": Core,
+                  "memory_archive": Archive, "anomaly_room": Anomaly}
+    var placed := true
+    var apart := true
+    for name in homes:
+        var home = homes[name] if homes[name] is Node else homes[name].new()
+        if not home is Node or not home.is_inside_tree():
+            root.add_child(home)
+            home.build({}, Settings.new())
+        var spots := []
+        for i in 6:
+            var spot = home.pin_spot("thought", i)
+            placed = placed and spot is Transform3D
+            if spot is Transform3D:
+                spots.append(spot)
+        placed = placed and home.pin_spot("thought", 6) == null and home.pin_spot("thought", -1) == null
+        for i in spots.size():
+            for j in range(i + 1, spots.size()):
+                apart = apart and (spots[i] as Transform3D).origin.distance_to((spots[j] as Transform3D).origin) > 0.5
+        if home != wall:
+            home.queue_free()
+    _check("thought_sheets_have_places_in_six_rooms", placed and apart, "placed %s apart %s" % [placed, apart])
+    var sheet = Thing.new()
+    wall.add_child(sheet)
+    sheet.build({"id": "thought_12", "name": "claim: you live in Harbour Town", "kind": "thought",
+                 "meaning": "You live in Harbour Town. Held because confirmed twice.",
+                 "lines": ["you live in Harbour Town", "held: confirmed twice", "chance 90% · proved right"],
+                 "thought": {"kind": "claim", "chance": 0.9, "decision": "held", "status": "settled", "outcome": "right"},
+                 "form": {"shape": "board", "colour": "#d9e4f2", "size": 0.6, "glow": 0.8, "pos": [0, 0, 0]}})
+    sheet.pin_to(wall.pin_spot("thought", 0))
+    var written := _labels(sheet).map(func(l): return (l as Label3D).text)
+    var record: Dictionary = sheet.record()
+    _check("a_thought_sheet_is_written_under_its_kinds_tab", "CLAIM" in written and "claim: you live in Harbour Town" in written
+           and "you live in Harbour Town\nheld: confirmed twice\nchance 90% · proved right" in written
+           and record == {"id": "thought_12", "kind": "thought", "name": "claim: you live in Harbour Town",
+                          "lines": ["you live in Harbour Town", "held: confirmed twice", "chance 90% · proved right"]},
+           str(written))
+    var things = Things.new()
+    root.add_child(things)
+    things.show_room("evidence_wall")
+    things.apply_world_state({"objects": [
+        {"id": "thought_12", "name": "claim: you live in Harbour Town", "kind": "thought", "room": "evidence_wall", "meaning": "x",
+         "lines": ["you live in Harbour Town"], "thought": {"kind": "claim"}, "form": {"shape": "board", "colour": "#d9e4f2", "pos": [0, 1, 2]}},
+        {"id": "built_lamp", "name": "Lamp", "kind": "built", "room": "evidence_wall", "made_by": "eli",
+         "form": {"shape": "lamp", "colour": "#f5b942", "size": 1.0, "glow": 0.8, "pos": [2, 0, 2]}}]})
+    await process_frame
+    var none_held: bool = things.held_record().is_empty()
+    things._things["built_lamp"].begin_grab()
+    var a_thing_is_not: bool = things.held_record().is_empty()
+    things._things["built_lamp"].end_grab()
+    things._things["thought_12"].begin_grab()
+    var held: Dictionary = things.held_record()
+    things._things["thought_12"].end_grab()
+    _check("the_sheet_in_the_users_hand_is_reported_as_its_record", none_held and a_thing_is_not
+           and held == {"id": "thought_12", "kind": "thought", "name": "claim: you live in Harbour Town", "lines": ["you live in Harbour Town"]},
+           "none %s thing %s held %s" % [none_held, a_thing_is_not, held])
+    things.queue_free()
+
+# The land: its height is the mesh's, what is stood on it stands on it, the ground cover sits on it,
+# its edge settles flat, the blades are drawn with their alpha, and the forest builds on it.
+func _land_checks() -> void:
+    var room = RoomBase.new()
+    root.add_child(room)
+    var land := LandKit.lay(room, LandKit.blend("sand", 3.0, Color.WHITE, "rock", 2.0, Color.WHITE), 7, 0.03, 3, 120.0, 60, 6.0, 10.0, 8.0, 4.0, -0.2, 20.0)
+    var vertices: PackedVector3Array = land.ground.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+    var agree := true
+    var rises := false
+    for i in range(0, vertices.size(), 97):
+        var v := vertices[i]
+        agree = agree and absf(land.y_at(v.x, v.z) - v.y) < 0.001
+        rises = rises or v.y > 0.5
+    var flat_middle: bool = absf(land.y_at(3.0, -4.0) + 0.2) < 0.0001
+    var flat_edge: bool = absf(land.y_at(59.9, 0.0) + 0.2) < 0.001 and absf(land.y_at(0.0, -59.9) + 0.2) < 0.001
+    var stone = land.on(room, "boulder_01", Vector3(24.0, 0.1, 9.0), 30.0, 1.2, true)
+    var on_ground: bool = stone != null and absf(stone.position.y - (land.y_at(24.0, 9.0) + 0.1)) < 0.0001 \
+        and absf(stone.scale.x - 1.2) < 0.001 and stone.basis.y.dot(Vector3.UP) > 0.8
+    var rng := RandomNumberGenerator.new()
+    rng.seed = 3
+    var field := land.cover(room, LandKit.tuft("grass", 1), LandKit.sway_material("grass", Color.WHITE, 0.05, 1.0), 24, 12.0, 30.0, rng)
+    var stood: PackedVector3Array = field.get_meta("stood_at")
+    var sits := field.multimesh.instance_count == 24 and stood.size() == 24
+    for at in stood:
+        sits = sits and absf(at.y - (land.y_at(at.x, at.z) - 0.03)) < 0.0001 and Vector2(at.x, at.z).length() >= 11.99
+    var blade := LandKit.blade_texture("needle")
+    var image := blade.get_image()
+    var clear := 0
+    var drawn := 0
+    for y in range(0, image.get_height(), 8):
+        for x in image.get_width():
+            if image.get_pixel(x, y).a < 0.5:
+                clear += 1
+            else:
+                drawn += 1
+    var blades_ok: bool = clear > 0 and drawn > 0 and LandKit.blade_texture("needle") == blade and image.get_pixel(32, image.get_height() - 1).a > 0.5
+    var sound := EliArms.sound("shot")
+    var hum := EliArms.sound("beam")
+    var sounds_ok: bool = sound.data.size() > 4000 and hum.loop_mode == AudioStreamWAV.LOOP_FORWARD and EliArms.sound("rail").data.size() > sound.data.size()
+    _check("the_land_knows_its_height_and_what_stands_on_it_stands_on_it", agree and rises and flat_middle and flat_edge and on_ground and sits,
+           "agree %s rises %s middle %s edge %s stone %s cover %s" % [agree, rises, flat_middle, flat_edge, on_ground, sits])
+    _check("ground_cover_blades_are_drawn_and_the_guns_have_their_sounds", blades_ok and sounds_ok, "blades %s sounds %s" % [blades_ok, sounds_ok])
+    var forest = Forest.new()
+    root.add_child(forest)
+    forest.build({}, Settings.new())
+    var fields := forest.get_children().filter(func(c): return c is MultiMeshInstance3D)
+    _check("the_forest_stands_on_its_floor_with_boughs_and_cover", forest._land != null and fields.size() >= 6
+           and fields.any(func(f): return (f as MultiMeshInstance3D).multimesh.instance_count == 46 * 3),
+           "land %s fields %d" % [forest._land != null, fields.size()])
+    forest.queue_free()
+    room.queue_free()
 
 # A model ELI brought in: fetched from the feed's list once, loaded while running, measured, in the
 # catalogue ELI is told of, and drawn as itself. The files come from the bundled side table, served

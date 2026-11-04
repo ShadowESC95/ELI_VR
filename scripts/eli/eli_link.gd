@@ -25,7 +25,7 @@ const SURFACE := "eli_vr"
 const PROTOCOL_VERSIONS := [1, 2]
 const WANTS_NOTE := "models: the real things ELI brought in of its own, fetched and drawn"
 const WANTS := ["world-state", "room-events", "scene", "say", "building", "undo", "own-room", "mind", "props", "pictures",
-                "games"]
+                "games", "thoughts"]
 const WELCOME_SECONDS := 4.0
 const CLOSE_UNAUTHORISED := 4401
 const CLOSE_INCOMPATIBLE := 4406

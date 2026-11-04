@@ -29,6 +29,7 @@ func _build() -> void:
     _outer_ring()
     _radio_table()
     _coming_up_board()
+    _thought_rack()
     _furnish()
     if motes:
         drift(Vector3(0, 3.4, 0), Vector3(8.0, 3.2, 8.0), 240, Color(1, 1, 1).lerp(accent, 0.35))
@@ -400,7 +401,36 @@ func _furnish() -> void:
     var on_rib := Vector3(cos(f), 0.0, sin(f)) * 9.0 + Vector3(0, 2.6, 0)
     prop("security_camera_01", on_rib, rad_to_deg(atan2(-on_rib.x, -on_rib.z)))
 
+# Beside the agenda, a standing rack for the thoughts of this room: how ELI read what you said, and
+# what it made of its own moments, each a sheet clipped to the rack the user can take down and ask about.
+const RACK_AT := Vector3(-4.1, 0.0, 2.1)
+const RACK_PLACES := [Vector3(-0.38, 1.15, 0.05), Vector3(0.38, 1.15, 0.05), Vector3(-0.38, 0.3, 0.05), Vector3(0.38, 0.3, 0.05),
+                      Vector3(-0.38, -0.55, 0.05), Vector3(0.38, -0.55, 0.05)]
+
+func _rack_at() -> Transform3D:
+    return Transform3D(Basis(Vector3.UP, atan2(-RACK_AT.x, -RACK_AT.z)), RACK_AT + Vector3(0, 1.45, 0))
+
+func _thought_rack() -> void:
+    var steel := MaterialKitClass.metal("brushed_metal", 0.6, Color(0.6, 0.62, 0.66), 0.6)
+    var rack := Node3D.new()
+    rack.transform = _rack_at()
+    add_child(rack)
+    box(Vector3(1.5, 2.7, 0.04), MaterialKitClass.painted("hull_panels", 1.0, Color(0.2, 0.22, 0.26), 0.6), Vector3.ZERO, rack)
+    for x in [-0.7, 0.7]:
+        rod(0.025, 2.8, steel, Vector3(x, -0.05, 0.0), rack)
+    var heading := Label3D.new()
+    heading.text = "WHAT ELI THOUGHT"
+    heading.font_size = 40
+    heading.pixel_size = 0.0028
+    heading.modulate = accent
+    heading.outline_size = 6
+    heading.position = Vector3(0, 1.52, 0.04)
+    rack.add_child(heading)
+    lamp(rack.transform * Vector3(0, 0.5, 0.9), accent, 0.5, 3.5)
+
 func pin_spot(kind: String, index: int) -> Variant:
+    if kind == "thought":
+        return _rack_at() * Transform3D(Basis.IDENTITY, RACK_PLACES[index]) if index >= 0 and index < RACK_PLACES.size() else null
     if kind != "playing" or index != 0:
         return null
     return Transform3D(Basis(Vector3.UP, atan2(-RADIO_AT.x, -RADIO_AT.z)), RADIO_AT + Vector3(0, 0.55, 0))
@@ -422,7 +452,8 @@ func show_eli(eli: Dictionary) -> void:
         return
     var shown := [EliReadout.status_lines(eli, accent), EliReadout.measure_lines(eli, accent),
                   EliReadout.tail(EliReadout.log_lines(eli, accent), _screens[2].rows()),
-                  EliReadout.recent_lines(eli, accent), EliReadout.mind_lines(eli, accent)]
+                  EliReadout.recent_lines(eli, accent),
+                  EliReadout.mind_lines(eli, accent) + EliReadout.thought_lines(eli, accent, ["act", "route"], "", 40)]
     for n in _screens.size():
         if shown[n].is_empty():
             _screens[n].show_idle("nothing yet")

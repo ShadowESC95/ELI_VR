@@ -115,6 +115,7 @@ func _run() -> void:
     await _frames(0.1)
     _check("gone_when_you_leave", not _presence.visible, "visible=%s" % _presence.visible)
     await _play_checks()
+    await _range_checks()
     _voice_checks()
     quit()
 
@@ -258,6 +259,141 @@ func _play_checks() -> void:
     play.queue_free()
     link.queue_free()
     _app.camera.rotation = Vector3.ZERO
+
+# The range: guns on the table in the hand, targets ahead shot by their rings, bolts that fly, a beam
+# that must rest, a rail through everything on its line, a gun let go going back to the table, a click
+# on a flat screen, and the result told with each gun's part.
+func _range_checks() -> void:
+    var link := FakeLink.new()
+    root.add_child(link)
+    var play := EliPlayClass.new()
+    root.add_child(play)
+    play.setup(_app, link, _presence, _things)
+    _motion.set_here(true, "core_room", "Core Room")
+    var arms := {"pistol": {"name": "Pistol", "class": "real", "fire": "shot", "rate": 0.0, "spread": 0.0, "shots": 1},
+                 "shotgun": {"name": "Shotgun", "class": "real", "fire": "shot", "rate": 0.0, "spread": 0.0, "shots": 7},
+                 "bolt": {"name": "Bolt caster", "class": "energy", "fire": "bolt", "rate": 0.0, "speed": 16.0, "drop": 3.0},
+                 "beam": {"name": "Beam lance", "class": "sci-fi", "fire": "beam", "rate": 0.0, "hold": 0.3},
+                 "rail": {"name": "Rail gun", "class": "sci-fi", "fire": "rail", "rate": 0.0, "charge": 0.1}}
+    var lines := {"start": "Take a gun.", "hit": "Hit.", "miss": "Missed.", "end": "Done."}
+    var rules := {"name": "The range", "kind": "range", "goal": "shoot the targets", "count": 6, "seconds": 60, "pace": 0.0,
+                  "motion": "still", "arms": arms, "rings": [3, 2, 1], "lines": lines}
+    var objects := [_game("r1", rules)]
+    objects.append({"id": "rack", "name": "Gun table", "room": "core_room", "made_by": "eli", "kind": "built",
+                    "piece": {"game": "r1", "role": "rack", "tag": "rack", "index": 0},
+                    "form": {"shape": "table", "colour": "#8a5a3c", "size": 1.0, "glow": 0.0, "pos": [0.75, 0.0, 1.1], "turn": 90.0}})
+    var n := 0
+    for tag in arms:
+        objects.append({"id": "arm_" + tag, "name": str(arms[tag]["name"]), "room": "core_room", "made_by": "eli", "kind": "built",
+                        "piece": {"game": "r1", "role": "arm", "tag": tag, "index": n},
+                        "form": {"shape": "arm", "colour": "#4fd2f2", "size": 1.0, "glow": 0.6, "pos": [0.5 + 0.1 * n, 0.78, 1.1], "turn": 180.0}})
+        n += 1
+    var spots := [[0.0, 1.2, 5.0], [2.0, 1.2, 5.0], [-2.0, 1.2, 5.0], [0.0, 1.6, 6.0], [1.0, 1.2, 5.0], [1.0, 1.2, 7.0]]
+    for i in 6:
+        var t := _piece("t%d" % (i + 1), "r1", "target", "target", i, "target", spots[i])
+        t["form"]["turn"] = 180.0
+        objects.append(t)
+    var state := {"objects": objects}
+    _things.apply_world_state(state)
+    play.apply_world_state(state)
+    await _frames(0.15)
+    var targets: Array = play._pieces
+    var guns: Array = play._arms
+    var up: Array = targets.filter(func(t): return not t.is_gone())
+    var guns_drawn: bool = guns.size() == 5 and guns.all(func(g): return g.has_method("aim") and not g.is_gone() and g._body.get_child_count() > 3)
+    _check("the_range_begins_with_the_guns_on_the_table_and_a_target_up", play.running and targets.size() == 6 and up.size() == 1
+           and guns_drawn and play._rack != null and not play._rack.is_gone() and _app.spoken.back() == "Take a gun.",
+           "running=%s targets=%d up=%d guns=%d drawn=%s rack=%s" % [play.running, targets.size(), up.size(), guns.size(), guns_drawn, play._rack])
+    for i in range(1, 6):
+        play._bring_up(targets[i], 60.0)
+    var by_tag := {}
+    for g in guns:
+        by_tag[str(g.piece.get("tag", ""))] = g
+    # a shot from the pistol through the middle of the first target: three points
+    var centre: Vector3 = targets[0].global_position + Vector3(0, targets[0].eye_height(), 0)
+    # each gun is held so that its muzzle (a little above the hand) is on the line to the target
+    var pistol = by_tag["pistol"]
+    pistol.hold(centre + Vector3(0, -pistol.muzzle.y, 3.0), Vector3(0, 0, -1), Vector2.ZERO, 0.0)
+    var aim: Dictionary = pistol.aim()
+    # the muzzle lies ahead of the hand by the gun's own length, on the line to the target's middle
+    var in_hand: bool = pistol.wielded and aim["dir"].is_equal_approx(Vector3(0, 0, -1)) \
+        and absf(aim["from"].distance_to(centre) - (3.0 + pistol.muzzle.z)) < 0.01 and absf(aim["from"].y - centre.y) < 0.001
+    play._shoot(pistol, play.arm_rules(pistol), null)
+    var middle_ok: bool = play.score == 3 and play.hits == 1 and play.shots == 1 and play._by_arm.get("pistol") == {"shots": 1, "hits": 1, "points": 3} \
+        and not play._live.has(targets[0]) and play._marks.size() == 1
+    # the shotgun at the edge of the second: one point, and one shot however many pellets
+    var edge: Vector3 = targets[1].global_position + Vector3(0, targets[1].eye_height(), 0) + Vector3(targets[1].target_radius() * 0.9, 0, 0)
+    var shotgun = by_tag["shotgun"]
+    shotgun.hold(edge + Vector3(0, -shotgun.muzzle.y, 3.0), Vector3(0, 0, -1), Vector2.ZERO, 0.0)
+    play._shoot(shotgun, play.arm_rules(shotgun), null)
+    var edge_ok: bool = play.score == 4 and play.hits == 2 and play.shots == 2 and play._by_arm["shotgun"]["points"] == 1
+    _check("a_shot_scores_by_the_ring_it_hits", in_hand and middle_ok and edge_ok,
+           "in hand %s, middle %s (score %d hits %d shots %d), edge %s (score %d)" % [in_hand, middle_ok, play.score, play.hits, play.shots, edge_ok, play.score])
+    # a bolt flies from the caster and meets the third; a miss by a mile falls and is gone
+    var third: Vector3 = targets[2].global_position + Vector3(0, targets[2].eye_height(), 0)
+    var caster = by_tag["bolt"]
+    caster.hold(third + Vector3(0, -caster.muzzle.y, 2.0), Vector3(0, 0, -1), Vector2.ZERO, 0.0)
+    play._cast(caster, play.arm_rules(caster), null)
+    var flying: bool = play._bolts.size() == 1
+    await _frames(0.5)
+    var bolt_ok: bool = flying and play.hits == 3 and play._bolts.is_empty() and play._by_arm["bolt"]["hits"] == 1
+    caster.hold(third + Vector3(0, -caster.muzzle.y, 2.0), Vector3(1, 0, 0), Vector2.ZERO, 0.0)
+    play._cast(caster, play.arm_rules(caster), null)
+    await _frames(play.BOLT_SECONDS + 0.3)
+    var gone: bool = play._bolts.is_empty() and play.hits == 3
+    _check("a_bolt_flies_and_hits_what_it_meets_and_one_that_meets_nothing_is_gone", bolt_ok and gone,
+           "flying %s hits %d bolts %d, gone %s" % [flying, play.hits, play._bolts.size(), gone])
+    # a gun let go goes back to the table in a moment (while the game is still on: at its end the guns leave)
+    var home: Vector3 = pistol.home
+    pistol.end_grab()
+    var waiting: bool = play._homing.has(pistol) and not pistol.wielded
+    await _frames(play.HOME_SECONDS + 0.3)
+    var homed: bool = not play._homing.has(pistol) and pistol._target.is_equal_approx(home) and pistol.basis.is_equal_approx(Basis.IDENTITY)
+    _check("a_gun_let_go_goes_back_to_the_table", waiting and homed, "waiting %s homed %s target %s home %s" % [waiting, homed, pistol._target, home])
+    # the beam must rest on the fourth for its hold; the rail goes through the fifth and the sixth at once
+    var fourth: Vector3 = targets[3].global_position + Vector3(0, targets[3].eye_height(), 0)
+    var lance = by_tag["beam"]
+    lance.hold(fourth + Vector3(0, -lance.muzzle.y, 3.0), Vector3(0, 0, -1), Vector2.ZERO, 0.0)
+    play._beam(lance, play.arm_rules(lance), 0.2)
+    var resting: bool = play.hits == 3 and lance._beam != null and play._beam_on.has(lance)
+    play._beam(lance, play.arm_rules(lance), 0.15)
+    var burnt: bool = play.hits == 4 and play._by_arm["beam"]["hits"] == 1
+    lance.beam_off()
+    var fifth: Vector3 = targets[4].global_position + Vector3(0, targets[4].eye_height(), 0)
+    var rail = by_tag["rail"]
+    rail.hold(fifth + Vector3(0, -rail.muzzle.y, 3.0), Vector3(0, 0, -1), Vector2.ZERO, 0.0)
+    play._rail(rail, play.arm_rules(rail), null)
+    var through: bool = play.hits == 6 and play._by_arm["rail"]["hits"] == 2 and play._by_arm["rail"]["shots"] == 1 and play._live.is_empty()
+    _check("a_beam_must_rest_on_a_target_and_a_rail_goes_through_every_target_on_its_line", resting and burnt and through and lance._beam == null,
+           "resting %s burnt %s through %s (hits %d)" % [resting, burnt, through, play.hits])
+    # the end: every target resolved, the result told with each gun's part
+    await _frames(0.3)
+    var told: Array = link.posted
+    var result: Dictionary = told.back()[1] if not told.is_empty() else {}
+    _check("the_range_tells_each_guns_part_in_the_result", not play.running and told.size() == 1 and told.back()[0] == "r1"
+           and int(result.get("score", 0)) == 16 and int(result.get("hits", 0)) == 6 and int(result.get("shots", 0)) == 6
+           and result.get("arms", {}).get("rail", {}).get("hits") == 2 and not bool(result.get("abandoned", true)),
+           "running %s told %s" % [play.running, told])
+    # on a flat screen a click fires the first gun from where you look
+    _app.spoken.clear()
+    var again := {"objects": [_game("r2", rules), objects[1], objects[2], _piece("u1", "r2", "target", "target", 0, "target", [0.0, 1.2, 5.0])]}
+    again["objects"][1] = {"id": "rack2", "name": "Gun table", "room": "core_room", "made_by": "eli", "kind": "built",
+                           "piece": {"game": "r2", "role": "rack", "tag": "rack", "index": 0},
+                           "form": {"shape": "table", "colour": "#8a5a3c", "size": 1.0, "glow": 0.0, "pos": [0.75, 0.0, 1.1]}}
+    again["objects"][2] = {"id": "arm2_pistol", "name": "Pistol", "room": "core_room", "made_by": "eli", "kind": "built",
+                           "piece": {"game": "r2", "role": "arm", "tag": "pistol", "index": 0},
+                           "form": {"shape": "arm", "colour": "#4fd2f2", "size": 1.0, "glow": 0.0, "pos": [0.5, 0.78, 1.1], "turn": 180.0}}
+    _things.apply_world_state(again)
+    play.apply_world_state(again)
+    await _frames(0.15)
+    var first: Vector3 = play._pieces[0].global_position + Vector3(0, play._pieces[0].eye_height(), 0)
+    play._shoot_from_camera(first + Vector3(0, 0, 4.0), Vector3(0, 0, -1))      # from where you look: no muzzle
+    _check("a_click_on_a_flat_screen_fires_the_first_gun", play.score == 3 and play.shots == 1 and play._by_arm.has("pistol"),
+           "score %d shots %d by %s" % [play.score, play.shots, play._by_arm])
+    play.stop()
+    await _frames(0.2)
+    play.queue_free()
+    link.queue_free()
 
 # Stands in for the app's settings, keeping what is set.
 class Kept extends RefCounted:

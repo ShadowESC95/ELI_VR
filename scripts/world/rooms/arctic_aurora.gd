@@ -6,6 +6,8 @@ extends RoomBase
 
 const MOON := Vector3(0.62, 0.24, 0.55)
 
+var _land: LandKit
+
 func _build() -> void:
     var env := environment(Color(0.14, 0.20, 0.32), 0.42)
     star_sky(env, Vector3(0.55, 0.5, -0.65), -40.0, 1.3)
@@ -47,12 +49,11 @@ func _lights_in_the_sky() -> void:
     lamp(Vector3(0, 30, -40), green, 0.9, 120.0)
 
 func _snowfield() -> void:
-    var noise := FastNoiseLite.new()
-    noise.seed = 21
-    noise.frequency = 0.021
-    noise.fractal_octaves = 4
-    var snow := MaterialKitClass.surface("snow", 5.0, Color(0.88, 0.93, 1.0), 0.85)
-    add(MeshKitClass.terrain(520.0, 170, noise, 15.0, 11.5, 16.0, 46.0, -0.14), snow)
+    # snow lying on the flats, the dark rock of the ridges showing through where it is steep, and
+    # specks of light in the snow near you
+    var snow := LandKit.blend("snow", 5.0, Color(0.88, 0.93, 1.0), "rock", 2.2, Color(0.32, 0.34, 0.38),
+        {"slope_from": 0.22, "slope_to": 0.48, "breakup": 0.5, "sparkle": 1.0, "far_blend": 60.0, "roughness_scale": 0.85})
+    _land = LandKit.lay(self, snow, 21, 0.021, 4, 520.0, 170, 15.0, 11.5, 16.0, 46.0, -0.14)
 
     # ice standing out of the snow
     var ice := MaterialKitClass.surface("ice", 1.6, Color(0.75, 0.9, 1.0).lerp(accent, 0.15), 0.25)
@@ -64,7 +65,9 @@ func _snowfield() -> void:
     for i in 22:
         var angle := rng.randf() * TAU
         var distance := rng.randf_range(13.0, 46.0)
-        var shard := add(spike, ice, Vector3(cos(angle) * distance, rng.randf_range(-0.2, 0.9), sin(angle) * distance))
+        var x := cos(angle) * distance
+        var z := sin(angle) * distance
+        var shard := add(spike, ice, Vector3(x, _land.y_at(x, z) + rng.randf_range(-0.2, 0.9), z))
         shard.scale = Vector3(1.0, rng.randf_range(0.5, 1.7), 1.0) * rng.randf_range(0.6, 1.8)
         shard.rotation = Vector3(rng.randf_range(-0.25, 0.25), rng.randf() * TAU, rng.randf_range(-0.25, 0.25))
 
@@ -72,16 +75,9 @@ func _snowfield() -> void:
 func _timber() -> void:
     var rng := RandomNumberGenerator.new()
     rng.seed = 5
-    for i in 14:
-        var angle := rng.randf() * TAU
-        var distance := rng.randf_range(12.0, 40.0)
-        prop("pine_sapling_small" if i % 2 else "fir_sapling", Vector3(cos(angle) * distance, -0.1, sin(angle) * distance),
-             rng.randf() * 360.0, rng.randf_range(0.9, 1.8))
-    for i in 5:
-        var angle := rng.randf() * TAU
-        var distance := rng.randf_range(11.0, 30.0)
-        prop(["dead_tree_trunk_02", "dead_tree_trunk", "tree_stump_01", "boulder_01", "dead_tree_trunk_02"][i],
-             Vector3(cos(angle) * distance, -0.12, sin(angle) * distance), rng.randf() * 360.0, rng.randf_range(0.9, 1.5))
+    _land.scatter(self, ["fir_sapling", "pine_sapling_small"], 14, 12.0, 40.0, rng, 0.9, 1.8, 0.04)
+    _land.scatter(self, ["dead_tree_trunk_02", "dead_tree_trunk", "tree_stump_01", "boulder_01", "dead_tree_trunk_02"], 5,
+                  11.0, 30.0, rng, 0.9, 1.5, 0.02, true)
 
 func _platform() -> void:
     var boards := MaterialKitClass.surface("planks", 2.4, Color(1.5, 1.35, 1.2), 0.9)

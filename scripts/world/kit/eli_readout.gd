@@ -20,15 +20,51 @@ static func _clock(ts) -> String:
 
 static func _colour_of(kind: String, tint: Color) -> Color:
     match kind:
-        "error_detected", "runtime_fault", "evidence_weak", "memory_uncertainty", "trouble":
+        "error_detected", "runtime_fault", "evidence_weak", "memory_uncertainty", "trouble", "action", "surprise", "conflict":
             return TROUBLE
-        "task_completed", "repair_completed", "memory_recall", "review_completed", "goal_done":
+        "task_completed", "repair_completed", "memory_recall", "review_completed", "goal_done", "act":
             return GOOD
-        "reflection", "insight", "belief_changed":
+        "reflection", "insight", "belief_changed", "recall", "memory":
             return REFLECT
-        "task_opened", "goal", "improvement_proposal", "upgrade_candidate", "ambition":
+        "task_opened", "goal", "improvement_proposal", "upgrade_candidate", "ambition", "proposal", "diagnosis":
             return PALE
     return tint
+
+
+## ELI's thoughts lately (the feed's "thoughts": what it recalled, believed, read a sentence as, made,
+## tried and proposed, each with why, how sure, what it decided and what became of it), as lines:
+## the thought, then its decision and reason, then its chance and outcome. `kinds` keeps it to some
+## kinds, `room` to the room of the house they belong in; newest first, as the feed gives them.
+static func thought_lines(eli: Dictionary, tint: Color, kinds: Array = [], room: String = "", width: int = 40) -> Array:
+    var lines := []
+    for thought in (eli.get("state", {}) as Dictionary).get("thoughts", []):
+        if typeof(thought) != TYPE_DICTIONARY:
+            continue
+        var kind := str(thought.get("kind", ""))
+        if not kinds.is_empty() and not kind in kinds:
+            continue
+        if not room.is_empty() and str(thought.get("room", "")) != room:
+            continue
+        var colour := _colour_of(kind, tint)
+        var what := str(thought.get("what", ""))
+        var first := true
+        for chunk in _wrap(what, width):
+            lines.append([("%s %s" % [_clock(thought.get("when")), chunk]) if first else "      " + chunk, colour])
+            first = false
+        var decision := str(thought.get("decision", ""))
+        var reason := str(thought.get("reason", ""))
+        if not decision.is_empty():
+            for chunk in _wrap(decision + (": " + reason if not reason.is_empty() else ""), width - 2):
+                lines.append(["  " + chunk, PALE])
+        var tail := ""
+        if thought.get("chance") != null:
+            tail = "chance %d%%" % int(round(float(thought.get("chance")) * 100.0))
+        var outcome := str(thought.get("outcome", ""))
+        if not outcome.is_empty():
+            tail += (" · " if not tail.is_empty() else "") + "proved " + outcome
+        if not tail.is_empty():
+            lines.append(["  " + tail, colour.darkened(0.25)])
+    return lines
 
 ## ELI's log, newest last, each line "HH:MM what happened". `keep` picks which kinds to show.
 static func log_lines(eli: Dictionary, tint: Color, keep: Callable = Callable()) -> Array:

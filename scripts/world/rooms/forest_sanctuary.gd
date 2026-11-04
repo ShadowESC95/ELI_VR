@@ -2,8 +2,12 @@ class_name ForestSanctuaryRoom
 extends RoomBase
 
 # Forest Sanctuary: a deck among tall pines in morning mist. The wood beyond
-# is a photograph of a real one; the trunks, ferns and stones near you are
-# solid, and the mist joins the two.
+# is a photograph of a real one; the ground near you is a forest floor of
+# needles and litter with moss and stone where it rises, the trunks carry
+# their boughs, ferns, grass, stumps and logs stand on the ground, and the
+# mist joins it all to the photograph.
+
+var _land: LandKit
 
 func _build() -> void:
     var env := environment(Color(0.6, 0.66, 0.62), 1.0)
@@ -17,6 +21,7 @@ func _build() -> void:
     sun(Vector3(-0.3, 0.9, 0.25), Color(1.0, 0.97, 0.9), 1.1)
 
     _deck_of_boards()
+    _ground()
     _trunks()
     _undergrowth()
     _real_undergrowth()
@@ -24,6 +29,13 @@ func _build() -> void:
     if motes:
         drift(Vector3(0, 2.4, 0), Vector3(12, 2.4, 12), 260, Color(1.0, 0.96, 0.8), 0.03, Vector3(0.4, 0.15, 0.2), 0.12, 0.8)
     probe(Vector3(28, 14, 28))
+
+# The forest floor: needles and leaf litter, with moss and stone where the ground rises. It settles
+# back to the photograph's flat ground over its last stretch, so the two meet without a step.
+func _ground() -> void:
+    var floor_mix := LandKit.blend("forest_floor", 2.2, Color(0.85, 0.9, 0.8), "moss_rock", 1.8, Color(0.8, 0.95, 0.75),
+        {"slope_from": 0.1, "slope_to": 0.3, "breakup": 0.55, "far_blend": 25.0})
+    _land = LandKit.lay(self, floor_mix, 6, 0.045, 3, 160.0, 120, 2.6, 10.0, 8.0, 0.0, -0.16, 40.0)
 
 func _deck_of_boards() -> void:
     var boards := MaterialKitClass.surface("planks", 2.4, Color(1.25, 1.1, 0.95), 0.9)
@@ -53,6 +65,8 @@ func _deck_of_boards() -> void:
         glow(at + Vector3(0, 0.3, 0), warm, 0.9, 1.0, 0.7)
         lamp(at + Vector3(0, 0.3, 0), warm, 0.5, 5.0)
 
+# The near pines: trunks turned on a lathe standing on the ground, and on each three whorls of boughs
+# hanging out and down, needles drawn here, moving a little in the air.
 func _trunks() -> void:
     var bark := MaterialKitClass.surface("bark", 1.4, Color(0.62, 0.5, 0.44), 1.0)
     var rng := RandomNumberGenerator.new()
@@ -64,17 +78,34 @@ func _trunks() -> void:
     many.transform_format = MultiMesh.TRANSFORM_3D
     many.mesh = trunk
     many.instance_count = 46
+    var boughs := MultiMesh.new()
+    boughs.transform_format = MultiMesh.TRANSFORM_3D
+    boughs.mesh = LandKit.tuft("needle", 31)
+    boughs.instance_count = 46 * 3
     for i in 46:
         var angle := rng.randf() * TAU
         # keep the way ahead a little more open
         var distance := rng.randf_range(11.0, 38.0)
-        var basis := Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3.ONE * rng.randf_range(0.75, 1.5))
+        var scale := rng.randf_range(0.75, 1.5)
+        var basis := Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3.ONE * scale)
         basis = Basis(Vector3(1, 0, 0), rng.randf_range(-0.03, 0.03)) * basis
-        many.set_instance_transform(i, Transform3D(basis, Vector3(cos(angle) * distance, -0.2, sin(angle) * distance)))
+        var foot := Vector3(cos(angle) * distance, _land.y_at(cos(angle) * distance, sin(angle) * distance) - 0.2, sin(angle) * distance)
+        many.set_instance_transform(i, Transform3D(basis, foot))
+        for tier in 3:
+            # a whorl of boughs a third, a half and two thirds of the way up, the lower ones wider
+            var up := (0.34 + 0.17 * tier) * 34.0 * scale
+            var spread := (2.4 - 0.5 * tier) * scale
+            var whorl := Basis(Vector3.UP, rng.randf() * TAU) * Basis(Vector3.RIGHT, deg_to_rad(165.0))
+            boughs.set_instance_transform(i * 3 + tier, Transform3D(whorl.scaled(Vector3(spread, spread * 0.8, spread)), foot + Vector3(0, up, 0)))
     var grove := MultiMeshInstance3D.new()
     grove.multimesh = many
     grove.material_override = bark
     add_child(grove)
+    var canopy := MultiMeshInstance3D.new()
+    canopy.multimesh = boughs
+    canopy.material_override = LandKit.sway_material("needle", Color(0.85, 1.0, 0.8), 0.12, 0.45)
+    canopy.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    add_child(canopy)
 
 func _undergrowth() -> void:
     var frond := MaterialKitClass.shader("res://assets/shaders/sway.gdshader", {
@@ -84,55 +115,32 @@ func _undergrowth() -> void:
     rng.seed = 17
     for kind in 3:
         var fern := MeshKitClass.plant(7 + kind, 0.34, 0.95, 0.75, 30 + kind)
-        var many := MultiMesh.new()
-        many.transform_format = MultiMesh.TRANSFORM_3D
-        many.mesh = fern
-        many.instance_count = 110
-        for i in 110:
-            var angle := rng.randf() * TAU
-            var distance := rng.randf_range(9.8, 19.0)
-            var basis := Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3.ONE * rng.randf_range(0.9, 2.0))
-            many.set_instance_transform(i, Transform3D(basis, Vector3(cos(angle) * distance, -0.14, sin(angle) * distance)))
-        var patch := MultiMeshInstance3D.new()
-        patch.multimesh = many
-        patch.material_override = frond
-        patch.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-        add_child(patch)
+        _land.cover(self, fern, frond, int(110 * detail), 9.8, 19.0, rng, 0.9, 2.0, 0.08)
+    # grass in the gaps between the ferns, and further out among the trunks
+    var grass := LandKit.sway_material("grass", Color(0.75, 0.95, 0.6), 0.05, 1.1)
+    for kind in 2:
+        _land.cover(self, LandKit.tuft("grass", 41 + kind), grass, int(260 * detail), 9.8, 28.0, rng, 0.7, 1.5, 0.04)
 
     var mossy := MaterialKitClass.surface("moss_rock", 1.6, Color(0.8, 0.9, 0.75), 1.0, true)
     for i in 14:
         var angle := rng.randf() * TAU
         var distance := rng.randf_range(10.5, 24.0)
+        var x := cos(angle) * distance
+        var z := sin(angle) * distance
         var boulder := add(MeshKitClass.rock(300 + i, rng.randf_range(0.4, 1.5), 0.3, 10), mossy,
-            Vector3(cos(angle) * distance, rng.randf_range(-0.25, 0.2), sin(angle) * distance))
+            Vector3(x, _land.y_at(x, z) + rng.randf_range(-0.15, 0.1), z))
         boulder.rotation.y = rng.randf() * TAU
 
 # Real ferns, stumps, fallen logs and mossy rocks near the deck, and young pines among the trunks
-# (scanned, assets/models).
+# (scanned, assets/models), each standing on the ground at its height.
 func _real_undergrowth() -> void:
     var rng := RandomNumberGenerator.new()
     rng.seed = 23
-    for i in 14:
-        var angle := rng.randf() * TAU
-        var distance := rng.randf_range(9.9, 14.0)
-        prop("fern_02", Vector3(cos(angle) * distance, -0.16, sin(angle) * distance), rng.randf() * 360.0, rng.randf_range(0.7, 1.2))
-    for i in 4:
-        var angle := rng.randf() * TAU
-        var distance := rng.randf_range(10.5, 18.0)
-        prop("tree_stump_01" if i % 2 else "tree_stump_02", Vector3(cos(angle) * distance, -0.12, sin(angle) * distance), rng.randf() * 360.0)
-    for i in 3:
-        var angle := rng.randf() * TAU
-        var distance := rng.randf_range(11.0, 20.0)
-        prop("rock_moss_set_02", Vector3(cos(angle) * distance, -0.2, sin(angle) * distance), rng.randf() * 360.0, rng.randf_range(0.6, 1.0))
-    for i in 2:
-        var angle := rng.randf() * TAU
-        var distance := rng.randf_range(11.0, 16.0)
-        prop("dead_tree_trunk", Vector3(cos(angle) * distance, -0.1, sin(angle) * distance), rng.randf() * 360.0, 1.3)
-    for i in 10:
-        var angle := rng.randf() * TAU
-        var distance := rng.randf_range(10.0, 22.0)
-        prop("pine_sapling_small" if i % 2 else "fir_sapling", Vector3(cos(angle) * distance, -0.2, sin(angle) * distance),
-             rng.randf() * 360.0, rng.randf_range(1.0, 1.8))
+    _land.scatter(self, ["fern_02"], 14, 9.9, 14.0, rng, 0.7, 1.2, -0.02)
+    _land.scatter(self, ["tree_stump_02", "tree_stump_01"], 4, 10.5, 18.0, rng, 1.0, 1.0, 0.0, true)
+    _land.scatter(self, ["rock_moss_set_02"], 3, 11.0, 20.0, rng, 0.6, 1.0, -0.05, true)
+    _land.scatter(self, ["dead_tree_trunk"], 2, 11.0, 16.0, rng, 1.3, 1.3, 0.0, true)
+    _land.scatter(self, ["fir_sapling", "pine_sapling_small"], 10, 10.0, 22.0, rng, 1.0, 1.8, -0.05)
 
 func _light_in_the_mist() -> void:
     var beam := QuadMesh.new()

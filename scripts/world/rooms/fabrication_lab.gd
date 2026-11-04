@@ -159,6 +159,19 @@ func _equipment() -> void:
 var _goals: InfoScreen
 var _improving: InfoScreen
 
+# The glass screen on the right carries ELI's thoughts of this bay: the fixes it proposed for itself
+# and the failures it diagnosed, each a sheet stuck to the glass the user can take down and ask about.
+const THOUGHT_BEARING := 78.0
+const THOUGHT_PLACES := [Vector3(-1.1, 0.55, 0.0), Vector3(0.0, 0.55, 0.0), Vector3(1.1, 0.55, 0.0),
+                         Vector3(-1.1, -0.5, 0.0), Vector3(0.0, -0.5, 0.0), Vector3(1.1, -0.5, 0.0)]
+
+func pin_spot(kind: String, index: int) -> Variant:
+    if kind != "thought" or index < 0 or index >= THOUGHT_PLACES.size():
+        return null
+    var a := deg_to_rad(THOUGHT_BEARING)
+    var pane := Transform3D(Basis(Vector3.UP, -a), Vector3(sin(a), 0.0, -cos(a)) * 11.16 + Vector3(0, 1.5, 0))
+    return pane * Transform3D(Basis.IDENTITY, THOUGHT_PLACES[index])
+
 # Two of the glass screens carry what this bay is for: ELI's goals and ambitions, and the
 # improvements it has proposed, reviewed and made.
 func _boards() -> void:
@@ -245,11 +258,14 @@ func show_eli(eli: Dictionary) -> void:
     else:
         _goals.show_lines(goals)
     var kinds := ["improvement_proposal", "upgrade_candidate", "review_completed", "repair_completed"]
-    var made := EliReadout.log_lines(eli, accent, func(kind): return kind in kinds)
+    # the fixes ELI proposed for itself and the failures it diagnosed, each with its chance and
+    # what became of it, then the log of the cycles
+    var made := EliReadout.thought_lines(eli, accent, ["proposal", "diagnosis"], "", 42)
+    made.append_array(EliReadout.log_lines(eli, accent, func(kind): return kind in kinds))
     if made.is_empty():
         _improving.show_idle("nothing proposed lately")
     else:
-        _improving.show_lines(EliReadout.tail(made, _improving.rows()))
+        _improving.show_lines(made.slice(0, _improving.rows()))
 
 func _glass_screens() -> void:
     var pane := MaterialKitClass.glass(Color(0.7, 0.9, 1.0), 0.12)

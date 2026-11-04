@@ -122,7 +122,8 @@ func _physics_process(_delta: float) -> void:
     _set_visual_state(target != null)
 
     var pressed: bool = controller.is_button_pressed("trigger_click")
-    if pressed and not trigger_before and current:
+    # a hand holding something (a panel, a thing, a gun of the range) is not pressing buttons with it
+    if pressed and not trigger_before and current and not XRWorldManipulator.is_holding(controller):
         current.activate()
         controller.trigger_haptic_pulse("haptic", 0.0, 0.30, 0.04, 0.0)
     elif current == null:

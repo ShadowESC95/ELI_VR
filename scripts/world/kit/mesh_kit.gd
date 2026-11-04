@@ -101,13 +101,26 @@ static func arc(r0: float, y0: float, r1: float, y1: float, angle: float, steps:
         out.append(dir * (r1 + (r0 - r1) * cos(t)) + Vector3.UP * (y0 + (y1 - y0) * sin(t)))
     return out
 
-# Open ground: a square of land centred on the origin. It is level inside
-# `flat` metres of the centre, where the room's floor goes, and rises into
-# the noise over the next `rise` metres. `bowl` lifts the far edges, for land
-# that climbs away from you.
+# The height of open ground at (x, z): level at `base_y` inside `flat` metres of the centre, where
+# the room's floor goes, rising into the noise over the next `rise` metres; `bowl` lifts the far
+# edges, for land that climbs away from you; `fade` (metres) settles the land back to `base_y`
+# over its last `fade` metres, so it meets a photograph's flat ground without a step. terrain()
+# is built from this, and LandKit stands things on it by the same figure.
+static func land_height(
+    x: float, z: float, size: float, noise: FastNoiseLite, height: float,
+    flat: float, rise: float, bowl: float = 0.0, base_y: float = 0.0, fade: float = 0.0
+) -> float:
+    var half := size * 0.5
+    var r := Vector2(x, z).length()
+    var lift := smoothstep(flat, flat + rise, r)
+    var far := clampf((r - flat) / maxf(half - flat, 0.001), 0.0, 1.0)
+    var settle := 1.0 if fade <= 0.0 else 1.0 - smoothstep(half - fade, half, maxf(absf(x), absf(z)))
+    return base_y + settle * lift * (height * (noise.get_noise_2d(x, z) * 0.5 + 0.5) + bowl * far * far)
+
+# Open ground: a square of land centred on the origin, `cells` across, shaped by land_height.
 static func terrain(
     size: float, cells: int, noise: FastNoiseLite, height: float,
-    flat: float, rise: float, bowl: float = 0.0, base_y: float = 0.0
+    flat: float, rise: float, bowl: float = 0.0, base_y: float = 0.0, fade: float = 0.0
 ) -> ArrayMesh:
     var step := size / float(cells)
     var half := size * 0.5
@@ -115,13 +128,8 @@ static func terrain(
     heights.resize((cells + 1) * (cells + 1))
     for j in cells + 1:
         for i in cells + 1:
-            var x := -half + step * i
-            var z := -half + step * j
-            var r := Vector2(x, z).length()
-            var lift := smoothstep(flat, flat + rise, r)
-            var far := clampf((r - flat) / maxf(half - flat, 0.001), 0.0, 1.0)
-            heights[j * (cells + 1) + i] = base_y + lift * (
-                height * (noise.get_noise_2d(x, z) * 0.5 + 0.5) + bowl * far * far)
+            heights[j * (cells + 1) + i] = land_height(-half + step * i, -half + step * j, size, noise, height,
+                                                       flat, rise, bowl, base_y, fade)
 
     var st := SurfaceTool.new()
     st.begin(Mesh.PRIMITIVE_TRIANGLES)

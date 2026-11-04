@@ -12,6 +12,7 @@ var _next_streak := 4.0
 var _streak_from := Vector3.ZERO
 var _streak_to := Vector3.ZERO
 var _streak_age := 9.0
+var _land: LandKit
 
 func _build() -> void:
     var env := environment(Color(0.12, 0.15, 0.24), 0.6)
@@ -30,32 +31,23 @@ func _build() -> void:
     probe()
 
 func _dunes() -> void:
-    var noise := FastNoiseLite.new()
-    noise.seed = 31
-    noise.frequency = 0.016
-    noise.fractal_octaves = 3
-    var sand := MaterialKitClass.surface("sand", 4.0, Color(0.62, 0.58, 0.56), 0.95)
-    add(MeshKitClass.terrain(640.0, 190, noise, 26.0, 12.0, 26.0, 30.0, -0.16), sand)
+    # sand, rippled by the wind, with the bedrock showing where a dune's face is steep
+    var sand := LandKit.blend("sand", 4.0, Color(0.62, 0.58, 0.56), "rock", 2.4, Color(0.5, 0.44, 0.4),
+        {"slope_from": 0.3, "slope_to": 0.62, "breakup": 0.45, "ripples": 1.0, "ripple_dir": Vector2(1.0, 0.35),
+         "ripple_width": 0.4, "far_blend": 50.0})
+    _land = LandKit.lay(self, sand, 31, 0.016, 3, 640.0, 190, 26.0, 12.0, 26.0, 30.0, -0.16)
 
-    # the boulders, quiver trees and dry scrub of a desert's edge (scanned, assets/models)
+    # the boulders, quiver trees and dry scrub of a desert's edge (scanned, assets/models), each on the
+    # ground at its height, and dry grass between them
     var rng := RandomNumberGenerator.new()
     rng.seed = 14
-    var boulders := ["namaqualand_boulder_02", "namaqualand_boulder_03", "namaqualand_boulder_05", "namaqualand_boulder_06"]
-    for i in 16:
-        var angle := rng.randf() * TAU
-        var distance := rng.randf_range(12.0, 44.0)
-        prop(boulders[i % boulders.size()], Vector3(cos(angle) * distance, -0.16 + rng.randf_range(-0.15, 0.05), sin(angle) * distance),
-             rng.randf() * 360.0, rng.randf_range(0.8, 1.7))
-    for i in 7:
-        var angle := rng.randf() * TAU
-        var distance := rng.randf_range(13.0, 36.0)
-        prop(["quiver_tree_01", "quiver_tree_02", "didelta_spinosa"][i % 3], Vector3(cos(angle) * distance, -0.16, sin(angle) * distance),
-             rng.randf() * 360.0, rng.randf_range(0.9, 1.4))
-    for i in 20:
-        var angle := rng.randf() * TAU
-        var distance := rng.randf_range(10.5, 40.0)
-        prop("dry_branches_medium_01" if i % 2 else "shrub_04", Vector3(cos(angle) * distance, -0.16, sin(angle) * distance),
-             rng.randf() * 360.0, rng.randf_range(1.0, 2.2))
+    _land.scatter(self, ["namaqualand_boulder_02", "namaqualand_boulder_03", "namaqualand_boulder_05", "namaqualand_boulder_06"],
+                  16, 12.0, 44.0, rng, 0.8, 1.7, -0.1, true)
+    _land.scatter(self, ["quiver_tree_01", "quiver_tree_02", "didelta_spinosa"], 7, 13.0, 36.0, rng, 0.9, 1.4, -0.02)
+    _land.scatter(self, ["shrub_04", "dry_branches_medium_01"], 20, 10.5, 40.0, rng, 1.0, 2.2, -0.03, true)
+    var dry := LandKit.sway_material("dry", Color(1.0, 0.92, 0.75), 0.05, 0.7)
+    for kind in 2:
+        _land.cover(self, LandKit.tuft("dry", 61 + kind), dry, int(160 * detail), 10.5, 42.0, rng, 0.8, 1.8, 0.03)
 
 func _platform() -> void:
     var slab := MaterialKitClass.surface("concrete", 3.0, Color(0.6, 0.55, 0.5), 0.9)
