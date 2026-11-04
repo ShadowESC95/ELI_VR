@@ -19,6 +19,7 @@ func _build() -> void:
     _deck_of_boards()
     _trunks()
     _undergrowth()
+    _real_undergrowth()
     _light_in_the_mist()
     if motes:
         drift(Vector3(0, 2.4, 0), Vector3(12, 2.4, 12), 260, Color(1.0, 0.96, 0.8), 0.03, Vector3(0.4, 0.15, 0.2), 0.12, 0.8)
@@ -43,13 +44,14 @@ func _deck_of_boards() -> void:
         rail.rings = 96
         rail.ring_segments = 6
         add(rail, timber, Vector3(0, height, 0))
-    # lanterns hung low
+    # lanterns on every fourth post (real ones, assets/models), lit
     var warm := Color(1.0, 0.8, 0.5)
     for i in 6:
-        var angle := TAU * float(i) / 6.0 + 0.3
-        var at := Vector3(cos(angle) * 9.2, 1.35, sin(angle) * 9.2)
-        glow(at, warm, 0.9, 1.0, 0.7)
-        lamp(at, warm, 0.5, 5.0)
+        var angle := TAU * float(i) / 6.0
+        var at := Vector3(cos(angle) * 9.2, 1.03, sin(angle) * 9.2)
+        prop("wooden_lantern_01", at, rad_to_deg(-angle))
+        glow(at + Vector3(0, 0.3, 0), warm, 0.9, 1.0, 0.7)
+        lamp(at + Vector3(0, 0.3, 0), warm, 0.5, 5.0)
 
 func _trunks() -> void:
     var bark := MaterialKitClass.surface("bark", 1.4, Color(0.62, 0.5, 0.44), 1.0)
@@ -104,6 +106,33 @@ func _undergrowth() -> void:
         var boulder := add(MeshKitClass.rock(300 + i, rng.randf_range(0.4, 1.5), 0.3, 10), mossy,
             Vector3(cos(angle) * distance, rng.randf_range(-0.25, 0.2), sin(angle) * distance))
         boulder.rotation.y = rng.randf() * TAU
+
+# Real ferns, stumps, fallen logs and mossy rocks near the deck, and young pines among the trunks
+# (scanned, assets/models).
+func _real_undergrowth() -> void:
+    var rng := RandomNumberGenerator.new()
+    rng.seed = 23
+    for i in 14:
+        var angle := rng.randf() * TAU
+        var distance := rng.randf_range(9.9, 14.0)
+        prop("fern_02", Vector3(cos(angle) * distance, -0.16, sin(angle) * distance), rng.randf() * 360.0, rng.randf_range(0.7, 1.2))
+    for i in 4:
+        var angle := rng.randf() * TAU
+        var distance := rng.randf_range(10.5, 18.0)
+        prop("tree_stump_01" if i % 2 else "tree_stump_02", Vector3(cos(angle) * distance, -0.12, sin(angle) * distance), rng.randf() * 360.0)
+    for i in 3:
+        var angle := rng.randf() * TAU
+        var distance := rng.randf_range(11.0, 20.0)
+        prop("rock_moss_set_02", Vector3(cos(angle) * distance, -0.2, sin(angle) * distance), rng.randf() * 360.0, rng.randf_range(0.6, 1.0))
+    for i in 2:
+        var angle := rng.randf() * TAU
+        var distance := rng.randf_range(11.0, 16.0)
+        prop("dead_tree_trunk", Vector3(cos(angle) * distance, -0.1, sin(angle) * distance), rng.randf() * 360.0, 1.3)
+    for i in 10:
+        var angle := rng.randf() * TAU
+        var distance := rng.randf_range(10.0, 22.0)
+        prop("pine_sapling_small" if i % 2 else "fir_sapling", Vector3(cos(angle) * distance, -0.2, sin(angle) * distance),
+             rng.randf() * 360.0, rng.randf_range(1.0, 1.8))
 
 func _light_in_the_mist() -> void:
     var beam := QuadMesh.new()

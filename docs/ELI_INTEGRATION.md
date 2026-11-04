@@ -217,6 +217,7 @@ ELI Legal runs inside ELI v3 and calls the model directly. ELI VR is a Godot app
 1. uses its local server if it is already running, or starts one on `127.0.0.1` for as long as ELI VR is open;
 2. tells ELI VR the port (`ELI_API_PORT`);
 3. starts ELI VR with the link on, and waits for it to close.
+4. loads its chat model only once ELI VR is in the room (ELI v3 3.0.151 on), so the plan for the load sees what the headset's runtime and ELI VR hold on the card. While you are there it measures what they hold and keeps the most seen free on that card at the next load; before that was so, the model took the card first and ELI's first reply failed inside CUDA.
 
 On Linux ELI VR is started through its launcher, so the desktop helper comes up with it and the VR runtime it started is stopped again on exit. Options you keep in `~/.config/eli-vr/launch.conf` still apply.
 

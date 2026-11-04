@@ -144,3 +144,40 @@ Each set is the 2K version, repacked as colour, normal (OpenGL convention) and o
 | `wooden_barrels_01` | Wooden Barrels 01 | James Ray Cock |
 | `wooden_crate_01` | Wooden Crate 01 | James Ray Cock |
 | `wooden_lantern_01` | Wooden Lantern 01 | James Ray Cock |
+| `Lantern_01` | Lantern 01 | Rajil Jose Macatangay |
+| `WetFloorSign_01` | Wet Floor Sign 01 | Fran Calvente |
+| `cassette_player` | Cassette Player | Oday Abuzaeed |
+| `coffee_table_round_01` | Coffee Table Round 01 | Ulan Cabanilla |
+| `dartboard` | Dartboard | Satyaki Mandal |
+| `fire_alarm` | Fire Alarm | Slinc |
+| `folding_wooden_stool` | Folding Wooden Stool | Ulan Cabanilla |
+| `garden_hose_wall_mounted_01` | Garden Hose Wall Mounted 01 | Kuutti Siitonen |
+| `industrial_caged_sconce` | Industrial Caged Sconce | Ulan Cabanilla |
+| `industrial_pastic_container` | Industrial Plastic Container | Galo Benivegna |
+| `industrial_pipe_lamp` | Industrial Pipe Lamp | Mateusz Sadek |
+| `lifebuoy` | Lifebuoy | Hank Kaamura |
+| `metal_stool_01` | Metal Stool 01 | Ulan Cabanilla |
+| `modern_arm_chair_01` | Modern Arm Chair 01 | Vibrant Nordic |
+| `modern_ceiling_lamp_01` | Modern Ceiling Lamp 01 | James Ray Cock |
+| `modular_airduct_circular_01` | Modular Airduct Circular 01 | Riley Queen |
+| `modular_pipes` | Modular Pipes | Kuutti Siitonen |
+| `planter_box_01` | Planter Box 01 | James Ray Cock |
+| `plastic_monobloc_chair_01` | Plastic Monobloc Chair 01 | Kuutti Siitonen |
+| `portable_generator` | Portable Generator | James Ray Cock |
+| `portable_searchlight` | Portable Searchlight | Elijah Cragg |
+| `potted_plant_01` | Potted Plant 01 | Rico Cilliers |
+| `potted_plant_02` | Potted Plant 02 | Rico Cilliers |
+| `security_camera_01` | Security Camera 01 | Alexander Otterbeck, Yann Kervran |
+| `security_camera_02` | Security Camera 02 | Garrison Gager, Yann Kervran |
+| `security_light` | Security Light | Maximilian Schuster |
+| `signal_flashlight` | Signal Flashlight | Jiří Ptáček |
+| `street_lamp_02` | Street Lamp 02 | Josh Dean |
+| `tree_stump_02` | Tree Stump 02 | Rob Tuytel |
+| `utility_box_01` | Utility Box 01 | James Ray Cock |
+| `utility_box_02` | Utility Box 02 | James Ray Cock |
+| `vintage_binocular` | Vintage Binoculars | Luke |
+| `vintage_microscope` | Vintage Microscope | Luis José Fernández Rodríguez |
+| `vintage_radio_transceiver` | Vintage Radio Transceiver | Mateusz Sadek |
+| `vintage_spacecraft_instrument` | Vintage Spacecraft Instrument | Michał Wiśniewski |
+| `wall_clock` | Wall Clock | PierreB3D |
+| `wooden_picnic_table` | Wooden Picnic Table | Ulan Cabanilla |

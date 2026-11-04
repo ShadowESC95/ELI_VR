@@ -29,6 +29,7 @@ func _build() -> void:
     _outer_ring()
     _radio_table()
     _coming_up_board()
+    _furnish()
     if motes:
         drift(Vector3(0, 3.4, 0), Vector3(8.0, 3.2, 8.0), 240, Color(1, 1, 1).lerp(accent, 0.35))
     probe()
@@ -345,6 +346,59 @@ func _coming_up_board() -> void:
     _coming.rotation.y = atan2(-at.x, -at.z)
     add_child(_coming)
     _coming.show_idle("ELI is not connected")
+
+# Somewhere to sit and watch Earth go by, and the deck's own gear (real things, assets/models): a
+# seating group behind you under a lamp hung from its rib, a bench at the rail facing the planet with
+# binoculars on the rail beside it, crates and a tool chest by the rail, planters, a camera on a rib.
+# The way ahead stays clear for the panels and the screen.
+const SEATS_BEARING := 157.5        # on a rib, so the lamp's cable has something to hang from
+const BENCH_BEARING := -34.0
+
+func _furnish() -> void:
+    var warm := Color(1.0, 0.9, 0.75)
+    var a := deg_to_rad(SEATS_BEARING)
+    var seats := Node3D.new()
+    seats.position = Vector3(sin(a), 0.0, -cos(a)) * 5.4
+    seats.rotation.y = -a                       # local +z looks to the middle of the deck
+    add_child(seats)
+    prop("coffee_table_round_01", Vector3.ZERO, 0.0, 1.0, seats)
+    prop("vintage_spacecraft_instrument", Vector3(0.34, 0.49 + 0.13, -0.2), -30.0, 1.0, seats)
+    prop("potted_plant_02", Vector3(-0.3, 0.49 + 0.1, 0.2), 0.0, 1.0, seats)
+    prop("Lantern_01", Vector3(0.05, 0.49, 0.42), 15.0, 1.0, seats)
+    glow(Vector3(0.05, 0.68, 0.42), warm, 0.3, 1.2, 0.8, seats)
+    prop("modern_arm_chair_01", Vector3(-1.5, 0.0, 0.25), 70.0, 1.0, seats)      # its front turned to the table
+    prop("modern_arm_chair_01", Vector3(1.5, 0.0, 0.25), -70.0, 1.0, seats)
+    prop("potted_plant_01", Vector3(-2.4, 0.0, -1.1), 0.0, 1.0, seats)
+    prop("potted_plant_01", Vector3(2.3, 0.0, -1.3), 120.0, 1.0, seats)
+    # the lamp over the table, hung from the rib on its cable (the rib is 6.8 m up at this radius)
+    var cable := MaterialKitClass.metal("brushed_metal", 0.4, Color(0.3, 0.3, 0.32), 0.8)
+    var top := Vector3(0.0, 3.3, 0.0)
+    prop("modern_ceiling_lamp_01", top - Vector3(0, 1.17, 0), 0.0, 1.0, seats)
+    rod(0.008, 3.5, cable, top + Vector3(0, 1.75, 0), seats)
+    lamp(top - Vector3(0, 0.85, 0), warm, 1.1, 6.0, seats)
+
+    # a bench at the rail facing the planet, binoculars on a plate on the rail beside it
+    var b := deg_to_rad(BENCH_BEARING)
+    prop("painted_wooden_bench", Vector3(sin(b), 0.0, -cos(b)) * 8.3, 180.0 - BENCH_BEARING)
+    var c := deg_to_rad(BENCH_BEARING + 9.0)
+    var on_rail := Vector3(sin(c), 0.0, -cos(c)) * 9.3
+    var steel := MaterialKitClass.metal("brushed_metal", 0.6, Color(0.75, 0.78, 0.82))
+    box(Vector3(0.3, 0.02, 0.24), steel, on_rail + Vector3(0, 1.06, 0)).rotation.y = -c
+    prop("vintage_binocular", on_rail + Vector3(0, 1.07 + 0.05, 0), 180.0 - (BENCH_BEARING + 9.0))
+
+    # crates and a tool chest by the rail on the right, planters either side at the back
+    for spec in [["metal_tool_chest", 100.0, 8.3, 0.0], ["plastic_crate_01", 106.0, 8.4, 20.0],
+                 ["industrial_storage_cart", 91.0, 8.0, 90.0], ["planter_box_01", 132.0, 8.6, 0.0],
+                 ["planter_box_01", -132.0, 8.6, 0.0]]:
+        var d := deg_to_rad(float(spec[1]))
+        var at := Vector3(sin(d), 0.0, -cos(d)) * float(spec[2])
+        prop(str(spec[0]), at, rad_to_deg(atan2(-at.x, -at.z)) + float(spec[3]))
+    var e := deg_to_rad(106.0)
+    prop("plastic_crate_02", Vector3(sin(e), 0.0, -cos(e)) * 8.4 + Vector3(0, 0.26, 0), rad_to_deg(atan2(-sin(e), cos(e))) - 12.0)
+    # a camera on a rib, looking over the deck
+    var f := PI / 8.0 + TAU * 2.0 / 8.0
+    var on_rib := Vector3(cos(f), 0.0, sin(f)) * 9.0 + Vector3(0, 2.6, 0)
+    prop("security_camera_01", on_rib, rad_to_deg(atan2(-on_rib.x, -on_rib.z)))
 
 func pin_spot(kind: String, index: int) -> Variant:
     if kind != "playing" or index != 0:

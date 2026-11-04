@@ -22,6 +22,7 @@ func _build() -> void:
     _kelp()
     _fish()
     _dome()
+    _bench()
     if motes:
         # bubbles going up, and the fine stuff that hangs in the water
         drift(Vector3(0, 6.0, 0), Vector3(20, 7, 20), 420, Color(0.8, 1.0, 1.0), 0.06, Vector3(0.05, 1, 0.02), 0.7, 0.9)
@@ -135,6 +136,29 @@ func _fish() -> void:
 func _animate(_delta: float) -> void:
     for entry in _shoals:
         (entry[0] as Node3D).position.y = float(entry[1]) + sin(_clock * 0.3 + float(entry[2])) * 1.4
+
+# The lab's bench, where what was brought up is looked at, and its shelves (real things, assets/models).
+func _bench() -> void:
+    var a := deg_to_rad(180.0)
+    var bench := Node3D.new()
+    bench.position = Vector3(sin(a), 0.0, -cos(a)) * 7.4
+    bench.rotation.y = -a
+    add_child(bench)
+    prop("metal_office_desk", Vector3.ZERO, 0.0, 1.0, bench)
+    var top := 0.79
+    prop("vintage_microscope", Vector3(-0.5, top, 0.0), 20.0, 1.0, bench)
+    prop("industrial_microscope", Vector3(0.1, top, -0.1), -15.0, 1.0, bench)
+    prop("classic_laptop", Vector3(0.6, top, 0.0), 10.0, 1.0, bench)
+    prop("metal_stool_01", Vector3(-0.2, 0.0, 0.8), 0.0, 1.0, bench)
+    lamp(Vector3(0, top + 0.6, 0), Color(0.9, 1.0, 1.0), 0.8, 3.5, bench)
+    for degrees in [150.0, 210.0]:
+        var b := deg_to_rad(degrees)
+        var at := Vector3(sin(b), 0.0, -cos(b)) * 7.9
+        var facing := rad_to_deg(atan2(-at.x, -at.z))
+        prop("steel_frame_shelves_02", at, facing)
+        prop("industrial_pastic_container", at * 0.985 + Vector3(0, 0.55, 0), facing + 10.0)
+        prop("plastic_crate_02", at * 0.985 + Vector3(0, 1.1, 0), facing - 12.0)
+    prop("WetFloorSign_01", Vector3(2.4, 0.0, 6.2), -30.0)
 
 func _dome() -> void:
     var tiles := MaterialKitClass.surface("lab_tiles", 1.6, Color(0.42, 0.52, 0.56), 0.6)

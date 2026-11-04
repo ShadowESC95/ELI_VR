@@ -16,6 +16,7 @@ func _build() -> void:
     _clouds()
     _rocks()
     _platform()
+    _gear()
     if motes:
         drift(Vector3(0, 3.0, 0), Vector3(9, 3, 9), 160, Color(1, 1, 1).lerp(accent, 0.3))
     probe()
@@ -95,6 +96,37 @@ func _rocks() -> void:
         var near := add(MeshKitClass.rock(20 + i, rng.randf_range(0.7, 2.2), 0.4, 12), stone,
             Vector3(cos(angle) * rng.randf_range(13.0, 20.0), rng.randf_range(0.5, 7.0), sin(angle) * rng.randf_range(13.0, 20.0)))
         spin(near, Vector3(rng.randf(), rng.randf(), rng.randf()), rng.randf_range(0.03, 0.12))
+
+# What a platform out here is worked from (real things, assets/models): an instrument desk facing
+# the giant with a lantern on it, the stores behind you, a bench to sit and watch from, and a
+# searchlight on its plinth at the edge.
+func _gear() -> void:
+    var warm := Color(1.0, 0.85, 0.6)
+    var a := deg_to_rad(-50.0)
+    var desk := Node3D.new()
+    desk.position = Vector3(sin(a), 0.0, -cos(a)) * 6.6
+    desk.rotation.y = -a                        # its front to the middle: the giant is over its far edge
+    add_child(desk)
+    prop("metal_office_desk", Vector3.ZERO, 0.0, 1.0, desk)
+    var top := 0.79
+    prop("classic_laptop", Vector3(-0.35, top, -0.05), 15.0, 1.0, desk)
+    prop("vintage_spacecraft_instrument", Vector3(0.45, top + 0.13, -0.15), -10.0, 1.0, desk)
+    prop("Lantern_01", Vector3(0.85, top, 0.1), 0.0, 1.0, desk)
+    prop("metal_stool_01", Vector3(0.0, 0.0, 0.75), 0.0, 1.0, desk)
+    glow(Vector3(0.85, top + 0.2, 0.1), warm, 0.35, 1.2, 0.8, desk)
+    lamp(Vector3(0.85, top + 0.3, 0.1), warm, 0.6, 3.5, desk)
+    for spec in [["drawer_cabinet", 150.0, 7.6], ["industrial_storage_cart", 172.0, 7.2],
+                 ["plastic_crate_02", 190.0, 7.8], ["wooden_crate_01", 197.0, 7.3]]:
+        var b := deg_to_rad(float(spec[1]))
+        var at := Vector3(sin(b), 0.0, -cos(b)) * float(spec[2])
+        prop(str(spec[0]), at, rad_to_deg(atan2(-at.x, -at.z)))
+    var c := deg_to_rad(-22.0)
+    prop("painted_wooden_bench", Vector3(sin(c), 0.0, -cos(c)) * 6.4, 180.0 + 22.0)
+    var steel := MaterialKitClass.metal("brushed_metal", 0.6, Color(0.7, 0.72, 0.78), 0.7)
+    var d := deg_to_rad(120.0)
+    var edge := Vector3(sin(d), 0.0, -cos(d)) * 8.5
+    box(Vector3(0.3, 1.0, 0.3), steel, edge + Vector3(0, 0.5, 0))
+    prop("portable_searchlight", edge + Vector3(0, 1.0 + 0.08, 0), rad_to_deg(atan2(-edge.x, -edge.z)) + 180.0)
 
 func _platform() -> void:
     var plating := MaterialKitClass.metal("deck_plating", 2.2, Color(0.46, 0.50, 0.58), 0.5)

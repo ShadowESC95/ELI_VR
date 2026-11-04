@@ -135,6 +135,27 @@ func _stores() -> void:
     for at in [Vector3(-7.0, 1.05, -5.2), Vector3(7.4, 1.05, 4.9), Vector3(0.6, 1.05, 8.6)]:
         prop("wooden_lantern_01", at, 0.0, 1.0)
         glow(at + Vector3(0, 0.3, 0), Color(1.0, 0.8, 0.5), 0.5, 1.2, 0.7)
+    # on the beacon's mast a lifebuoy and a light; a hose on its post; containers by the barrels;
+    # somewhere to sit; lamps at the rail for the dark
+    var foot := Vector3(-6.4, 0.0, 5.4)
+    var inward := -foot.normalized()
+    var facing := rad_to_deg(atan2(inward.x, inward.z))
+    prop("lifebuoy", foot + inward * 0.22 + Vector3(0, 1.3, 0), facing)
+    prop("security_light", foot + inward * 0.2 + Vector3(0, 5.6, 0), facing)
+    var steel := MaterialKitClass.metal("brushed_metal", 0.6, Color(0.6, 0.62, 0.66), 0.7)
+    rod(0.03, 1.1, steel, Vector3(7.6, 0.55, 4.2))
+    prop("garden_hose_wall_mounted_01", Vector3(7.5, 0.95, 4.1), rad_to_deg(atan2(-7.6, -4.2)))
+    prop("industrial_pastic_container", Vector3(4.3, 0.0, -6.2), 25.0)
+    prop("industrial_pastic_container", Vector3(4.4, 0.45, -6.25), 10.0)
+    prop("folding_wooden_stool", Vector3(-6.0, 0.0, 2.6), 40.0)
+    prop("metal_stool_01", Vector3(6.9, 0.0, 5.3), 0.0)
+    var cool := Color(0.9, 0.95, 1.0)
+    for degrees in [-58.0, 58.0]:
+        var a := deg_to_rad(degrees)
+        var at := Vector3(sin(a), 0.0, -cos(a)) * 8.6
+        prop("street_lamp_02", at + Vector3(0, 0.39, 0), rad_to_deg(atan2(-at.x, -at.z)))
+        glow(at + Vector3(0, 1.9, 0), cool, 0.7, 1.0, 0.7)
+        lamp(at + Vector3(0, 1.85, 0), cool, 0.8, 6.0)
 
 # Rocks breaking the water near the legs, part under, part over the swell.
 func _shoals() -> void:

@@ -98,7 +98,10 @@ func _process(delta: float) -> void:
                     "protocol_versions": PROTOCOL_VERSIONS, "capabilities": WANTS,
                 }))
             while _socket.get_available_packet_count() > 0:
-                var msg = JSON.parse_string(_socket.get_packet().get_string_from_utf8())
+                var text := _socket.get_packet().get_string_from_utf8()
+                if text.is_empty():
+                    continue                # not a message: nothing to parse
+                var msg = JSON.parse_string(text)
                 if typeof(msg) == TYPE_DICTIONARY:
                     _take(msg)
             if protocol == 0 and _welcome_wait > 0.0:
@@ -305,7 +308,8 @@ func _answer(r: EliResult) -> EliResult:
     return EliResult.good(data) if typeof(data) == TYPE_DICTIONARY else EliResult.bad("bad_reply", "", r.status)
 
 func _json(body) -> Variant:
-    return JSON.parse_string((body as PackedByteArray).get_string_from_utf8())
+    var text := (body as PackedByteArray).get_string_from_utf8()
+    return JSON.parse_string(text) if not text.is_empty() else null
 
 func _post(path: String, body: PackedByteArray, content_type: String, timeout: float) -> EliResult:
     return await _request(HTTPClient.METHOD_POST, path, body, content_type, timeout)
@@ -342,7 +346,7 @@ func _request(method: int, path: String, body: PackedByteArray, content_type: St
 func _failure(code: int, body: PackedByteArray) -> EliResult:
     var kind := ""
     var words := ""
-    var data = JSON.parse_string(body.get_string_from_utf8())
+    var data = _json(body)
     if typeof(data) == TYPE_DICTIONARY:
         var said = data.get("detail", "")
         if typeof(said) == TYPE_DICTIONARY:

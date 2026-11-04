@@ -15,7 +15,7 @@ var _terminals: Array = []
 # what it took on and finished.
 const STRANDS := [
     ["Troubles", ["error_detected", "runtime_fault", "evidence_weak", "memory_uncertainty"]],
-    ["Reasoning", ["reasoning_stage", "reflection"]],
+    ["Reasoning", ["reasoning_stage", "reflection", "answer_assessed"]],
     ["Recall", ["memory_recall", "evidence_weak"]],
     ["Work", ["task_opened", "task_completed", "repair_completed", "review_completed", "improvement_proposal"]],
 ]
@@ -38,6 +38,8 @@ func _build() -> void:
     _roof(wall)
     _wiring()
     _log_board()
+    _stores()
+    _services()
     if motes:
         drift(Vector3(0, 2.4, 0), Vector3(12, 2.4, 12), 200, Color(0.8, 0.9, 0.8), 0.025)
     probe(Vector3(30, 5.2, 30), Vector3(0, 2.6, 0), true)
@@ -148,6 +150,66 @@ func _wiring() -> void:
         var at := Vector3(cos(angle) * 3.6, 4.7, sin(angle) * 3.6)
         prop("caged_hanging_light", at - Vector3(0, 0.75, 0), rad_to_deg(angle))
         lamp(at - Vector3(0, 0.9, 0), cold, 1.4, 8.0)
+
+# The basement's stores: shelves of spare parts behind you, and under the log board the bench where
+# a fault is run to ground by hand (real things, assets/models).
+func _stores() -> void:
+    for degrees in [158.0, 202.0]:
+        var a := deg_to_rad(degrees)
+        var at := Vector3(sin(a), 0.0, -cos(a)) * 13.9
+        var facing := rad_to_deg(atan2(-at.x, -at.z))
+        prop("steel_frame_shelves_02", at, facing)
+        var up := at * 0.985
+        prop("circuit_board", up + Vector3(0, 0.55, 0), facing + 20.0)
+        prop("power_box_01", up + Vector3(0, 1.1, 0), facing)
+        prop("plastic_crate_01", up + Vector3(0, 1.62, 0), facing - 15.0)
+        prop("retro_multimeter", up + Vector3(0, 0.05, 0), facing + 40.0)
+    var bench := Node3D.new()
+    bench.position = Vector3(0, 0, -12.4)
+    add_child(bench)
+    prop("metal_office_desk", Vector3.ZERO, 0.0, 1.0, bench)
+    var top := 0.79
+    prop("vintage_microscope", Vector3(-0.55, top, 0.0), 10.0, 1.0, bench)
+    prop("vintage_radio_transceiver", Vector3(0.45, top + 0.11, -0.12), -8.0, 1.0, bench)
+    prop("industrial_pipe_lamp", Vector3(-0.05, top + 0.03, -0.3), 180.0, 1.0, bench)
+    prop("signal_flashlight", Vector3(0.1, top + 0.05, 0.25), 70.0, 1.0, bench)
+    prop("metal_stool_01", Vector3(0.2, 0.0, 0.8), 0.0, 1.0, bench)
+    lamp(Vector3(-0.05, top + 0.45, -0.3), Color(1.0, 0.85, 0.6), 0.8, 3.0, bench)
+
+# Pipes along the walls and a duct under the roof, boxes and alarms on the pillars, caged lamps,
+# a generator in a corner, the crew's dartboard, and a sign for the floor that is never dry.
+func _services() -> void:
+    for degrees in [90.0, 270.0]:
+        var a := deg_to_rad(degrees)
+        var on_wall := Vector3(sin(a), 0.0, -cos(a)) * 14.7
+        prop("modular_pipes", on_wall + Vector3(0, 2.0, 0), rad_to_deg(atan2(-on_wall.x, -on_wall.z)))
+    for spec in [["utility_box_01", 80.0], ["utility_box_02", 262.0]]:
+        var a := deg_to_rad(float(spec[1]))
+        var on_wall := Vector3(sin(a), 0.0, -cos(a)) * 14.6
+        prop(str(spec[0]), on_wall, rad_to_deg(atan2(-on_wall.x, -on_wall.z)))
+    for x in [-3.0, -1.5, 0.0]:
+        prop("modular_airduct_circular_01", Vector3(x, 4.35, 1.0), 90.0)
+    var cold := Color(0.85, 1.0, 0.92)
+    for k in 8:
+        var angle := TAU * float(k) / 8.0 + PI / 8.0
+        var face := Vector3(cos(angle), 0.0, sin(angle)) * 6.44
+        var facing := rad_to_deg(atan2(-face.x, -face.z))
+        match k % 4:
+            0:
+                prop("industrial_caged_sconce", face + Vector3(0, 3.2, 0), facing)
+                lamp(face * 0.95 + Vector3(0, 3.1, 0), cold, 1.0, 6.0)
+            1:
+                prop("fire_alarm", face + Vector3(0, 1.5, 0), facing)
+            2:
+                prop("industrial_caged_sconce", face + Vector3(0, 3.2, 0), facing)
+                lamp(face * 0.95 + Vector3(0, 3.1, 0), cold, 1.0, 6.0)
+            3:
+                prop("dartboard", face + Vector3(0, 1.73, 0), facing)
+    var g := deg_to_rad(250.0)
+    var corner := Vector3(sin(g), 0.0, -cos(g)) * 11.8
+    prop("portable_generator", corner, rad_to_deg(atan2(-corner.x, -corner.z)) + 30.0)
+    prop("WetFloorSign_01", Vector3(cos(PI / 8.0 + TAU * 2.0 / 8.0), 0.0, sin(PI / 8.0 + TAU * 2.0 / 8.0)) * 5.6, -40.0)
+    prop("security_camera_02", Vector3(0.0, 4.3, -14.3), 0.0)
 
 # ELI's whole log, on the wall ahead where nothing else stands.
 func _log_board() -> void:

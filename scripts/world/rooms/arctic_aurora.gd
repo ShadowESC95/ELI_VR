@@ -20,6 +20,7 @@ func _build() -> void:
     _timber()
     _platform()
     _hut()
+    _camp()
     if motes:
         drift(Vector3(0, 5.0, 0), Vector3(16, 6, 16), 700, Color(0.92, 0.96, 1.0), 0.04, Vector3(0.12, -1.0, 0.06), 0.55, 0.9)
     probe()
@@ -130,3 +131,34 @@ func _hut() -> void:
     mast.height = 6.0
     add(mast, timber, Vector3(2.0, 5.4, -1.0), hut)
     blink(glow(hut.position + Vector3(2.0, 8.5, -1.0).rotated(Vector3.UP, hut.rotation.y), Color(1.0, 0.2, 0.15), 1.0, 2.0, 0.9), 2.2)
+    # by the door a lantern; the woodpile along the side; stores and the generator that keeps the
+    # light on round the back (real things, assets/models)
+    prop("Lantern_01", Vector3(-1.9, 0.0, 2.0), 0.0, 1.0, hut)
+    glow(Vector3(-1.9, 0.25, 2.0), warm, 0.5, 1.2, 0.8, hut)
+    lamp(Vector3(-1.9, 0.4, 2.2), warm, 0.6, 4.0, hut)
+    for i in 4:
+        prop("dead_tree_trunk", Vector3(-3.3, 0.14 + 0.27 * float(i / 2), 0.4 + 0.3 * float(i % 2)), 90.0, 0.55, hut)
+    prop("wooden_crate_01", Vector3(3.2, 0.0, 0.9), 15.0, 1.0, hut)
+    prop("wooden_barrels_01", Vector3(3.6, 0.0, -0.9), 0.0, 0.55, hut)
+    prop("portable_generator", Vector3(0.6, 0.0, -2.6), 180.0, 1.0, hut)
+
+# A fire by the platform with benches round it, and a path of lamps out to the hut.
+func _camp() -> void:
+    var fire := Vector3(6.5, -0.1, 7.5)
+    var flame := Color(1.0, 0.55, 0.2)
+    prop("stone_fire_pit", fire, 0.0)
+    glow(fire + Vector3(0, 0.45, 0), flame, 1.6, 1.4, 0.6)
+    lamp(fire + Vector3(0, 0.8, 0), flame, 2.2, 9.0)
+    if motes:
+        drift(fire + Vector3(0, 1.2, 0), Vector3(0.3, 0.8, 0.3), 60, flame, 0.03, Vector3(0.05, 1.0, 0.0), 0.9, 1.2)
+    for degrees in [200.0, 320.0]:
+        var a := deg_to_rad(degrees)
+        var seat := fire + Vector3(sin(a), 0.0, -cos(a)) * 1.9
+        prop("painted_wooden_bench", seat, rad_to_deg(atan2(fire.x - seat.x, fire.z - seat.z)))
+    var warm := Color(1.0, 0.8, 0.5)
+    for i in 3:
+        var t := float(i + 1) / 4.0
+        var on_path := Vector3(9.4, -0.1, 0.0).lerp(Vector3(11.5, 0.3, -17.0), t) + Vector3(1.2, 0.0, 0.0)
+        prop("street_lamp_02", on_path + Vector3(0, 0.39, 0), 0.0)
+        glow(on_path + Vector3(0, 1.9, 0), warm, 0.8, 1.0, 0.7)
+        lamp(on_path + Vector3(0, 1.85, 0), warm, 0.9, 6.0)

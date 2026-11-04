@@ -1,0 +1,341 @@
+{
+  "asset": {
+    "generator": "Khronos glTF Blender I/O v3.6.28",
+    "version": "2.0"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0,
+        1
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "mesh": 0,
+      "name": "security_camera_02_mount"
+    },
+    {
+      "mesh": 1,
+      "name": "security_camera_02",
+      "translation": [
+        0.00003203190863132477,
+        0.028008505702018738,
+        0.15240097045898438
+      ]
+    }
+  ],
+  "materials": [
+    {
+      "doubleSided": true,
+      "name": "security_camera_02",
+      "normalTexture": {
+        "index": 0
+      },
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 1
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      }
+    },
+    {
+      "alphaMode": "BLEND",
+      "doubleSided": true,
+      "name": "security_camera_02_glass",
+      "normalTexture": {
+        "index": 3
+      },
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 4
+        },
+        "metallicRoughnessTexture": {
+          "index": 5
+        }
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Cylinder.007",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1,
+            "TEXCOORD_0": 2
+          },
+          "indices": 3,
+          "material": 0
+        }
+      ]
+    },
+    {
+      "name": "Cylinder.001",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 4,
+            "NORMAL": 5,
+            "TEXCOORD_0": 6
+          },
+          "indices": 7,
+          "material": 0
+        },
+        {
+          "attributes": {
+            "POSITION": 8,
+            "NORMAL": 9,
+            "TEXCOORD_0": 10
+          },
+          "indices": 11,
+          "material": 1
+        }
+      ]
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "source": 0
+    },
+    {
+      "sampler": 0,
+      "source": 1
+    },
+    {
+      "sampler": 0,
+      "source": 2
+    },
+    {
+      "sampler": 0,
+      "source": 0
+    },
+    {
+      "sampler": 0,
+      "source": 3
+    },
+    {
+      "sampler": 0,
+      "source": 2
+    }
+  ],
+  "images": [
+    {
+      "mimeType": "image/jpeg",
+      "name": "security_camera_02_nor_gl",
+      "uri": "textures/security_camera_02_nor_gl_1k.jpg"
+    },
+    {
+      "mimeType": "image/jpeg",
+      "name": "security_camera_02_diff",
+      "uri": "textures/security_camera_02_diff_1k.jpg"
+    },
+    {
+      "mimeType": "image/jpeg",
+      "name": "security_camera_02_metal-security_camera_02_rough",
+      "uri": "textures/security_camera_02_arm_1k.jpg"
+    },
+    {
+      "mimeType": "image/jpeg",
+      "name": "security_camera_02_diff-security_camera_02_opacity",
+      "uri": "textures/security_camera_02_diff_1k.jpg"
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 3929,
+      "max": [
+        0.027151325717568398,
+        0.044679462909698486,
+        0.17100894451141357
+      ],
+      "min": [
+        -0.027151325717568398,
+        -0.04467947781085968,
+        -0.00003489851951599121
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 3929,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 3929,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5123,
+      "count": 13782,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5126,
+      "count": 6447,
+      "max": [
+        0.07030073553323746,
+        0.13590086996555328,
+        0.2413489818572998
+      ],
+      "min": [
+        -0.07036538422107697,
+        -0.014200433157384396,
+        -0.10291828215122223
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 5,
+      "componentType": 5126,
+      "count": 6447,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 6,
+      "componentType": 5126,
+      "count": 6447,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 7,
+      "componentType": 5123,
+      "count": 23637,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 8,
+      "componentType": 5126,
+      "count": 6,
+      "max": [
+        0.04537901282310486,
+        0.11374427378177643,
+        0.17986884713172913
+      ],
+      "min": [
+        -0.04544313997030258,
+        0.057986535131931305,
+        0.1797289252281189
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 9,
+      "componentType": 5126,
+      "count": 6,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 10,
+      "componentType": 5126,
+      "count": 6,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 11,
+      "componentType": 5123,
+      "count": 12,
+      "type": "SCALAR"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteLength": 47148,
+      "byteOffset": 0,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 47148,
+      "byteOffset": 47148,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 31432,
+      "byteOffset": 94296,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 27564,
+      "byteOffset": 125728,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteLength": 77364,
+      "byteOffset": 153292,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 77364,
+      "byteOffset": 230656,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 51576,
+      "byteOffset": 308020,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 47274,
+      "byteOffset": 359596,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteLength": 72,
+      "byteOffset": 406872,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 72,
+      "byteOffset": 406944,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 48,
+      "byteOffset": 407016,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 24,
+      "byteOffset": 407064,
+      "target": 34963
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 407088,
+      "uri": "security_camera_02.bin"
+    }
+  ]
+}

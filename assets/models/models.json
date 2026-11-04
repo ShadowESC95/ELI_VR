@@ -27,6 +27,20 @@
    1.13
   ]
  },
+ "Lantern_01": {
+  "name": "Lantern 01",
+  "authors": [
+   "Rajil Jose Macatangay"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "Lantern_01",
+  "triangles": 33902,
+  "size": [
+   0.12,
+   0.29,
+   0.1
+  ]
+ },
  "Rockingchair_01": {
   "name": "Rockingchair 01",
   "authors": [
@@ -67,6 +81,20 @@
    0.6,
    0.46,
    0.47
+  ]
+ },
+ "WetFloorSign_01": {
+  "name": "Wet Floor Sign 01",
+  "authors": [
+   "Fran Calvente"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "WetFloorSign_01",
+  "triangles": 228,
+  "size": [
+   0.3,
+   0.63,
+   0.36
   ]
  },
  "WoodenChair_01": {
@@ -182,6 +210,20 @@
    0.31
   ]
  },
+ "cassette_player": {
+  "name": "Cassette Player",
+  "authors": [
+   "Oday Abuzaeed"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "cassette_player",
+  "triangles": 4830,
+  "size": [
+   0.13,
+   0.24,
+   0.05
+  ]
+ },
  "ceiling_fan": {
   "name": "Ceiling Fan",
   "authors": [
@@ -250,6 +292,34 @@
    4.04,
    1.33,
    3.75
+  ]
+ },
+ "coffee_table_round_01": {
+  "name": "Coffee Table Round 01",
+  "authors": [
+   "Ulan Cabanilla"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "coffee_table_round_01",
+  "triangles": 4044,
+  "size": [
+   1.3,
+   0.49,
+   1.3
+  ]
+ },
+ "dartboard": {
+  "name": "Dartboard",
+  "authors": [
+   "Satyaki Mandal"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "dartboard",
+  "triangles": 6800,
+  "size": [
+   0.45,
+   0.45,
+   0.04
   ]
  },
  "dead_tree_trunk": {
@@ -396,6 +466,48 @@
    0.83
   ]
  },
+ "fire_alarm": {
+  "name": "Fire Alarm",
+  "authors": [
+   "Slinc"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "fire_alarm",
+  "triangles": 2705,
+  "size": [
+   0.1,
+   0.14,
+   0.03
+  ]
+ },
+ "folding_wooden_stool": {
+  "name": "Folding Wooden Stool",
+  "authors": [
+   "Ulan Cabanilla"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "folding_wooden_stool",
+  "triangles": 6324,
+  "size": [
+   0.53,
+   0.44,
+   0.55
+  ]
+ },
+ "garden_hose_wall_mounted_01": {
+  "name": "Garden Hose Wall Mounted 01",
+  "authors": [
+   "Kuutti Siitonen"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "garden_hose_wall_mounted_01",
+  "triangles": 11684,
+  "size": [
+   0.47,
+   0.56,
+   0.25
+  ]
+ },
  "grass_medium_02": {
   "name": "Grass Medium 02",
   "authors": [
@@ -424,6 +536,20 @@
    0.55
   ]
  },
+ "industrial_caged_sconce": {
+  "name": "Industrial Caged Sconce",
+  "authors": [
+   "Ulan Cabanilla"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "industrial_caged_sconce",
+  "triangles": 26576,
+  "size": [
+   1.21,
+   0.91,
+   0.39
+  ]
+ },
  "industrial_microscope": {
   "name": "Industrial Microscope",
   "authors": [
@@ -436,6 +562,34 @@
    0.21,
    0.46,
    0.5
+  ]
+ },
+ "industrial_pastic_container": {
+  "name": "Industrial Plastic Container",
+  "authors": [
+   "Galo Benivegna"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "industrial_pastic_container",
+  "triangles": 7118,
+  "size": [
+   0.48,
+   0.42,
+   0.63
+  ]
+ },
+ "industrial_pipe_lamp": {
+  "name": "Industrial Pipe Lamp",
+  "authors": [
+   "Mateusz Sadek"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "industrial_pipe_lamp",
+  "triangles": 8626,
+  "size": [
+   0.18,
+   0.36,
+   0.26
   ]
  },
  "industrial_storage_cart": {
@@ -480,6 +634,20 @@
    0.25
   ]
  },
+ "lifebuoy": {
+  "name": "Lifebuoy",
+  "authors": [
+   "Hank Kaamura"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "lifebuoy",
+  "triangles": 10728,
+  "size": [
+   0.78,
+   0.84,
+   0.16
+  ]
+ },
  "magnifying_glass_01": {
   "name": "Magnifying Glass 01",
   "authors": [
@@ -522,6 +690,20 @@
    0.95
   ]
  },
+ "metal_stool_01": {
+  "name": "Metal Stool 01",
+  "authors": [
+   "Ulan Cabanilla"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "metal_stool_01",
+  "triangles": 8334,
+  "size": [
+   0.35,
+   0.88,
+   0.35
+  ]
+ },
  "metal_tool_chest": {
   "name": "Metal Tool Chest",
   "authors": [
@@ -551,6 +733,48 @@
    0.29
   ]
  },
+ "modern_arm_chair_01": {
+  "name": "Modern Arm Chair 01",
+  "authors": [
+   "Vibrant Nordic"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "modern_arm_chair_01",
+  "triangles": 8916,
+  "size": [
+   0.82,
+   1.02,
+   0.99
+  ]
+ },
+ "modern_ceiling_lamp_01": {
+  "name": "Modern Ceiling Lamp 01",
+  "authors": [
+   "James Ray Cock"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "modern_ceiling_lamp_01",
+  "triangles": 5602,
+  "size": [
+   0.43,
+   0.95,
+   0.43
+  ]
+ },
+ "modular_airduct_circular_01": {
+  "name": "Modular Airduct Circular 01",
+  "authors": [
+   "Riley Queen"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "modular_airduct_circular_01",
+  "triangles": 14280,
+  "size": [
+   4.17,
+   1.32,
+   1.46
+  ]
+ },
  "modular_electric_cables": {
   "name": "Modular Electric Cables",
   "authors": [
@@ -563,6 +787,20 @@
    2.08,
    0.76,
    0.21
+  ]
+ },
+ "modular_pipes": {
+  "name": "Modular Pipes",
+  "authors": [
+   "Kuutti Siitonen"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "modular_pipes",
+  "triangles": 47428,
+  "size": [
+   4.19,
+   2.43,
+   0.46
   ]
  },
  "moss_01": {
@@ -711,6 +949,20 @@
    0.77
   ]
  },
+ "planter_box_01": {
+  "name": "Planter Box 01",
+  "authors": [
+   "James Ray Cock"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "planter_box_01",
+  "triangles": 8094,
+  "size": [
+   0.91,
+   0.42,
+   0.41
+  ]
+ },
  "plastic_crate_01": {
   "name": "Plastic Crate 01",
   "authors": [
@@ -739,6 +991,48 @@
    0.41
   ]
  },
+ "plastic_monobloc_chair_01": {
+  "name": "Plastic Monobloc Chair 01",
+  "authors": [
+   "Kuutti Siitonen"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "plastic_monobloc_chair_01",
+  "triangles": 3356,
+  "size": [
+   0.64,
+   0.88,
+   0.63
+  ]
+ },
+ "portable_generator": {
+  "name": "Portable Generator",
+  "authors": [
+   "James Ray Cock"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "portable_generator",
+  "triangles": 26419,
+  "size": [
+   0.82,
+   0.58,
+   0.56
+  ]
+ },
+ "portable_searchlight": {
+  "name": "Portable Searchlight",
+  "authors": [
+   "Elijah Cragg"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "portable_searchlight",
+  "triangles": 18802,
+  "size": [
+   0.17,
+   0.19,
+   0.25
+  ]
+ },
  "portable_welding_cart": {
   "name": "Portable Welding Cart",
   "authors": [
@@ -751,6 +1045,34 @@
    0.84,
    1.56,
    0.65
+  ]
+ },
+ "potted_plant_01": {
+  "name": "Potted Plant 01",
+  "authors": [
+   "Rico Cilliers"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "potted_plant_01",
+  "triangles": 96030,
+  "size": [
+   0.59,
+   1.35,
+   0.63
+  ]
+ },
+ "potted_plant_02": {
+  "name": "Potted Plant 02",
+  "authors": [
+   "Rico Cilliers"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "potted_plant_02",
+  "triangles": 69806,
+  "size": [
+   0.7,
+   0.84,
+   0.66
   ]
  },
  "power_box_01": {
@@ -857,6 +1179,50 @@
    2.84
   ]
  },
+ "security_camera_01": {
+  "name": "Security Camera 01",
+  "authors": [
+   "Alexander Otterbeck",
+   "Yann Kervran"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "security_camera_01",
+  "triangles": 13571,
+  "size": [
+   0.17,
+   0.29,
+   0.55
+  ]
+ },
+ "security_camera_02": {
+  "name": "Security Camera 02",
+  "authors": [
+   "Garrison Gager",
+   "Yann Kervran"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "security_camera_02",
+  "triangles": 12477,
+  "size": [
+   0.14,
+   0.21,
+   0.39
+  ]
+ },
+ "security_light": {
+  "name": "Security Light",
+  "authors": [
+   "Maximilian Schuster"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "security_light",
+  "triangles": 4668,
+  "size": [
+   0.32,
+   0.53,
+   0.42
+  ]
+ },
  "shrub_04": {
   "name": "Shrub 04",
   "authors": [
@@ -883,6 +1249,20 @@
    0.55,
    0.55,
    0.45
+  ]
+ },
+ "signal_flashlight": {
+  "name": "Signal Flashlight",
+  "authors": [
+   "Jiří Ptáček"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "signal_flashlight",
+  "triangles": 9730,
+  "size": [
+   0.07,
+   0.15,
+   0.04
   ]
  },
  "steel_frame_shelves_01": {
@@ -927,6 +1307,20 @@
    1.43
   ]
  },
+ "street_lamp_02": {
+  "name": "Street Lamp 02",
+  "authors": [
+   "Josh Dean"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "street_lamp_02",
+  "triangles": 20338,
+  "size": [
+   0.39,
+   1.68,
+   0.81
+  ]
+ },
  "television_02": {
   "name": "Television 02",
   "authors": [
@@ -969,6 +1363,62 @@
    1.59
   ]
  },
+ "tree_stump_02": {
+  "name": "Tree Stump 02",
+  "authors": [
+   "Rob Tuytel"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "tree_stump_02",
+  "triangles": 62345,
+  "size": [
+   1.52,
+   0.52,
+   1.39
+  ]
+ },
+ "utility_box_01": {
+  "name": "Utility Box 01",
+  "authors": [
+   "James Ray Cock"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "utility_box_01",
+  "triangles": 4404,
+  "size": [
+   0.52,
+   1.12,
+   0.43
+  ]
+ },
+ "utility_box_02": {
+  "name": "Utility Box 02",
+  "authors": [
+   "James Ray Cock"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "utility_box_02",
+  "triangles": 6268,
+  "size": [
+   0.92,
+   1.12,
+   0.43
+  ]
+ },
+ "vintage_binocular": {
+  "name": "Vintage Binoculars",
+  "authors": [
+   "Luke"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "vintage_binocular",
+  "triangles": 19362,
+  "size": [
+   0.19,
+   0.07,
+   0.2
+  ]
+ },
  "vintage_cabinet_01": {
   "name": "Vintage Cabinet 01",
   "authors": [
@@ -998,6 +1448,20 @@
    0.43
   ]
  },
+ "vintage_microscope": {
+  "name": "Vintage Microscope",
+  "authors": [
+   "Luis José Fernández Rodríguez"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "vintage_microscope",
+  "triangles": 20631,
+  "size": [
+   0.11,
+   0.4,
+   0.18
+  ]
+ },
  "vintage_oil_lamp": {
   "name": "Vintage Oil Lamp",
   "authors": [
@@ -1012,6 +1476,34 @@
    0.22
   ]
  },
+ "vintage_radio_transceiver": {
+  "name": "Vintage Radio Transceiver",
+  "authors": [
+   "Mateusz Sadek"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "vintage_radio_transceiver",
+  "triangles": 42350,
+  "size": [
+   0.62,
+   0.43,
+   0.42
+  ]
+ },
+ "vintage_spacecraft_instrument": {
+  "name": "Vintage Spacecraft Instrument",
+  "authors": [
+   "Michał Wiśniewski"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "vintage_spacecraft_instrument",
+  "triangles": 13279,
+  "size": [
+   0.41,
+   0.27,
+   0.2
+  ]
+ },
  "vintage_wooden_drawer_01": {
   "name": "Vintage Wooden Drawer 01",
   "authors": [
@@ -1024,6 +1516,20 @@
    1.72,
    1.09,
    1.01
+  ]
+ },
+ "wall_clock": {
+  "name": "Wall Clock",
+  "authors": [
+   "PierreB3D"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "wall_clock",
+  "triangles": 3658,
+  "size": [
+   0.32,
+   0.32,
+   0.05
   ]
  },
  "wooden_barrels_01": {
@@ -1080,6 +1586,20 @@
    0.22,
    0.53,
    0.23
+  ]
+ },
+ "wooden_picnic_table": {
+  "name": "Wooden Picnic Table",
+  "authors": [
+   "Ulan Cabanilla"
+  ],
+  "licence": "CC0 1.0",
+  "polyhaven_id": "wooden_picnic_table",
+  "triangles": 10210,
+  "size": [
+   2.24,
+   0.75,
+   3.02
   ]
  },
  "worn_metal_rack": {

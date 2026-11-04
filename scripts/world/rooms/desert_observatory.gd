@@ -24,6 +24,7 @@ func _build() -> void:
     _dome()
     _dish()
     _shooting_star()
+    _camp()
     if motes:
         drift(Vector3(0, 1.6, 0), Vector3(14, 1.6, 14), 220, Color(0.9, 0.82, 0.7), 0.025, Vector3(1, 0.05, 0.3), 0.35, 0.5)
     probe()
@@ -141,6 +142,25 @@ func _dish() -> void:
     arm.rotation.x = deg_to_rad(48.0)
     blink(glow(base.position + Vector3(0, 8.6, 0), Color(1.0, 0.2, 0.12), 0.9, 2.0, 0.9), 2.6)
     spin(head, Vector3.UP, 0.05)
+
+# The astronomers' table at the edge of the platform, where the night's notes are kept under a red
+# lamp; the generator by the dome; a stool by the dish (real things, assets/models).
+func _camp() -> void:
+    var a := deg_to_rad(150.0)
+    var table := Node3D.new()
+    table.position = Vector3(sin(a), 0.0, -cos(a)) * 6.3
+    table.rotation.y = -a + PI * 0.5
+    add_child(table)
+    prop("wooden_picnic_table", Vector3.ZERO, 0.0, 1.0, table)
+    prop("cassette_player", Vector3(0.35, 0.75, 0.5), 20.0, 1.0, table)
+    prop("vintage_binocular", Vector3(-0.3, 0.75 + 0.05, -0.4), -35.0, 1.0, table)
+    prop("Lantern_01", Vector3(0.0, 0.75, 0.0), 0.0, 1.0, table)
+    var red := Color(1.0, 0.25, 0.12)
+    glow(Vector3(0.0, 0.95, 0.0), red, 0.5, 1.2, 0.8, table)
+    lamp(Vector3(0.0, 1.0, 0.0), red, 0.9, 4.0, table)
+    prop("plastic_monobloc_chair_01", Vector3(1.5, 0.0, 1.9), 150.0, 1.0, table)
+    prop("portable_generator", Vector3(-12.0, 0.0, -19.0) + Vector3(5.5, 0.0, 1.4), -20.0)
+    prop("metal_stool_01", Vector3(15.0, 0.4, -21.0) + Vector3(-1.4, 0.0, 1.0), 0.0)
 
 func _shooting_star() -> void:
     var quad := QuadMesh.new()

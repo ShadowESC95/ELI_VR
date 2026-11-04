@@ -19,7 +19,8 @@ static var _wanted: Array = []          # the feed's models, newest list wins
 static func listed() -> Dictionary:
     if not _read:
         _read = true
-        var data = JSON.parse_string(FileAccess.get_file_as_string(MANIFEST))
+        # none fetched yet: no manifest, and nothing to parse (an empty string is a parse error)
+        var data = JSON.parse_string(FileAccess.get_file_as_string(MANIFEST)) if FileAccess.file_exists(MANIFEST) else null
         _listed = data if typeof(data) == TYPE_DICTIONARY else {}
     return _listed
 

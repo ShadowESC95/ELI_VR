@@ -1,0 +1,798 @@
+{
+  "asset": {
+    "generator": "Khronos glTF Blender I/O v5.1.20",
+    "version": "2.0"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "mesh": 0,
+      "name": "vintage_microscope_mirror_arm"
+    },
+    {
+      "mesh": 1,
+      "name": "vintage_microscope_condenser"
+    },
+    {
+      "mesh": 2,
+      "name": "vintage_microscope_rack_mount_support"
+    },
+    {
+      "mesh": 3,
+      "name": "vintage_microscope_base"
+    },
+    {
+      "mesh": 4,
+      "name": "vintage_microscope_mirror_base"
+    },
+    {
+      "mesh": 5,
+      "name": "vintage_microscope_eye_piece"
+    },
+    {
+      "mesh": 6,
+      "name": "vintage_microscope_adjustment"
+    },
+    {
+      "mesh": 7,
+      "name": "vintage_microscope_revolver"
+    }
+  ],
+  "materials": [
+    {
+      "doubleSided": true,
+      "name": "vintage_microscope",
+      "normalTexture": {
+        "index": 0
+      },
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 1
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      }
+    },
+    {
+      "alphaMode": "BLEND",
+      "doubleSided": true,
+      "name": "vintage_microscope_glass",
+      "normalTexture": {
+        "index": 3
+      },
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 4
+        },
+        "metallicRoughnessTexture": {
+          "index": 5
+        }
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "vintage_microscope_01_mirror_arm",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1,
+            "TEXCOORD_0": 2
+          },
+          "indices": 3,
+          "material": 0
+        }
+      ]
+    },
+    {
+      "name": "vintage_microscope_01_condenser",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 4,
+            "NORMAL": 5,
+            "TEXCOORD_0": 6
+          },
+          "indices": 7,
+          "material": 0
+        }
+      ]
+    },
+    {
+      "name": "vintage_microscope_01_rack_mount_support",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 8,
+            "NORMAL": 9,
+            "TEXCOORD_0": 10
+          },
+          "indices": 11,
+          "material": 0
+        }
+      ]
+    },
+    {
+      "name": "vintage_microscope_01_base",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 12,
+            "NORMAL": 13,
+            "TEXCOORD_0": 14
+          },
+          "indices": 15,
+          "material": 0
+        }
+      ]
+    },
+    {
+      "name": "vintage_microscope_01_mirror_base",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 16,
+            "NORMAL": 17,
+            "TEXCOORD_0": 18
+          },
+          "indices": 19,
+          "material": 0
+        },
+        {
+          "attributes": {
+            "POSITION": 20,
+            "NORMAL": 21,
+            "TEXCOORD_0": 22
+          },
+          "indices": 23,
+          "material": 1
+        }
+      ]
+    },
+    {
+      "name": "vintage_microscope_01_eye_piece",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 24,
+            "NORMAL": 25,
+            "TEXCOORD_0": 26
+          },
+          "indices": 27,
+          "material": 0
+        }
+      ]
+    },
+    {
+      "name": "vintage_microscope_01_adjustment",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 28,
+            "NORMAL": 29,
+            "TEXCOORD_0": 30
+          },
+          "indices": 31,
+          "material": 0
+        }
+      ]
+    },
+    {
+      "name": "vintage_microscope_01_revolver",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 32,
+            "NORMAL": 33,
+            "TEXCOORD_0": 34
+          },
+          "indices": 35,
+          "material": 0
+        }
+      ]
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "source": 0
+    },
+    {
+      "sampler": 0,
+      "source": 1
+    },
+    {
+      "sampler": 0,
+      "source": 2
+    },
+    {
+      "sampler": 0,
+      "source": 0
+    },
+    {
+      "sampler": 0,
+      "source": 3
+    },
+    {
+      "sampler": 0,
+      "source": 2
+    }
+  ],
+  "images": [
+    {
+      "mimeType": "image/jpeg",
+      "name": "vintage_microscope_nor_gl",
+      "uri": "textures/vintage_microscope_nor_gl_1k.jpg"
+    },
+    {
+      "mimeType": "image/jpeg",
+      "name": "vintage_microscope_diff",
+      "uri": "textures/vintage_microscope_diff_1k.jpg"
+    },
+    {
+      "mimeType": "image/jpeg",
+      "name": "vintage_microscope_metal-vintage_microscope_rough",
+      "uri": "textures/vintage_microscope_arm_1k.jpg"
+    },
+    {
+      "mimeType": "image/jpeg",
+      "name": "vintage_microscope_diff-vintage_microscope_alpha",
+      "uri": "textures/vintage_microscope_diff_1k.jpg"
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 570,
+      "max": [
+        0.028638066723942757,
+        0.129497230052948,
+        0.03806301951408386
+      ],
+      "min": [
+        -0.0326380655169487,
+        0.027192339301109314,
+        -0.006873677484691143
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 570,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 570,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5123,
+      "count": 1704,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5126,
+      "count": 1028,
+      "max": [
+        0.014899451285600662,
+        0.1587100625038147,
+        0.05025088042020798
+      ],
+      "min": [
+        -0.017644131556153297,
+        0.08395987004041672,
+        0.014193560928106308
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 5,
+      "componentType": 5126,
+      "count": 1028,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 6,
+      "componentType": 5126,
+      "count": 1028,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 7,
+      "componentType": 5123,
+      "count": 3108,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 8,
+      "componentType": 5126,
+      "count": 5506,
+      "max": [
+        0.052027005702257156,
+        0.318553626537323,
+        0.08737851679325104
+      ],
+      "min": [
+        -0.054771821945905685,
+        0.09657537192106247,
+        -0.06998893618583679
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 9,
+      "componentType": 5126,
+      "count": 5506,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 10,
+      "componentType": 5126,
+      "count": 5506,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 11,
+      "componentType": 5123,
+      "count": 19863,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 12,
+      "componentType": 5126,
+      "count": 1047,
+      "max": [
+        0.049991488456726074,
+        0.12986084818840027,
+        0.07400001585483551
+      ],
+      "min": [
+        -0.05400852859020233,
+        -1.4901161193847656e-8,
+        -0.08362294733524323
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 13,
+      "componentType": 5126,
+      "count": 1047,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 14,
+      "componentType": 5126,
+      "count": 1047,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 15,
+      "componentType": 5123,
+      "count": 3366,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 16,
+      "componentType": 5126,
+      "count": 198,
+      "max": [
+        0.022484377026557922,
+        0.05459088459610939,
+        0.05723302811384201
+      ],
+      "min": [
+        -0.026484373956918716,
+        0.026060111820697784,
+        0.009472593665122986
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 17,
+      "componentType": 5126,
+      "count": 198,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 18,
+      "componentType": 5126,
+      "count": 198,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 19,
+      "componentType": 5123,
+      "count": 960,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 20,
+      "componentType": 5126,
+      "count": 264,
+      "max": [
+        0.02183397114276886,
+        0.05488591641187668,
+        0.05681873485445976
+      ],
+      "min": [
+        -0.025833971798419952,
+        0.025765083730220795,
+        0.009886886924505234
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 21,
+      "componentType": 5126,
+      "count": 264,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 22,
+      "componentType": 5126,
+      "count": 264,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 23,
+      "componentType": 5123,
+      "count": 960,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 24,
+      "componentType": 5126,
+      "count": 2685,
+      "max": [
+        0.03640959411859512,
+        0.3995528221130371,
+        0.08970729261636734
+      ],
+      "min": [
+        -0.03947301208972931,
+        0.20321030914783478,
+        0.0027429088950157166
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 25,
+      "componentType": 5126,
+      "count": 2685,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 26,
+      "componentType": 5126,
+      "count": 2685,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 27,
+      "componentType": 5123,
+      "count": 9276,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 28,
+      "componentType": 5126,
+      "count": 2988,
+      "max": [
+        0.0373665876686573,
+        0.3218843936920166,
+        0.026721026748418808
+      ],
+      "min": [
+        -0.0400712676346302,
+        0.27875006198883057,
+        -0.016413312405347824
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 29,
+      "componentType": 5126,
+      "count": 2988,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 30,
+      "componentType": 5126,
+      "count": 2988,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 31,
+      "componentType": 5123,
+      "count": 10224,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 32,
+      "componentType": 5126,
+      "count": 3786,
+      "max": [
+        0.037108249962329865,
+        0.22520042955875397,
+        0.09825214743614197
+      ],
+      "min": [
+        -0.03928378224372864,
+        0.17241518199443817,
+        0.017574194818735123
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 33,
+      "componentType": 5126,
+      "count": 3786,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 34,
+      "componentType": 5126,
+      "count": 3786,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 35,
+      "componentType": 5123,
+      "count": 12432,
+      "type": "SCALAR"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteLength": 6840,
+      "byteOffset": 0,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 6840,
+      "byteOffset": 6840,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 4560,
+      "byteOffset": 13680,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 3408,
+      "byteOffset": 18240,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteLength": 12336,
+      "byteOffset": 21648,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 12336,
+      "byteOffset": 33984,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 8224,
+      "byteOffset": 46320,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 6216,
+      "byteOffset": 54544,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteLength": 66072,
+      "byteOffset": 60760,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 66072,
+      "byteOffset": 126832,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 44048,
+      "byteOffset": 192904,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 39726,
+      "byteOffset": 236952,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteLength": 12564,
+      "byteOffset": 276680,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 12564,
+      "byteOffset": 289244,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 8376,
+      "byteOffset": 301808,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 6732,
+      "byteOffset": 310184,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteLength": 2376,
+      "byteOffset": 316916,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 2376,
+      "byteOffset": 319292,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 1584,
+      "byteOffset": 321668,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 1920,
+      "byteOffset": 323252,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteLength": 3168,
+      "byteOffset": 325172,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 3168,
+      "byteOffset": 328340,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 2112,
+      "byteOffset": 331508,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 1920,
+      "byteOffset": 333620,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteLength": 32220,
+      "byteOffset": 335540,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 32220,
+      "byteOffset": 367760,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 21480,
+      "byteOffset": 399980,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 18552,
+      "byteOffset": 421460,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteLength": 35856,
+      "byteOffset": 440012,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 35856,
+      "byteOffset": 475868,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 23904,
+      "byteOffset": 511724,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 20448,
+      "byteOffset": 535628,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteLength": 45432,
+      "byteOffset": 556076,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 45432,
+      "byteOffset": 601508,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 30288,
+      "byteOffset": 646940,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 24864,
+      "byteOffset": 677228,
+      "target": 34963
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 702092,
+      "uri": "vintage_microscope.bin"
+    }
+  ]
+}

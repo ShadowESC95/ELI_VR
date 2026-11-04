@@ -97,13 +97,13 @@ The nine ELI rooms:
 
 | Room | Where you are | What moves |
 |---|---|---|
-| Core Room | An open deck on a station in orbit, Earth below, the real Milky Way overhead | The station's outer ring, the hub, a projected globe, Earth's cloud |
+| Core Room | An open deck on a station in orbit, Earth below, the real Milky Way overhead; a seating group under a hung lamp, a bench at the rail facing the planet, crates and planters by the rail | The station's outer ring, the hub, a projected globe, Earth's cloud |
 | Memory Archive | A marble hall open to the stars, its walls shelved floor to roof with books, ladders on brass rails, reading corners lit by oil lamps, a librarian's desk, catalogue cabinets, a grandfather clock | A few books glow, brightening and fading; lights drift loose and rise; rings turn overhead |
 | Workshop | A repair bay with its door open to space: benches with vices and toolboxes, and behind you the stores (shelves of crates, a tool chest, a drill press, a cart) under their own light | A welding arm, a crane on its rails, a beacon, Earth going by outside |
 | Reflection Chamber | A stone terrace on a mountain plateau at dawn, ringed by still water | Birds, dust in the first light |
-| Debug Basement | A concrete bunker of racks and old terminals: desks with CRT monitors, a laptop, meters and boards under test, power boxes and cables on the walls, caged lamps from the beams | Status lamps, scrolling logs, a roof fan, one strip light on its way out |
+| Debug Basement | A concrete bunker of racks and old terminals: desks with CRT monitors, a laptop, meters and boards under test, shelves of spare parts, a bench of instruments under the log board, pipes and a duct, alarms and caged lamps on the pillars, a generator in a corner | Status lamps, scrolling logs, a roof fan, one strip light on its way out |
 | Upgrade Bay | A clean white lab of panelled walls, a bank of glass-fronted racks across the far wall, a test bench and its microscope, shelves of parts, a storage cart and a welding cart | A printer building a part, crates on a belt, an arm sorting them; the racks' lights blink as hard as ELI is working |
-| Simulation Lab | A world that is only being computed: grid, wire hills, towers of data | Everything |
+| Simulation Lab | A world that is only being computed: grid, wire hills, stepped towers of data with the data arcing between them, and ELI's house as a hologram on a table, the room ELI is in burning brightest | Everything |
 | Anomaly Room | A cracked deck drifting towards a black hole | The disc of the hole, arcs between pylons, debris spiralling in |
 | Evidence Wall | A dim studio with a long wall of pinned sheets strung with thread; behind you a desk under its lamp, a cabinet of files between racks of boxes, lamps on the walls | A fan, a projector changing slides, dust in the lamps |
 
@@ -111,12 +111,12 @@ Six more workspaces:
 
 | Workspace | Where you are |
 |---|---|
-| Forest Sanctuary | A timber deck among tall pines in morning mist |
-| Ocean Platform | A rig at sea at sunset; the water carries the sky |
-| Deep Space Observatory | A platform beside a ringed giant, rocks tumbling past |
-| Arctic Aurora | A snowfield at night under the northern lights |
-| Desert Observatory | Dunes under the Milky Way, a dome and a dish at work |
-| Underwater Research Lab | A glass dome on the seabed, kelp, shoals, shafts of light |
+| Forest Sanctuary | A timber deck among tall pines in morning mist, real ferns, stumps, logs and young pines close by, lanterns on the posts |
+| Ocean Platform | A rig at sea at sunset; the water carries the sky; a lifebuoy and a light on the beacon's mast, lamps at the rail, stores on deck |
+| Deep Space Observatory | A platform beside a ringed giant, rocks tumbling past; an instrument desk facing the giant, a bench, stores, a searchlight |
+| Arctic Aurora | A snowfield at night under the northern lights; a fire with benches by the platform, a path of lamps out to the hut, its woodpile and stores |
+| Desert Observatory | Dunes under the Milky Way, a dome and a dish at work; the astronomers' table under its red lamp |
+| Underwater Research Lab | A glass dome on the seabed, kelp, shoals, shafts of light; the lab's bench and shelves |
 
 The night sky is NASA's star map and the Earth is NASA's Blue Marble. The forest, the mountain and the sunset are photographs of real places, laid on the ground so that what is near stays put as you move. Stone, wood, metal, snow and sand are scanned materials. All of it is free to use and listed in [assets/CREDITS.md](assets/CREDITS.md).
 
@@ -173,7 +173,7 @@ python3 tools/eli_vr.py eli on            # remembered
 ELI VR names no model and assumes none. Which GGUF is ELI's mind is your choice, three ways:
 
 - **Opened from ELI v3's window:** the model already loaded there is the one that answers. Nothing is chosen again and nothing is loaded twice.
-- **In the room:** the ELI'S MIND panel lists the models ELI has, by its own list. The one in use is marked. Press another and ELI loads it.
+- **In the room:** the ELI'S MIND panel lists the models ELI has, by its own list: the ones in ELI v3's models folder, the ones beside any model chosen in ELI v3's settings, and the ones in folders named in ELI v3's `ELI_MODEL_DIRS` (ELI v3 3.0.151 on). The one in use is marked. Press another and ELI loads it.
 - **Before starting:** `--eli-model=<name>` for that run, or `python3 tools/eli_vr.py model <name>` to keep it. A kept model is asked for only when ELI has nothing loaded yet.
 
 The status line always says which model ELI is using, and says so when that is only the one used last and nobody chose it.
