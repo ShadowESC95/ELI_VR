@@ -24,7 +24,8 @@ const RETRY_SECONDS := 5.0
 const SURFACE := "eli_vr"
 const PROTOCOL_VERSIONS := [1, 2]
 const WANTS_NOTE := "models: the real things ELI brought in of its own, fetched and drawn"
-const WANTS := ["world-state", "room-events", "scene", "say", "building", "undo", "own-room", "mind", "props", "pictures"]
+const WANTS := ["world-state", "room-events", "scene", "say", "building", "undo", "own-room", "mind", "props", "pictures",
+                "games"]
 const WELCOME_SECONDS := 4.0
 const CLOSE_UNAUTHORISED := 4401
 const CLOSE_INCOMPATIBLE := 4406
@@ -273,6 +274,13 @@ func compose() -> EliResult:
     if not can("building"):
         return EliResult.bad("unsupported")
     return await _answer(await _post("/v1/world/compose", PackedByteArray(), "application/json", 300.0))
+
+# How a game ELI set went (EliPlay): the score is kept by ELI's world, the pieces leave, ELI remembers.
+func played(game_id: String, result: Dictionary) -> EliResult:
+    if not can("games"):
+        return EliResult.bad("unsupported")
+    var body := JSON.stringify({"game": game_id, "result": result})
+    return await _answer(await _post("/v1/world/played", body.to_utf8_buffer(), "application/json", 30.0))
 
 # --- its mind ---------------------------------------------------------------------
 

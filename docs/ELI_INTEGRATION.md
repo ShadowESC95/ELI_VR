@@ -79,6 +79,22 @@ ELI: BUILD asks now: the oldest urge if one is waiting, otherwise simply what is
 
 **ELI's records in its rooms.** The Memory Archive carries ELI's real recent memories as books stood face out on the eye-level shelves ahead, each with its words on the cover; the Upgrade Bay carries the goals ELI holds now; the Evidence Wall carries what ELI believes about you, each with when it learned it (amber where something disputes it); the Anomaly Room carries each place where two things ELI was told disagree, with the question that would settle it. What ELI did for you is there too, from its evidence ledger, only what worked and only yours: what it found (`kind` `found`: a search, the news, the weather) on the board over the Evidence Wall's desk, what it wrote (`written`) on the Workshop's rack, and what it is playing (`playing`) on the Core Room's radio. These carry `lines`, what the sheet or the radio says line by line; an older ELI VR reads `meaning` instead. Pictures ELI took or looked at for you (`kind` `seen`) also carry `picture`, the path ELI v3 serves the picture at (`GET /v1/world/picture/<row>`, capability `pictures`): only a picture its evidence ledger records as one ELI took or looked at for you, still on disk, and a picture by its own first bytes. The message also carries `coming_up`: what is on your agenda in the next day and a half, each with when and what, which the Core Room shows. Needs ELI v3 3.0.148 or newer. They are read from ELI's memory, claims, goal store and evidence ledger, refreshed every half minute. You can pick one up; moving one changes nothing in ELI.
 
+## ELI makes games
+
+Say "let's play a game", "set up a catch game", "hide something for me to find", "challenge me", or press **ELI: PLAY** on the console (`G` on the keyboard), and ELI makes up a small game for the room you are standing in. Needs ELI v3 3.0.150 or newer (capability `games`).
+
+A game is things ELI made with rules attached. ELI v3 composes it the way it composes a thing: one call to whichever model is loaded, held to an exact shape by a grammar, from the room, where you stand, what is on ELI's mind and how you did last time. The pieces are built things in the room, each marked with its part (`piece`: the game, a role, a tag, an index); the game itself is an object of kind `game` carrying the rules (`game`: name, kind, goal, pieces, count, seconds, pace, motion, lines) and a `status`. ELI VR draws the pieces as it draws anything and runs the rules on them (`scripts/eli/eli_play.gd`): how many are up at once, how fast they move and how long each stays come from ELI's numbers and the room, never from a table.
+
+| Kind | How it is played |
+|---|---|
+| `targets` | Pieces come up one after another where ELI's world put them; point and pull the trigger at one, or touch it, and it is hit; one left too long fades: a miss. ELI may have them stand still, drift, or orbit you |
+| `catch` | Pieces come down from above; grab one (the grip) before it reaches the floor |
+| `sort` | Pieces stand before you with a mat for each kind; let a piece go on its mat; on the wrong one is a miss |
+| `order` | The lights flash in a sequence, one longer each round; hit them in that order |
+| `hide` | One piece is hidden somewhere in the room each round; look at it for a moment, or touch it |
+
+A board ahead of you shows the name, the goal, the score and the time. ELI's lines (what it says at the start, at a hit, at a miss, at the end) are spoken at the start and the end and shown under ELI at a hit or a miss. When the game ends, when you say "stop the game", or when you leave the room, ELI VR tells ELI's world how it went (`POST /v1/world/played`: score, misses, rounds, seconds, abandoned). ELI v3 keeps the result on the game, clears the pieces through its world's policy, writes the game in its journal, remembers it, and keeps the moment as one of its own, so ELI may make something of it later. "How did I do?" has a true answer, and the next game is told how the last went. From ELI v3's own window, "let's play a game in VR" sets one up where you are standing in the headset.
+
 ## How building works
 
 ELI VR draws; ELI v3 decides and remembers. The split is the same as for ELI's presence.
@@ -116,6 +132,7 @@ The world protocol has versions and they are agreed, not assumed. On connecting,
 | VR → ELI | `POST /v1/world/edit` | A thing you moved by hand | 2 |
 | VR → ELI | `POST /v1/world/compose` | ELI: BUILD | 2 |
 | VR → ELI | `POST /v1/world/undo` | UNDO | 2 |
+| VR → ELI | `POST /v1/world/played` | How a game ELI set went | 2 |
 | ELI → VR | `GET /v1/world/mind` | Which model is loaded, and which ones ELI has, by name | 2 |
 | VR → ELI | `POST /v1/world/mind` | The model you chose | 2 |
 

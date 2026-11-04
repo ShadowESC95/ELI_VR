@@ -15,7 +15,7 @@ extends Node
 signal state_changed(state: String)   # idle | listening | thinking | speaking
 signal heard(text: String)
 signal replied(text: String)
-signal built(reply: Dictionary)       # ELI changed the room: what it did, edit by edit
+signal built(reply: Dictionary)       # ELI changed the room, or set a game: what it did, edit by edit
 signal failed(result)                 # an EliResult saying which failure it was
 
 const MIN_SECONDS := 0.35
@@ -192,7 +192,7 @@ func converse_text(text: String) -> void:
     var reply: Dictionary = answer.payload
     var words := str(reply.get("text", ""))
     replied.emit(words)
-    if str(reply.get("kind", "")) == "build":
+    if str(reply.get("kind", "")) in ["build", "game"]:
         built.emit(reply)
     if words.is_empty():
         _set_state("idle")

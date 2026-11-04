@@ -20,7 +20,7 @@ func setup(p_app: Node, registry, config) -> void:
         ["CORE","room","core_room"],["WORKSHOP","room","workshop"],["REFLECT","room","reflection_chamber"],
         ["MEMORY","room","memory_archive"],["DEBUG","room","debug_basement"],["UPGRADE","room","upgrade_bay"],
         ["SIM LAB","room","simulation_lab"],["ANOMALY","room","anomaly_room"],["EVIDENCE","room","evidence_wall"],
-        ["ELI'S ROOM","room","own_room"],["ELI: BUILD","eli","compose"],["UNDO","eli","undo"]
+        ["ELI'S ROOM","room","own_room"],["ELI: BUILD","eli","compose"],["ELI: PLAY","eli","play"],["UNDO","eli","undo"]
     ], 3)
 
     _build_panel("ENVIRONMENTS", "EnvironmentsPanel", Vector3(0.0, 1.30, -3.30), 0.0, [

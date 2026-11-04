@@ -17,6 +17,7 @@ Where ELI VR is, and what comes next. Dates are not promised.
 - Things made part by part and a sky painted ELI's own way, not only named shapes
 - ELI building of its own accord from its own moments and records, with nothing scheduled or chosen for ELI
 - ELI's real memories in the Memory Archive and its goals in the Upgrade Bay
+- Small games ELI makes up for the room you are in (targets, catch, sort, order, hide), played on its own things, scored, told back and remembered
 - ELI VR as an ELI v3 bundle: ELI v3 lists it and opens it
 - Release builds for the three systems and a Linux AppImage, with a clean stop of the VR runtime on exit
 - A privacy gate on everything published

@@ -64,6 +64,19 @@ class Alive(unittest.TestCase):
         self.check("the_headsets_own_microphone_is_tried_before_the_default")
         self.check("a_microphone_giving_only_silence_is_passed_over_and_the_one_heard_is_kept")
 
+    def test_a_game_eli_set_begins_on_its_pieces_and_its_result_is_told(self) -> None:
+        self.check("a_game_set_in_the_room_begins_with_its_first_piece_up")
+        self.check("a_hit_scores_a_piece_left_too_long_is_a_miss_and_the_result_is_told")
+
+    def test_sorting_order_catching_and_hiding_are_played_as_eli_set_them(self) -> None:
+        self.check("a_piece_let_go_on_its_mat_scores_and_on_the_wrong_one_is_a_miss")
+        self.check("the_lights_are_hit_in_the_order_shown_and_stopping_tells_how_far_it_got")
+        self.check("a_piece_coming_down_is_caught_in_the_hand_and_one_that_lands_is_a_miss")
+        self.check("a_hidden_piece_is_found_by_looking_at_it_then_hides_elsewhere")
+
+    def test_a_game_elis_world_takes_down_ends_quietly(self) -> None:
+        self.check("a_game_taken_down_by_elis_world_ends_without_a_word")
+
 
 class Screens(Alive):
     """The screens in the rooms show ELI's real log and state, and nothing made up."""

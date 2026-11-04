@@ -15,6 +15,7 @@ const EliPresenceClass = preload("res://scripts/eli/eli_presence.gd")
 const EliVoiceClass = preload("res://scripts/eli/eli_voice.gd")
 const EliSensesClass = preload("res://scripts/eli/eli_senses.gd")
 const EliThingsClass = preload("res://scripts/eli/eli_things.gd")
+const EliPlayClass = preload("res://scripts/eli/eli_play.gd")
 const XRBootstrapClass = preload("res://scripts/xr/xr_bootstrap.gd")
 const XRLocomotionClass = preload("res://scripts/xr/locomotion.gd")
 const XRPointerClass = preload("res://scripts/xr/xr_pointer.gd")
@@ -79,6 +80,7 @@ var eli_presence
 var eli_voice
 var eli_senses
 var eli_things
+var eli_play
 var _eli_mood: Dictionary = {}
 var _eli_notice := ""
 var _eli_notice_until_ms := 0
@@ -402,6 +404,8 @@ func _unhandled_key_input(event: InputEvent) -> void:
             _apply_current_room()
         KEY_B:
             eli_build()
+        KEY_G:
+            eli_play_request()
         KEY_Z:
             eli_undo()
         KEY_F6:
@@ -442,6 +446,8 @@ func apply_console_action(kind: String, value: String) -> void:
         "eli":
             if value == "compose":
                 eli_build()
+            elif value == "play":
+                eli_play_request()
             elif value == "undo":
                 eli_undo()
         "system":
@@ -539,6 +545,8 @@ func _apply_current_room() -> void:
     _build_portals()
     _apply_eli_mood()
     _show_eli_in_room()
+    if eli_play:
+        eli_play.room_changing(room_id)     # a game on in the room you are leaving is given up
     if eli_things:
         eli_things.pinner = _room_node()
         eli_things.show_room(room_id)
@@ -640,6 +648,10 @@ func _setup_eli() -> void:
     eli_things.pinner = _room_node()
     eli_things.show_room(_current_room_id())
     eli_things.moved_by_hand.connect(_on_eli_thing_moved)
+    eli_play = EliPlayClass.new()
+    eli_play.name = "EliPlay"
+    add_child(eli_play)
+    eli_play.setup(self, eli_link, eli_presence, eli_things)
     eli_motion = EliMotionClass.new()
     eli_motion.name = "EliMotion"
     add_child(eli_motion)
@@ -702,6 +714,7 @@ func _on_eli_world_state(state: Dictionary) -> void:
     eli_thoughts.apply_world_state(state)
     eli_initiative.apply_world_state(state)
     eli_things.apply_world_state(state)
+    eli_play.apply_world_state(state)
     var spaces: Dictionary = state.get("spaces", {})
     var own: Dictionary = spaces.get("own_room", {})
     if own.has("mood"):
@@ -809,6 +822,10 @@ func _on_eli_failed(result) -> void:
     _eli_say_briefly(result.sentence())
 
 func _on_eli_built(reply: Dictionary) -> void:
+    if str(reply.get("kind", "")) == "game":
+        var game: Dictionary = reply.get("game", {})
+        _eli_say_briefly("game: %s (%s)" % [str(game.get("name", "")), str(game.get("kind", ""))], 10.0)
+        return
     var done := []
     for result in reply.get("results", []):
         if bool(result.get("ok", false)):
@@ -830,13 +847,30 @@ func eli_build() -> void:
         return
     var reply: Dictionary = result.payload
     _on_eli_built(reply)
-    var words := str(reply.get("text", ""))
-    if not words.is_empty() and eli_voice != null and eli_voice.state == "idle":
-        var speech = await eli_link.speak(words)
-        if speech.ok:
-            eli_presence.set_mode("speaking")
-            await eli_presence.say(speech.payload)
-            eli_presence.set_mode("idle")
+    await eli_speak(str(reply.get("text", "")))
+
+## ELI says these words from where it stands, when it is not already talking with you.
+func eli_speak(words: String) -> void:
+    if words.is_empty() or eli_link == null or not eli_link.connected:
+        return
+    if eli_voice != null and eli_voice.state != "idle":
+        return
+    var speech = await eli_link.speak(words)
+    if speech.ok and eli_presence != null:
+        eli_presence.set_mode("speaking")
+        await eli_presence.say(speech.payload)
+        eli_presence.set_mode("idle")
+
+## ELI: PLAY on the console, or G: ELI makes up a game for this room (as if you had asked aloud).
+func eli_play_request() -> void:
+    if eli_link == null or not eli_link.can("games"):
+        _eli_say_briefly("this ELI v3 has no games" if eli_link and eli_link.connected else "ELI is not running")
+        return
+    if eli_voice == null or eli_voice.state != "idle":
+        return
+    _eli_say_briefly("making up a game...", 60.0)
+    eli_senses.report_now()
+    await eli_voice.converse_text("let's play a game here")
 
 func eli_undo() -> void:
     if eli_link == null or not eli_link.can("undo"):
@@ -971,6 +1005,8 @@ func _setup_eli_say() -> void:
         sentence = sentence.strip_edges()
         if sentence == "@build":            # what the ELI: BUILD button does
             await eli_build()
+        elif sentence == "@play":           # what ELI: PLAY does
+            await eli_play_request()
         elif sentence == "@undo":
             await eli_undo()
         elif sentence == "@wait":

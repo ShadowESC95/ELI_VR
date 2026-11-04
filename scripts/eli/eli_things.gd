@@ -10,6 +10,9 @@ signal moved_by_hand(thing_id: String, position: Vector3)
 # Not sent for what was already standing when you came in.
 signal appeared(thing)
 signal changed(thing)
+# A piece of a game taken in the hand, and one let go (EliPlay runs the game on them).
+signal taken(thing)
+signal dropped(thing)
 
 const ThingClass = preload("res://scripts/eli/eli_thing.gd")
 # The mobile renderer lights a mesh with eight lamps at most, and the rooms
@@ -22,6 +25,7 @@ var pinner: Node
 var _things: Dictionary = {}       # id -> EliThing
 var _last: Array = []
 var _forms: Dictionary = {}        # id -> its form as last drawn
+var _games: Dictionary = {}        # id -> the game object ELI's world set in this room (not drawn: EliPlay)
 var _settled := false              # the room's things as you found them are drawn
 
 func _ready() -> void:
@@ -43,6 +47,7 @@ func show_room(room_id: String) -> void:
         thing.queue_free()
     _things.clear()
     _forms.clear()
+    _games.clear()
     _settled = false
     _apply(_last)
 
@@ -50,8 +55,22 @@ func apply_world_state(state: Dictionary) -> void:
     _last = state.get("objects", [])
     _apply(_last)
 
+## The things standing in sight: a piece of a game that is not up yet, or has been hit, is not.
 func standing() -> Array:
-    return _things.values().filter(func(t): return is_instance_valid(t))
+    return _things.values().filter(func(t): return is_instance_valid(t) and not t.is_gone())
+
+## The game ELI's world has set in this room, as it sent it; {} when there is none.
+func game_here() -> Dictionary:
+    for data in _games.values():
+        if str(data.get("status", "")) != "done":
+            return data
+    return {}
+
+## The pieces (and mats) of a game, by their index in it, up or not.
+func pieces_of(game_id: String) -> Array:
+    var out := _things.values().filter(func(t): return is_instance_valid(t) and str(t.piece.get("game", "")) == game_id)
+    out.sort_custom(func(a, b): return int(a.piece.get("index", 0)) < int(b.piece.get("index", 0)))
+    return out
 
 # The nearest of them to a point, as ELI is told of them.
 func near(point: Vector3, limit: int) -> Array:
@@ -66,12 +85,16 @@ func near(point: Vector3, limit: int) -> Array:
 func _apply(objects: Array) -> void:
     var seen := {}
     var counted := {}              # kind -> how many of that kind are placed so far
+    var games_here := {}
     for data in objects:
         if typeof(data) != TYPE_DICTIONARY or str(data.get("room", "")) != room:
             continue
         if not data.has("form"):
             continue                # an ELI v3 that does not say how things look
         var id := str(data.get("id", ""))
+        if str(data.get("kind", "")) == "game":
+            games_here[id] = data   # the rules: EliPlay's, not a thing to draw
+            continue
         seen[id] = true
         var form := JSON.stringify(data.get("form", {}))
         if _things.has(id) and is_instance_valid(_things[id]):
@@ -83,9 +106,10 @@ func _apply(objects: Array) -> void:
             add_child(thing)
             thing.build(data)
             thing.let_go.connect(_on_let_go)
+            thing.taken.connect(func(t): taken.emit(t))
             _things[id] = thing
-            if _settled:
-                appeared.emit(thing)
+            if _settled and thing.piece.is_empty():
+                appeared.emit(thing)        # a piece of a game is the game's to bring up
         _forms[id] = form
         var record := str(data.get("kind", ""))
         if pinner != null and is_instance_valid(pinner) and pinner.has_method("pin_spot"):
@@ -99,6 +123,7 @@ func _apply(objects: Array) -> void:
                 _things[id].leave()
             _things.erase(id)
             _forms.erase(id)
+    _games = games_here
     _share_lamps()
     # what an ELI that says how things look sent first is what was here before you came
     if objects.any(func(o): return typeof(o) == TYPE_DICTIONARY and o.has("form")):
@@ -111,4 +136,7 @@ func _share_lamps() -> void:
         lit[i].lamp.visible = i < MAX_LAMPS
 
 func _on_let_go(thing) -> void:
-    moved_by_hand.emit(thing.thing_id, thing.position)
+    if thing.piece.is_empty():
+        moved_by_hand.emit(thing.thing_id, thing.position)
+    else:
+        dropped.emit(thing)             # a piece of a game: the game says what that means, not ELI's world

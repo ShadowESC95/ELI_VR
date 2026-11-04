@@ -63,7 +63,7 @@ With `auto`, ELI VR uses a headset when an OpenXR runtime is active and falls ba
 | `F3` | Performance HUD |
 | `F5` | Rebuild the current room |
 | Hold `T` | Talk to ELI (with the ELI link on) |
-| `B` / `Z` | ELI builds something of its own in its room / take the last change back |
+| `B` / `G` / `Z` | ELI builds something of its own in its room / makes up a game here / take the last change back |
 | `Esc` | Release the mouse |
 
 ### In the headset
@@ -149,6 +149,7 @@ Off by default. Switch the link on and, while ELI v3's local server is running o
 - Hold **A** / **X** on a controller, or **T** on the keyboard, to talk to ELI. It answers in its own voice from where it stands.
 - **ELI knows where it is.** ELI is told which room you are both in and what that place is, where you are standing, what you are looking at and which of its things are near. Ask "where are we" or "what am I looking at".
 - **ELI can build.** Ask for something, "build me a tall red pillar", "put a lamp to my left", "make the pillar green and bigger", "undo", and the thing rises out of the floor where you asked. You can grab what ELI made and move it. Everything ELI does goes through its world's own policy and is kept in that world's ledger.
+- **ELI makes games.** "Let's play a game", "set up a catch game", "hide something for me to find", or ELI: PLAY on the console, and ELI makes up a small game for the room you are in: targets to hit, things to catch as they come down, pieces to sort onto their mats, lights to hit in the order shown, or something hidden to find, with pieces, colours, counts, time and lines of ELI's own choosing, from the room, its memories and how you did last time. The pieces are ELI's things; the score goes back to ELI's world, is journalled and remembered, and the next game answers the last.
 - **In any way ELI likes.** A thing is a shape by name, or anything at all made part by part: boxes, balls, cones, rings, a profile turned on a lathe, an outline pulled up into a solid, a tube along a path, text, each with its own place, turn, size, colour, metal, glow, clearness and motion. Nothing has to come from a list.
 - **ELI has a room of its own.** ELI'S ROOM on the console is open ground under an open sky with nothing there but what ELI has made. The sky is ELI's to choose: one by name, or painted from two colours, stars and a sun placed wherever ELI likes. So is the ground: any colour, flat or rising into hills.
 - **Of its own accord, from its own life.** Nothing is scheduled and nothing is chosen for ELI. When something happens in ELI (an insight forms, a goal is taken on or finished, an improvement to itself is proposed) that moment is kept in its own words. When ELI is free it may make something of that moment in its room, and what ELI makes is tied to the record the moment came from. ELI: BUILD asks now.

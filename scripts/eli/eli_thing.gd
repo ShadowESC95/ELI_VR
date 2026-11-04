@@ -10,6 +10,7 @@ extends Manipulable3D
 # with its own place, turn, size, colour, metal, glow, clearness and motion.
 
 signal let_go(thing)
+signal taken(thing)             # the grip has closed on it
 
 const GROW_SECONDS := 0.9
 
@@ -35,6 +36,10 @@ var _parts: Array = []
 var _parts_key := ""
 var _moving: Array = []        # [node, spin radians a second, bob metres, pulse, material, rest height]
 var pinned := false            # the room has a place for this kind of record, and it stands there
+var piece := {}                # its part in a game ELI set (EliPlay): the game, a role, a tag, an index
+var driven := false            # a game is moving it: where ELI's world says it stands is left alone
+var _gone := false             # out of sight for now (a piece not yet up, or hit)
+var _flash_left := 0.0
 # Records that, pinned, are written out where they stand: a belief, a memory, what ELI found for
 # you, what it wrote, and what it is playing.
 const WRITTEN := ["claim", "memory", "found", "written", "playing", "seen"]
@@ -76,8 +81,10 @@ func refresh(data: Dictionary, first: bool = false) -> void:
     kind = str(data.get("kind", ""))
     lines = data.get("lines", []) if typeof(data.get("lines")) == TYPE_ARRAY else []
     picture = str(data.get("picture", ""))
+    piece = data.get("piece", {}) if typeof(data.get("piece")) == TYPE_DICTIONARY else {}
     var pos: Array = form.get("pos", [0.0, 0.0, 0.0])
-    _target = _pin.origin if pinned else EliSenses.from_protocol(pos)
+    if not driven:
+        _target = _pin.origin if pinned else EliSenses.from_protocol(pos)
     if first:
         position = _target
     var parts_key := JSON.stringify(form.get("parts", []))
@@ -103,6 +110,42 @@ func refresh(data: Dictionary, first: bool = false) -> void:
 
 func leave() -> void:
     _leaving = true
+
+# --- as a piece of a game (EliPlay) ------------------------------------------------------------
+
+## Move it: a game drives it from here on, wherever ELI's world says it stands. `now` puts it there at once.
+func drive(to: Vector3, now: bool = false) -> void:
+    driven = true
+    _target = to
+    if now:
+        position = to
+
+## Out of sight, kept: a piece not yet up, or one that has been hit.
+func vanish() -> void:
+    _gone = true
+    visible = false
+    _grown = 0.0
+    _body.scale = Vector3.ONE * 0.001
+
+## Up again, growing out of the floor where it stands.
+func show_piece() -> void:
+    _gone = false
+    visible = true
+    _grown = 0.0
+
+func is_gone() -> bool:
+    return _gone
+
+func held() -> bool:
+    return _held
+
+## Light up for a moment: a light showing its turn, a target hit.
+func flash(seconds: float) -> void:
+    _flash_left = maxf(_flash_left, seconds)
+
+## How far from its middle a thing counts as on it: a mat takes a piece set down on it.
+func footprint() -> float:
+    return 0.6 * size if shape == "mat" else 0.35 * size
 
 ## Stand at a place the room keeps for records of this kind (a belief pinned to the Evidence Wall).
 func pin_to(spot: Transform3D) -> void:
@@ -448,11 +491,12 @@ func eye_height() -> float:
     if pinned and kind in WRITTEN:
         return 0.0
     return {"orb": 0.9, "pillar": 1.1, "lamp": 1.0, "beacon": 1.6, "tree": 1.2, "arch": 1.1,
-            "ring": 0.9, "board": 0.9, "crystal": 0.7}.get(shape, 0.35) * size
+            "ring": 0.9, "board": 0.9, "crystal": 0.7, "mat": 0.05}.get(shape, 0.35) * size
 
 func begin_grab() -> void:
     super.begin_grab()
     _held = true
+    taken.emit(self)
 
 func end_grab() -> void:
     super.end_grab()
@@ -464,6 +508,12 @@ func end_grab() -> void:
 
 func _process(delta: float) -> void:
     _clock += delta
+    if _gone:
+        return
+    var lit := 0.0
+    if _flash_left > 0.0:
+        _flash_left -= delta
+        lit = clampf(_flash_left / 0.3, 0.0, 1.0)
     if _leaving:
         _grown = maxf(0.0, _grown - delta / 0.5)
         if _grown <= 0.0:
@@ -473,7 +523,7 @@ func _process(delta: float) -> void:
         _grown = minf(1.0, _grown + delta / GROW_SECONDS)
     # out of the ground, with a little overshoot
     var eased := 1.0 - pow(1.0 - _grown, 3.0)
-    _body.scale = Vector3.ONE * maxf(0.001, eased * (1.0 + 0.12 * sin(_grown * PI)))
+    _body.scale = Vector3.ONE * maxf(0.001, eased * (1.0 + 0.12 * sin(_grown * PI)) * (1.0 + 0.3 * lit))
     if not _held:
         position = position.lerp(_target, clampf(delta * 4.0, 0.0, 1.0))
     if pinned and kind in WRITTEN:
@@ -495,9 +545,9 @@ func _process(delta: float) -> void:
     if _material and _parts.is_empty():
         var breath := 1.0 + 0.18 * sin(_clock * 1.7 + float(get_index()) * 0.9)
         # its own colour first: only a thing meant to glow gives off much light
-        _material.emission_energy_multiplier = (0.03 + 0.8 * glow * glow) * breath * eased
+        _material.emission_energy_multiplier = (0.03 + 0.8 * glow * glow) * breath * eased * (1.0 + 4.0 * lit)
     if lamp:
-        lamp.light_energy = (0.4 + 1.6 * glow) * eased
+        lamp.light_energy = (0.4 + 1.6 * glow) * eased * (1.0 + 2.0 * lit)
 
 # --- shapes ---------------------------------------------------------------------
 
@@ -607,6 +657,14 @@ func _shape() -> void:
             _cyl(0.05 * s, 0.22 * s, 3.2 * s, Vector3(0, 1.6 * s, 0))
             _ball(0.14 * s, Vector3(0, 3.3 * s, 0))
             _light(Vector3(0, 3.3 * s, 0), 7.0 * s)
+        "mat":
+            # a round mat on the floor with a lit rim: where the pieces of a sorting game go
+            var cloth := _cyl(0.6 * s, 0.6 * s, 0.03, Vector3(0, 0.015, 0), colour.darkened(0.55))
+            cloth.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+            var rim := TorusMesh.new()
+            rim.inner_radius = 0.56 * s
+            rim.outer_radius = 0.64 * s
+            _mesh(rim, Vector3(0, 0.03, 0))
         _:
             _ball(0.34 * s, Vector3(0, 0.9 * s, 0))
             if glow >= 0.5:

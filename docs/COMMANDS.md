@@ -41,7 +41,7 @@ Anything after `--` goes to the app and applies to that run only:
 | `--eli-link=on\|off` | The link to ELI v3 |
 | `--eli-endpoint=<url>` | ELI v3's local server, if not the default. Loopback only |
 | `--eli-model=<name>` | Ask ELI to load one of its models, for this run. Names are the ones on the ELI'S MIND panel |
-| `--eli-say="..."` | Send a sentence to ELI as if spoken, once the link is up. Several separated by `\|`; `@build` and `@undo` do what those buttons do, `@wait` waits. For trying the link without a microphone |
+| `--eli-say="..."` | Send a sentence to ELI as if spoken, once the link is up. Several separated by `\|`; `@build`, `@play` and `@undo` do what those buttons do, `@wait` waits. For trying the link without a microphone |
 
 ## Settings
 
