@@ -15,9 +15,12 @@ Expected in the folder:
 Every file a glTF names must be there, inside that model's folder; nothing else is
 copied. assets/models/models.json records what each model is and who made it, and
 assets/CREDITS.md lists them. Models already in assets/models/ and not in the folder
-are kept as they are, so a folder of new downloads adds to what is there. Then measure
-them, so ELI knows how big each one is:
+are kept as they are, so a folder of new downloads adds to what is there. Then let Godot
+import them once, set their textures to be compressed on the GPU with mipmaps and import
+again (tests/test_texture_imports.py fails until that is done), and measure them, so ELI
+knows how big each one is:
 
+    ./tools/godot_parse_check.sh && python3 tools/set_texture_imports.py && ./tools/godot_parse_check.sh
     godot --headless --path . --script tools/measure_models.gd
 """
 from __future__ import annotations

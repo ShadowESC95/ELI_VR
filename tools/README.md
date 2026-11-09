@@ -29,7 +29,7 @@ Helpers for working on ELI VR. The app does not use any of them at run time. Pyt
 |---|---|
 | `make_release.py` | Builds the clean source package. The privacy gate runs first and stops it |
 | `prepare_space_assets.py` | Turns the downloaded source imagery into the textures the rooms use. Needs numpy, Pillow and ffmpeg |
-| `set_texture_imports.py` | Sets how Godot imports those textures: compressed on the GPU, with mipmaps |
+| `set_texture_imports.py` | Sets how Godot imports every texture under `assets/` (the models' too): compressed on the GPU, with mipmaps, normal maps as normal maps. `--check` only says which are not |
 
 ## Linux desktop capture
 

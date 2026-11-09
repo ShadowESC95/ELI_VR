@@ -23,7 +23,7 @@ Render scale is read once, when the headset session starts. Change the profile a
 - **Foveation.** Switched on when the runtime supports it, lighter at `low` and `medium`. `xr.foveation` set to `off` disables it.
 - **Edges and textures.** 4x multisampling on every edge and 16x anisotropic filtering on every texture, so lines stay clean and floors and text stay sharp at a slant.
 - **Glow.** Off in a headset, where it costs a full-screen pass per eye, and on in the flat window.
-- **Textures.** Compressed on the GPU with mipmaps (`tools/set_texture_imports.py`), so the art costs video memory once and not per room.
+- **Textures.** Every texture under `assets/`, the real models' among them, is compressed on the GPU with mipmaps (`tools/set_texture_imports.py`; `tests/test_texture_imports.py` fails on one that is not), so the art costs video memory once and not per room, and far or slanted surfaces do not shimmer.
 - **Focus.** The world pauses when the headset says the session has lost focus, and carries on when it has it back. `xr.pause_when_unfocused` set to `false` keeps it running.
 
 OpenXR extensions are treated as optional. A runtime without one loses that feature, not the session.
