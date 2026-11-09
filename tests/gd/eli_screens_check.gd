@@ -221,14 +221,16 @@ func _run() -> void:
     var bay = UpgradeBay.new()
     root.add_child(bay)
     bay.build({}, Settings.new())
-    bay.show_eli({"connected": true, "state": {"awareness": {"cognitive_load": 0.9, "tool_activity": 0.2}}})
-    var hard: float = bay._leds.get_shader_parameter("busy")
-    bay.show_eli({"connected": true, "state": {"awareness": {"cognitive_load": 0.1, "tool_activity": 0.0}}})
-    var easy: float = bay._leds.get_shader_parameter("busy")
-    bay.show_eli({"connected": false})
-    var away: float = bay._leds.get_shader_parameter("busy")
-    _check("the_racks_work_as_hard_as_eli", is_equal_approx(hard, 0.9) and is_equal_approx(easy, 0.1) and away < easy,
-           "%s %s %s" % [hard, easy, away])
+    # the racks' lights are the room's own: how hard ELI is working, or ELI being away, leaves them as built
+    var built := [bay._leds.get_shader_parameter("pace"), bay._leds.get_shader_parameter("busy")]
+    var after := []
+    for working in [{"connected": true, "state": {"awareness": {"cognitive_load": 0.9, "tool_activity": 0.2}}},
+                    {"connected": true, "state": {"awareness": {"cognitive_load": 0.1, "tool_activity": 0.0}}},
+                    {"connected": false}]:
+        bay.show_eli(working)
+        after.append([bay._leds.get_shader_parameter("pace"), bay._leds.get_shader_parameter("busy")])
+    _check("the_racks_keep_their_own_pace_whatever_eli_is_doing", built[0] != null and after.all(func(a): return a == built),
+           "built %s, then %s" % [built, after])
 
     # what ELI may place: every real thing, by id, with what it is and how big
     var offered := EliProps.catalogue()

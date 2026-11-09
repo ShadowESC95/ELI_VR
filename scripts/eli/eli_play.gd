@@ -73,6 +73,7 @@ var _ended: Dictionary = {}         # game id -> true once this game has been pl
 var _said_start := false            # ELI's start line, said once it is there
 var _rng := RandomNumberGenerator.new()
 var _pressed: Dictionary = {}       # pointer -> whether its trigger was down last frame
+var _touching: Dictionary = {}      # hand -> the pieces it was on last tick ({thing: true})
 var _arm_pressed: Dictionary = {}   # arm -> whether its hand's trigger was down last frame
 var _last_shot: Dictionary = {}     # arm -> when it last fired
 var _by_arm: Dictionary = {}        # arm tag -> {"shots", "hits", "points"}
@@ -163,6 +164,7 @@ func _begin(obj: Dictionary) -> void:
     _pause = 0.0
     _looked = 0.0
     _arm_pressed.clear()
+    _touching.clear()
     _last_shot.clear()
     _by_arm.clear()
     _beam_on.clear()
@@ -864,12 +866,19 @@ func _physics_process(_delta: float) -> void:
         if pressed and not bool(_pressed.get(pointer, false)) and not XRWorldManipulator.is_holding(controller):
             hit(_along(pointer.global_transform.origin, -pointer.global_transform.basis.z))
         _pressed[pointer] = pressed
+    # a touch is a hand coming onto a piece: one resting there is the same touch, tick after tick
     for hand in [app.get("left_hand"), app.get("right_hand")]:
         if hand == null or not hand.get_has_tracking_data():
+            _touching.erase(hand)
             continue
+        var was: Dictionary = _touching.get(hand, {})
+        var on := {}
         for thing in _touchable():
-            if hand.global_position.distance_to(thing.global_position + Vector3(0, thing.eye_height(), 0)) <= thing.radius:
-                hit(thing)
+            if thing.touched_by(hand.global_position):
+                on[thing] = true
+                if not was.has(thing):
+                    hit(thing)
+        _touching[hand] = on
 
 func _unhandled_input(event: InputEvent) -> void:
     if not running or app == null or bool(app.get("xr_active")):

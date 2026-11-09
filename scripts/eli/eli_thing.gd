@@ -13,6 +13,9 @@ signal let_go(thing)
 signal taken(thing)             # the grip has closed on it
 
 const GROW_SECONDS := 0.9
+# Metres round the grip pose a hand still counts as on what it touches: the tracked point is the
+# middle of the closed hand, and the hand reaches about this far past it on every side.
+const HAND_REACH := 0.08
 
 var thing_id := ""
 var shape := "orb"
@@ -39,6 +42,7 @@ var pinned := false            # the room has a place for this kind of record, a
 var piece := {}                # its part in a game ELI set (EliPlay): the game, a role, a tag, an index
 var driven := false            # a game is moving it: where ELI's world says it stands is left alone
 var _gone := false             # out of sight for now (a piece not yet up, or hit)
+var _layer := 0                 # the layer its sphere is on while it is in sight
 var _flash_left := 0.0
 var turn := 0.0                 # which way its front faces, in ELI's degrees round from straight ahead
 # Records that, pinned, are written out where they stand: a belief, a memory, what ELI found for
@@ -124,15 +128,21 @@ func drive(to: Vector3, now: bool = false) -> void:
     if now:
         position = to
 
-## Out of sight, kept: a piece not yet up, or one that has been hit.
+## Out of sight, kept: a piece not yet up, or one that has been hit. Out of reach too: its sphere
+## leaves the layer the trigger's and the grip's rays look on, so neither stops at what is not there.
 func vanish() -> void:
+    if not _gone:
+        _layer = collision_layer
     _gone = true
     visible = false
+    collision_layer = 0
     _grown = 0.0
     _body.scale = Vector3.ONE * 0.001
 
-## Up again, growing out of the floor where it stands.
+## Up again, growing out of the floor where it stands, and in reach again.
 func show_piece() -> void:
+    if _gone:
+        collision_layer = _layer
     _gone = false
     visible = true
     _grown = 0.0
@@ -146,6 +156,13 @@ func held() -> bool:
 ## Light up for a moment: a light showing its turn, a target hit.
 func flash(seconds: float) -> void:
     _flash_left = maxf(_flash_left, seconds)
+
+## Whether a hand at `point` is on it: inside what is drawn of it as it stands now (growing, turned,
+## a real model or made part by part), give or take HAND_REACH. Not the grip's 0.6 m sphere, which
+## would have one hand on two lights set closer than 1.2 m.
+func touched_by(point: Vector3) -> bool:
+    var drawn := EliModels.bounds(_body, global_transform)
+    return drawn.size != Vector3.ZERO and drawn.grow(HAND_REACH).has_point(point)
 
 ## How far from its middle a thing counts as on it: a mat takes a piece set down on it.
 func footprint() -> float:
@@ -558,6 +575,8 @@ func end_grab() -> void:
 func _process(delta: float) -> void:
     _clock += delta
     if _gone:
+        if _leaving:
+            queue_free()            # out of sight already: nothing to see go, so it goes at once
         return
     var lit := 0.0
     if _flash_left > 0.0:

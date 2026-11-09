@@ -8,6 +8,7 @@ const EliThingsClass = preload("res://scripts/eli/eli_things.gd")
 const EliMotionClass = preload("res://scripts/eli/eli_motion.gd")
 const EliInitiativeClass = preload("res://scripts/eli/eli_initiative.gd")
 const EliPlayClass = preload("res://scripts/eli/eli_play.gd")
+const EliLinkClass = preload("res://scripts/eli/eli_link.gd")
 
 # Stands in for the app: a camera where you stand, a room, and the BUILD action, which takes a while.
 class StandIn extends Node3D:
@@ -26,6 +27,11 @@ class StandIn extends Node3D:
         await get_tree().create_timer(0.3).timeout
     func eli_speak(words: String) -> void:
         spoken.append(words)
+
+# Stands in for a tracked controller: a hand in the room, where it is put.
+class FakeHand extends Node3D:
+    func get_has_tracking_data() -> bool:
+        return true
 
 # Stands in for the link to ELI v3: it takes the result of a game and answers as ELI's world would.
 class FakeLink extends Node:
@@ -116,6 +122,7 @@ func _run() -> void:
     _check("gone_when_you_leave", not _presence.visible, "visible=%s" % _presence.visible)
     await _play_checks()
     await _range_checks()
+    await _link_checks()
     _voice_checks()
     quit()
 
@@ -256,6 +263,68 @@ func _play_checks() -> void:
     play.apply_world_state({"objects": []})
     _check("a_game_taken_down_by_elis_world_ends_without_a_word", was_on and not play.running and link.posted.size() == 5,
            "on=%s running=%s posted=%d" % [was_on, play.running, link.posted.size()])
+
+    # a piece out of sight is out of reach: one waiting its turn in front of the target that is up does
+    # not stop the trigger's ray, nor the grip's (the same mask-4 ray), at nothing
+    var still := {"name": "Line", "kind": "targets", "goal": "hit it", "count": 2, "seconds": 60, "pace": 0.5,
+                  "motion": "still", "lines": lines}
+    state = {"objects": [_game("g7", still), _piece("v1", "g7", "target", "orb", 0, "orb", [0.0, 0.0, 5.0]),
+                         _piece("v2", "g7", "target", "orb", 1, "orb", [0.0, 0.0, 3.0])]}
+    _things.apply_world_state(state)
+    play.apply_world_state(state)
+    await _frames(0.2)
+    var v1 = _things._things["v1"]
+    var v2 = _things._things["v2"]
+    var from := Vector3(0, 0.3, 0)
+    var along = play._along(from, Vector3(0, 0, -1))
+    var ray := PhysicsRayQueryParameters3D.create(from, from + Vector3(0, 0, -30))
+    ray.collision_mask = 4
+    ray.collide_with_areas = true
+    ray.collide_with_bodies = false
+    var grip = _app.get_viewport().get_world_3d().direct_space_state.intersect_ray(ray).get("collider")
+    _check("a_piece_out_of_sight_does_not_stop_a_ray_at_the_live_one_behind_it", not v1.is_gone() and v2.is_gone()
+           and along == v1 and grip == v1, "up %s waiting %s, trigger met %s, grip met %s" % [not v1.is_gone(), v2.is_gone(), along, grip])
+    play.stop()
+
+    # a hand coming onto a light is one touch however long it rests there; a hand between two lights
+    # set a metre apart touches neither (what is drawn of a light, not the grip's 0.6 m sphere)
+    var lights := {"name": "Follow", "kind": "order", "goal": "follow", "count": 3, "seconds": 30, "pace": 1.0, "lines": lines}
+    state = {"objects": [_game("g8", lights), _piece("o1", "g8", "light", "o", 0, "orb", [-0.5, 1.2, 2.5]),
+                         _piece("o2", "g8", "light", "o", 1, "orb", [0.5, 1.2, 2.5])]}
+    _things.apply_world_state(state)
+    play.apply_world_state(state)
+    await _frames(1.6)        # grown, and the first round shown
+    var o1 = _things._things["o1"]
+    var o2 = _things._things["o2"]
+    var hand := FakeHand.new()
+    root.add_child(hand)
+    _app.left_hand = hand
+    _app.xr_active = true
+    play._sequence = [o1, o2]
+    play._expected = 0
+    var lit := func(t) -> Vector3: return t.global_position + Vector3(0, t.eye_height(), 0)
+    hand.global_position = (lit.call(o1) + lit.call(o2)) * 0.5
+    await _frames(0.3)
+    var between: bool = play.misses == 0 and play._expected == 0 and play.rounds == 0
+    hand.global_position = lit.call(o1)
+    await _frames(0.3)
+    var resting: bool = play.misses == 0 and play._expected == 1
+    hand.global_position = lit.call(o2)
+    await _frames(0.3)
+    _check("a_hand_on_a_light_is_one_touch_and_the_light_beside_it_is_not_touched", between and resting and play.rounds == 1
+           and play.misses == 0, "between %s resting %s rounds %d misses %d" % [between, resting, play.rounds, play.misses])
+    _app.xr_active = false
+    _app.left_hand = null
+    hand.queue_free()
+    play.stop()
+
+    # ELI's world takes the pieces of every game played here away: none is left in the room, seen or not
+    _things.apply_world_state({"objects": []})
+    play.apply_world_state({"objects": []})
+    await _frames(0.8)        # one in sight shrinks away for half a second; one out of sight goes at once
+    var left: Array = _things.get_children().filter(func(n): return n is EliThing)
+    _check("the_pieces_of_games_played_out_are_gone_once_elis_world_takes_them", left.is_empty(),
+           "%d still in the room: %s" % [left.size(), left.map(func(n): return n.name)])
     play.queue_free()
     link.queue_free()
     _app.camera.rotation = Vector3.ZERO
@@ -394,6 +463,92 @@ func _range_checks() -> void:
     await _frames(0.2)
     play.queue_free()
     link.queue_free()
+
+# The link to ELI v3 tells ELI of the session once, when it is whole, and tells it the session ended
+# however ELI VR ends. The far end is a WebSocket in this process on a loopback port (no ELI, nothing
+# outside this machine): it says what ELI v3 would and keeps what it hears.
+func _link_checks() -> void:
+    var state := {"type": "eli_world_state", "room": "core_room"}
+    var welcome := {"type": "welcome", "version": 2, "capabilities": ["world-state"], "server": "stand-in"}
+    var heard := []
+    for order in [[state, welcome, state], [welcome, state, state]]:
+        var link = EliLinkClass.new()
+        root.add_child(link)
+        var changes := []
+        var agreed := []
+        link.link_changed.connect(func(on): changes.append(on))
+        if link.has_signal("agreed"):
+            link.agreed.connect(func(): agreed.append(true))
+        for msg in order:
+            link._take(msg)
+        heard.append([changes, agreed.size()])
+        link.queue_free()
+    _check("the_session_is_told_once_whichever_comes_first", heard.all(func(h): return h[0] == [true] and h[1] == 1), str(heard))
+
+    var server := TCPServer.new()
+    if server.listen(0, "127.0.0.1") != OK:
+        _check("closing_the_window_or_ending_the_app_tells_eli_the_session_ended", false, "no loopback port")
+        return
+    var told := {}
+    for how in ["window", "tree"]:
+        var link = EliLinkClass.new()
+        link.base_url = "%s:%d" % [EliLinkClass.LOOPBACK, server.get_local_port()]
+        link.enabled = true
+        root.add_child(link)
+        var peer: WebSocketPeer = await _accept(server)
+        if peer == null:
+            told[how] = "never connected"
+            link.queue_free()
+            continue
+        peer.send_text(JSON.stringify(state))
+        peer.send_text(JSON.stringify(welcome))
+        var until := Time.get_ticks_msec() + 3000
+        while Time.get_ticks_msec() < until and (not link.connected or link.protocol != 2):
+            peer.poll()
+            await process_frame
+        _heard(peer)                    # the hello, before the end
+        if how == "window":
+            link.notification(Node.NOTIFICATION_WM_CLOSE_REQUEST)
+        root.remove_child(link)         # what every way of the app ending does to it, the window's too
+        told[how] = await _events_for(peer, 1.0)
+        link.free()
+        peer.close()
+    server.stop()
+    _check("closing_the_window_or_ending_the_app_tells_eli_the_session_ended",
+           told.values().all(func(t): return t == ["vr_session_ended"]), str(told))
+
+func _accept(server: TCPServer) -> WebSocketPeer:
+    var peer: WebSocketPeer = null
+    var until := Time.get_ticks_msec() + 5000
+    while Time.get_ticks_msec() < until:
+        if peer == null and server.is_connection_available():
+            peer = WebSocketPeer.new()
+            peer.accept_stream(server.take_connection())
+        if peer != null:
+            peer.poll()
+            if peer.get_ready_state() == WebSocketPeer.STATE_OPEN and peer.get_available_packet_count() > 0:
+                return peer
+        await process_frame
+    return null
+
+# What the far end heard: the events in it, by type.
+func _heard(peer: WebSocketPeer) -> Array:
+    var events := []
+    peer.poll()
+    while peer.get_available_packet_count() > 0:
+        var msg = JSON.parse_string(peer.get_packet().get_string_from_utf8())
+        if typeof(msg) == TYPE_DICTIONARY and str(msg.get("type", "")) == "vr_event":
+            events.append(str(msg.get("event_type", "")))
+    return events
+
+# The events the far end hears over the next `seconds`, with nothing polling the link meanwhile.
+func _events_for(peer: WebSocketPeer, seconds: float) -> Array:
+    var events := []
+    var until := Time.get_ticks_msec() + int(seconds * 1000.0)
+    while Time.get_ticks_msec() < until:
+        events.append_array(_heard(peer))
+        await process_frame
+    return events
 
 # Stands in for the app's settings, keeping what is set.
 class Kept extends RefCounted:

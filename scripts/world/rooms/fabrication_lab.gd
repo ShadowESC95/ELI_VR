@@ -9,7 +9,7 @@ var _print: MeshInstance3D
 var _head: Node3D
 var _crates: Array = []
 var _arm: Array = []
-var _leds: ShaderMaterial          # the racks' status lights: how busy ELI is sets their pace
+var _leds: ShaderMaterial          # the racks' status lights, at the room's own pace
 
 func _build() -> void:
     # little light from nowhere: the panels in the roof and the lamps on the work give the room its shape
@@ -188,7 +188,7 @@ func _boards() -> void:
             _improving = screen
 
 # Across the far wall, behind the portals: the racks ELI thinks on, glass-fronted, their status
-# lights blinking as hard as ELI is working.
+# lights blinking each at its own pace, whatever ELI is doing (how ELI is shows on ELI and its light).
 func _compute_racks() -> void:
     var graphite := MaterialKitClass.painted("hull_panels", 1.2, Color(0.11, 0.12, 0.14), 0.45)
     var steel := MaterialKitClass.metal("brushed_metal", 0.6, Color(0.55, 0.57, 0.6), 0.6)
@@ -229,7 +229,7 @@ func _compute_racks() -> void:
         batch.set_instance_custom_data(i, Color(lights[i][2], lights[i][3], 0.0, 0.0))
     var leds := MultiMeshInstance3D.new()
     leds.multimesh = batch
-    _leds = MaterialKitClass.shader("res://assets/shaders/rack_leds.gdshader", {"busy": 0.3, "energy": 2.2})
+    _leds = MaterialKitClass.shader("res://assets/shaders/rack_leds.gdshader", {"pace": 0.3, "energy": 2.2})
     leds.material_override = _leds
     leds.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
     add_child(leds)
@@ -238,10 +238,6 @@ func _compute_racks() -> void:
         lamp(Vector3(sin(b), 0.0, -cos(b)) * (RADIUS - 1.6) + Vector3(0, 2.6, 0), Color(0.6, 0.85, 1.0), 0.9, 4.5)
 
 func show_eli(eli: Dictionary) -> void:
-    if _leds != null:
-        var awareness: Dictionary = (eli.get("state", {}) as Dictionary).get("awareness", {})
-        var busy := maxf(float(awareness.get("cognitive_load", 0.0)), float(awareness.get("tool_activity", 0.0)))
-        _leds.set_shader_parameter("busy", clampf(busy, 0.0, 1.0) if bool(eli.get("connected", false)) else 0.05)
     if _goals == null:
         return
     if not bool(eli.get("connected", false)):

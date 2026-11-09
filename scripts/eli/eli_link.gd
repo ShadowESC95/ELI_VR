@@ -16,6 +16,9 @@ extends Node
 
 signal world_state_received(state: Dictionary)
 signal link_changed(connected: bool)
+# The link is whole: ELI's world is arriving and the versions are agreed (in whichever order the two
+# came). Once a connection: this is when the session is told to ELI, and told once.
+signal agreed
 
 const DEFAULT_ENDPOINT := "http://127.0.0.1:8081"
 const LOOPBACK := "http://127.0.0.1"
@@ -44,6 +47,7 @@ var _socket: WebSocketPeer
 var _retry := 0.0
 var _was_open := false
 var _welcome_wait := 0.0
+var _agreed_told := false               # `agreed` was emitted for this connection
 
 func configure(config, policy) -> void:
     var asked = config.get_value("eli_bridge.enabled", "auto")
@@ -122,6 +126,7 @@ func _process(delta: float) -> void:
             _was_open = false
             protocol = 0
             capabilities = []
+            _agreed_told = false
             _set_connected(false)
 
 func _take(msg: Dictionary) -> void:
@@ -143,9 +148,14 @@ func _agree(version: int, has: Array, from: String) -> void:
     if version < 2:
         problem = EliResult.bad("unsupported", "This ELI v3 is older: presence and talking only")
     print("ELI link: world protocol %d%s" % [version, "" if from.is_empty() else " (%s)" % from])
-    link_changed.emit(connected)
+    _tell_agreed()
     if can("props"):
         report_body.call_deferred()
+
+func _tell_agreed() -> void:
+    if connected and protocol != 0 and not _agreed_told:
+        _agreed_told = true
+        agreed.emit()
 
 # Bytes ELI v3 serves: a picture ELI took or looked at for you ("pictures"), a file of a model
 # ELI brought in ("models").
@@ -181,6 +191,7 @@ func _set_connected(value: bool) -> void:
         problem = null
     print("ELI link: %s" % ("connected" if connected else "lost"))
     link_changed.emit(connected)
+    _tell_agreed()                      # a welcome that came before ELI's world did
 
 # What the status line says about the link itself, or "" when it is whole.
 func status() -> String:
@@ -189,6 +200,24 @@ func status() -> String:
     if problem != null and (not connected or problem.kind != "unsupported"):
         return problem.sentence()
     return "" if connected else "ELI is not running"
+
+## ELI VR is ending: ELI is told the session is over, sent now rather than on a later frame, since
+## none may follow. Called by the exit button, by the window being closed and, as the last resort, by
+## the link leaving the tree however the app ends; told once, and the link is not opened again. The
+## socket closes with the process (or this node), which ELI's world sees as well.
+func end_session(summary: String) -> void:
+    if not enabled or _socket == null or _socket.get_ready_state() != WebSocketPeer.STATE_OPEN:
+        return
+    enabled = false
+    send_event("vr_session_ended", summary, {})
+    _socket.poll()                      # the event goes out now
+
+func _notification(what: int) -> void:
+    if what == NOTIFICATION_WM_CLOSE_REQUEST:
+        end_session("The user closed ELI VR")
+
+func _exit_tree() -> void:
+    end_session("ELI VR closed")
 
 func send_event(event_type: String, summary: String, payload: Dictionary = {}) -> void:
     if _socket == null or _socket.get_ready_state() != WebSocketPeer.STATE_OPEN:

@@ -77,6 +77,19 @@ class Alive(unittest.TestCase):
     def test_a_game_elis_world_takes_down_ends_quietly(self) -> None:
         self.check("a_game_taken_down_by_elis_world_ends_without_a_word")
 
+    def test_a_piece_out_of_sight_is_out_of_reach_of_the_trigger_and_the_grip(self) -> None:
+        self.check("a_piece_out_of_sight_does_not_stop_a_ray_at_the_live_one_behind_it")
+
+    def test_a_hand_resting_on_a_light_touches_it_once_and_not_the_light_beside_it(self) -> None:
+        self.check("a_hand_on_a_light_is_one_touch_and_the_light_beside_it_is_not_touched")
+
+    def test_the_pieces_of_a_game_leave_the_room_when_elis_world_takes_them(self) -> None:
+        self.check("the_pieces_of_games_played_out_are_gone_once_elis_world_takes_them")
+
+    def test_eli_is_told_of_the_session_once_and_told_when_it_ends_however_it_ends(self) -> None:
+        self.check("the_session_is_told_once_whichever_comes_first")
+        self.check("closing_the_window_or_ending_the_app_tells_eli_the_session_ended")
+
     def test_the_range_begins_with_guns_on_the_table_and_shots_score_by_their_ring(self) -> None:
         self.check("the_range_begins_with_the_guns_on_the_table_and_a_target_up")
         self.check("a_shot_scores_by_the_ring_it_hits")
@@ -137,8 +150,8 @@ class Screens(Alive):
         self.check("a_finding_is_printed_with_its_lines")
         self.check("the_radio_says_what_is_playing")
 
-    def test_the_upgrade_bay_racks_blink_as_hard_as_eli_is_working(self) -> None:
-        self.check("the_racks_work_as_hard_as_eli")
+    def test_the_upgrade_bay_racks_blink_at_their_own_pace_whatever_eli_is_doing(self) -> None:
+        self.check("the_racks_keep_their_own_pace_whatever_eli_is_doing")
 
     def test_eli_can_place_real_things_and_paint_its_own_pictures(self) -> None:
         self.check("eli_is_told_the_real_things_there_are")

@@ -687,6 +687,7 @@ func _setup_eli() -> void:
 
     eli_link.world_state_received.connect(_on_eli_world_state)
     eli_link.link_changed.connect(_on_eli_link_changed)
+    eli_link.agreed.connect(_on_eli_link_agreed)
     _refresh_eli_presence()
 
 func _theme_accent() -> Color:
@@ -699,13 +700,17 @@ func _current_room_id() -> String:
 func _on_eli_link_changed(connected: bool) -> void:
     _show_eli_in_room()
     eli_presence.set_mode("idle" if connected else "dormant")
-    if connected and eli_link.can("mind") and _eli_mind.is_empty():
-        _settle_eli_mind()
-    elif not connected:
+    if not connected:
         _eli_mind = {}
-    if connected:
-        eli_link.send_event("vr_session_started", "The user opened ELI VR", {"xr": xr_active})
-        _tell_eli_where_we_are()
+    _refresh_eli_presence()
+
+# The link is whole (EliLink.agreed, once a connection): the session is told to ELI once, with the
+# room you are in, and ELI's mind is asked for now that what it can do is known.
+func _on_eli_link_agreed() -> void:
+    if eli_link.can("mind") and _eli_mind.is_empty():
+        _settle_eli_mind()
+    eli_link.send_event("vr_session_started", "The user opened ELI VR", {"xr": xr_active})
+    _tell_eli_where_we_are()
     _refresh_eli_presence()
 
 func _on_eli_world_state(state: Dictionary) -> void:
@@ -969,12 +974,12 @@ func exit_notice() -> String:
     return "PRESS EXIT AGAIN TO CLOSE" if Time.get_ticks_msec() < _exit_armed_until_ms else ""
 
 # The launcher that started us is waiting for this process to end; it then
-# stops the VR runtime and the desktop helper it started.
+# stops the VR runtime and the desktop helper it started. ELI is told the session
+# ended here, and by the link itself when the window is closed or the app ends
+# any other way (EliLink.end_session).
 func quit_app() -> void:
-    if eli_link != null and eli_link.connected:
-        eli_link.send_event("vr_session_ended", "The user closed ELI VR", {})
-        await get_tree().process_frame
-        await get_tree().process_frame
+    if eli_link != null:
+        eli_link.end_session("The user closed ELI VR")
     if desktop_surface and desktop_surface.has_method("set_desktop_visible"):
         desktop_surface.set_desktop_visible(false)
     print("ELI VR closing")
