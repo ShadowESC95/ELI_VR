@@ -21,7 +21,7 @@ Change one from a terminal with `python3 tools/eli_vr.py set <key> <value>`, or 
 | `xr.snap_turn_degrees` | `30` | Snap turn angle |
 | `xr.turn_cooldown_seconds` | `0.3` | Delay before a held stick turns again |
 
-`xr.controller_calibration` holds the hand offsets the calibration gesture works out. Leave it to the gesture.
+`xr.controller_calibration` holds the hand offsets the calibration gesture works out (B / Y held on both controllers, or RECALIBRATE POINTER on the wrist menu). Leave it to the gesture.
 
 ## Graphics
 
@@ -67,7 +67,10 @@ Holding the screen with the grip changes the last five, and recentring the works
 | Key | Default | Meaning |
 |---|---|---|
 | `ui.desktop_dock` | `true` | The settings dock in the flat window (`F1`) |
-| `ui.performance_hud` | `true` | Frame rate and state (`F3`) |
+| `ui.readouts.fps` | `false` | Frame rate, hardware class and quality on the HUD |
+| `ui.readouts.controllers` | `false` | Controller coordinates: the calibration offsets x, y, z and yaw |
+| `ui.readouts.input` | `false` | Controller input diagnostics in the headset |
+| `ui.readouts.status` | `false` | Room, desktop link and ELI link on the HUD |
 | `ui.wrist_menu` | `true` | The menu on your left wrist |
 | `ui.console_distance_m` | `2.7` | How far the control panels stand |
 | `ui.spatial_panels_grabbable` | `true` | Panels can be grabbed and moved |

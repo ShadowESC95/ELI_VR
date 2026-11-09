@@ -32,7 +32,7 @@ OpenXR extensions are treated as optional. A runtime without one loses that feat
 
 The reference setup is a mid-range desktop GPU from 2019 driving a 90 Hz PC headset. There, every one of the fifteen places held 90 frames a second with a headset render scale of 1.15 (now `high`), with roughly 1.5 to 2.1 GB of video memory in use. That is one machine, with the profile chosen by hand; `ultra` at 1.3, with multisampling on, has not been measured in a headset yet. On less, `auto` will pick lower; on integrated graphics expect `low` in the flat window.
 
-The performance HUD (`F3`) shows the frame rate, and `ELI_VR_LOG_FPS=1` writes it to the log every few seconds.
+The FPS readout (wrist menu, settings dock, or `F3` for every readout) shows the frame rate, and `ELI_VR_LOG_FPS=1` writes it to the log every few seconds.
 
 ## If it is slow
 

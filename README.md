@@ -60,7 +60,7 @@ With `auto`, ELI VR uses a headset when an OpenXR runtime is active and falls ba
 | `Q` / `E` | Down / up |
 | `F1` | Settings dock |
 | `F2` | Desktop screen |
-| `F3` | Performance HUD |
+| `F3` | HUD readouts (frame rate, controller coordinates, input diagnostics, status), all on or all off |
 | `F5` | Rebuild the current room |
 | Hold `T` | Talk to ELI (with the ELI link on) |
 | `B` / `G` / `R` / `Z` | ELI builds something of its own in its room / sets a game here / sets up the range (guns and targets) / take the last change back |
@@ -79,7 +79,8 @@ With `auto`, ELI VR uses a headset when an OpenXR runtime is active and falls ba
 | Left stick | Move |
 | Right stick | Snap turn |
 | B / Y | Show or hide the spatial console |
-| Menu (left) | Wrist menu |
+| Hold B / Y on both controllers | Recalibrate the pointer: hold the controllers together in front of your chest; a bar fills for a second, then the controllers pulse and it says so |
+| Menu (left) | Wrist menu: places, RECALIBRATE POINTER (then hold both triggers), CALIBRATE (trim by hand), EXIT, and each HUD readout or all of them |
 | Hold A / X | Talk to ELI (with the ELI link on) |
 
 Clicking on the desktop needs the desktop helper with your desktop's permission to take the pointer: on Linux under Wayland the screen-sharing dialog asks for it the first time, and it is remembered; macOS asks for Accessibility the first time you click. Without it the desktop is shown and not touched.

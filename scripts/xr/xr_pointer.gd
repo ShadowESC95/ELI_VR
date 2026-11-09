@@ -121,7 +121,7 @@ func _physics_process(_delta: float) -> void:
     _set_beam_length(maxf(0.05, hit_distance))
     _set_visual_state(target != null)
 
-    var pressed: bool = controller.is_button_pressed("trigger_click")
+    var pressed: bool = _trigger_down()
     # a hand holding something (a panel, a thing, a gun of the range) is not pressing buttons with it
     if pressed and not trigger_before and current and not XRWorldManipulator.is_holding(controller):
         current.activate()
@@ -211,7 +211,12 @@ func _hide_visuals() -> void:
     reticle.visible = false
 
 func _update_trigger_latch() -> void:
-    trigger_before = controller.is_button_pressed("trigger_click")
+    trigger_before = _trigger_down()
+
+# The trigger, unless a recalibration armed from the wrist menu has it (XRCalibrationWidget): then it
+# presses nothing and clicks nothing until let go.
+func _trigger_down() -> bool:
+    return controller.is_button_pressed("trigger_click") and not XRCalibrationWidget.takes_triggers()
 
 func _log_status_once(status: String) -> void:
     if status == status_logged:

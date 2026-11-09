@@ -26,10 +26,12 @@ func setup(
     app = p_app
 
 func _process(delta: float) -> void:
+    # the sticks trim the calibration while its panel is open for that; a recalibration's own
+    # prompt leaves them alone
     if (
         app != null
         and app.get("calibration_widget") != null
-        and bool(app.get("calibration_widget").visible)
+        and bool(app.get("calibration_widget").trim_open)
     ):
         return
 

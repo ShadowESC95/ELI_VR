@@ -169,9 +169,12 @@ Grip + stick Y       push it away or pull it in (the desktop: larger or smaller)
 Grip + stick X       turn it (the desktop: flatter or more curved)
 Grip + hand in/out   the desktop: nearer or further
 B / Y                show or hide the spatial console
+B / Y on both, held  recalibrate the pointer
 Menu (left)          wrist menu
 Hold A / X           talk to ELI, with the link on
 Grip on ELI's thing  move what ELI built; ELI is told where you put it
 ```
 
-Hands not where the controllers are: hold both grips and both triggers for a second with the controllers together in front of your chest, or use CALIBRATE on the wrist menu. `F6` shows the calibration widget, `F7` calibrates at once.
+Hands or pointer not where the controllers are: hold both controllers together in front of your chest and hold B / Y on both for a second (a bar fills while you hold; the controllers pulse when it is done). On controllers without B / Y (Vive, Windows Mixed Reality, the simple profile), press RECALIBRATE POINTER on the wrist menu, then hold both triggers for a second the same way; pressing it again stops. Either way the existing calibration runs and is kept in ELI VR's settings. CALIBRATE on the wrist menu opens the panel to trim the offsets by hand with the sticks. `F6` shows that panel, `F7` calibrates at once.
+
+The HUD's readouts are off for normal use: the frame rate (FPS), the controller coordinates (the calibration offsets x, y, z and yaw), the input diagnostics and the status lines. Switch each, or all at once, on the wrist menu, in the settings dock (`F1`), with `F3` or the console's HUD button; the choice is kept. What ELI just did and the second press that closes ELI VR show whatever is switched. `ELI_VR_XR_DIAGNOSTICS=1` starts ELI VR in its diagnostic mode: every readout shown, and what is switched in that run lasts that run only.

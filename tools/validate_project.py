@@ -96,7 +96,7 @@ if "query.collision_mask = 4" not in manip:
 
 widget = (ROOT / "scripts/xr/calibration_widget.gd").read_text(errors="ignore")
 for token in [
-    "CHORD_HOLD_SECONDS", "grip_click", "trigger_click",
+    "CHORD_HOLD_SECONDS", "CHORD_ACTION", "trigger_click",
     "var left_stick: Vector2", "var right_stick: Vector2",
     'manager.call(&"calibrate_hands")',
 ]:

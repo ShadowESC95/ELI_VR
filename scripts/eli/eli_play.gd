@@ -499,7 +499,8 @@ func _tick_firing(delta: float) -> void:
             _charge.erase(arm)
             continue
         var hand := _hand_holding(arm)
-        var pressed: bool = hand != null and hand.controller != null and hand.controller.is_button_pressed("trigger_click")
+        var pressed: bool = (hand != null and hand.controller != null and hand.controller.is_button_pressed("trigger_click")
+                             and not XRCalibrationWidget.takes_triggers())     # a recalibration has the triggers
         var info := arm_rules(arm)
         var edge: bool = pressed and not bool(_arm_pressed.get(arm, false))
         match str(info.get("fire", "shot")):
@@ -861,7 +862,7 @@ func _physics_process(_delta: float) -> void:
         var controller = pointer.get("controller")
         if controller == null:
             continue
-        var pressed: bool = controller.is_button_pressed("trigger_click")
+        var pressed: bool = controller.is_button_pressed("trigger_click") and not XRCalibrationWidget.takes_triggers()
         # a hand with a gun in it fires the gun (the range), not the pointer
         if pressed and not bool(_pressed.get(pointer, false)) and not XRWorldManipulator.is_holding(controller):
             hit(_along(pointer.global_transform.origin, -pointer.global_transform.basis.z))

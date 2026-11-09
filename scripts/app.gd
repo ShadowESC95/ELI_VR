@@ -35,6 +35,7 @@ const AmbientAudioManagerClass = preload("res://scripts/world/ambient_audio.gd")
 const DesktopSurfaceClass = preload("res://scripts/desktop/desktop_surface.gd")
 const ControlDockClass = preload("res://scripts/ui/control_dock.gd")
 const PerformanceHudClass = preload("res://scripts/ui/performance_hud.gd")
+const HudReadoutsClass = preload("res://scripts/ui/hud_readouts.gd")
 const LicenceClass = preload("res://scripts/core/licence.gd")
 const LicenceScreenClass = preload("res://scripts/ui/licence_screen.gd")
 
@@ -52,6 +53,7 @@ var console
 var desktop_surface
 var dock
 var hud
+var readouts                # which debug readouts the HUDs show (HudReadouts)
 var ambient_audio
 var optimizer
 
@@ -68,7 +70,6 @@ var right_hand_visual
 var wrist_menu
 var controller_calibration
 var calibration_widget
-var _by_toggle_latched := false
 
 var eli_link
 var eli_room_light
@@ -104,6 +105,12 @@ func _ready() -> void:
 
     network_policy = NetworkPolicyClass.new()
     network_policy.configure(config)
+
+    readouts = HudReadoutsClass.new()
+    readouts.setup(config, HudReadoutsClass.diagnostic_mode())
+    readouts.changed.connect(_apply_readouts)
+    if readouts.diagnostic:
+        print("ELI VR diagnostic mode: every readout is shown, and what is switched lasts this run only")
 
     capabilities = CapabilityClass.new().detect()
     _apply_adaptive_hardware_profile()
@@ -338,15 +345,15 @@ func _setup_view_rigs() -> void:
             hand_accent
         )
         xr_camera.add_child(calibration_widget)
+        # B/Y pressed alone shows or hides the spatial console; both together are the recalibration chord
+        calibration_widget.chord_button_alone.connect(
+            func(): set_spatial_console_enabled(not bool(config.get_value("world.spatial_console", true))))
 
         xr_diagnostics = XRInputDiagnosticsClass.new()
         xr_diagnostics.name = "XRInputDiagnostics"
         xr_diagnostics.setup(xr_camera, left_hand, right_hand, left_aim, right_aim)
-        xr_diagnostics.visible = (
-            bool(config.get_value("diagnostics.xr_input_overlay", false))
-            and OS.get_environment("ELI_VR_XR_DIAGNOSTICS") == "1"
-        )
         add_child(xr_diagnostics)
+        _apply_readouts()
     else:
         xr_origin.visible = false
         flat_camera = Camera3D.new()
@@ -373,7 +380,6 @@ func _setup_ui() -> void:
         hud.name = "XRStatusHUD"
         hud.setup(self, xr_camera)
         add_child(hud)
-        hud.visible = bool(config.get_value("ui.performance_hud", true))
     else:
         dock = ControlDockClass.new()
         dock.name = "ControlDock"
@@ -385,7 +391,6 @@ func _setup_ui() -> void:
         hud.name = "PerformanceHUD"
         hud.setup(self)
         add_child(hud)
-        hud.visible = bool(config.get_value("ui.performance_hud", true))
 
     if bool(config.get_value("world.spatial_console", true)):
         _rebuild_console()
@@ -399,7 +404,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
         KEY_F2:
             set_desktop_enabled(not desktop_surface.visible)
         KEY_F3:
-            if hud: hud.visible = not hud.visible
+            readouts.toggle_all()
         KEY_F5:
             _apply_current_room()
         KEY_B:
@@ -422,12 +427,6 @@ func _unhandled_key_input(event: InputEvent) -> void:
 func _process(_delta: float) -> void:
     ModelCache.poll()                # the next real model, loading in the background
     _process_eli_talk()
-    if not xr_active:
-        return
-    var by_pressed := left_hand.is_button_pressed("by_button") or right_hand.is_button_pressed("by_button")
-    if by_pressed and not _by_toggle_latched:
-        set_spatial_console_enabled(not bool(config.get_value("world.spatial_console", true)))
-    _by_toggle_latched = by_pressed
 
 func apply_console_action(kind: String, value: String) -> void:
     match kind:
@@ -439,10 +438,12 @@ func apply_console_action(kind: String, value: String) -> void:
             if value == "desktop":
                 set_desktop_enabled(not desktop_surface.visible)
             elif value == "hud":
-                if hud:
-                    hud.visible = not hud.visible
-                    config.set_value("ui.performance_hud", hud.visible)
-                    config.save_runtime()
+                readouts.toggle_all()
+        "readout":
+            if value == "all":
+                readouts.toggle_all()
+            else:
+                readouts.toggle(value)
         "eli_model":
             eli_use_model(value)
         "eli":
@@ -457,6 +458,8 @@ func apply_console_action(kind: String, value: String) -> void:
         "system":
             if value == "calibration" and calibration_widget:
                 calibration_widget.toggle()
+            elif value == "recalibrate" and calibration_widget:
+                calibration_widget.toggle_recalibration()
             elif value == "reset_workspace":
                 if console and console.has_method("reset_layout"):
                     console.reset_layout()
@@ -620,6 +623,14 @@ func desktop_status() -> String:
     if not desktop_surface or not desktop_surface.visible:
         return "OFF"
     return desktop_surface.bridge_status()
+
+# The readouts that are not drawn by the HUDs themselves follow the switches (HudReadouts); the wrist
+# menu and the settings dock listen to them on their own.
+func _apply_readouts() -> void:
+    if xr_diagnostics:
+        xr_diagnostics.visible = readouts.shown("input")
+    if calibration_widget:
+        calibration_widget.set_show_offsets(readouts.shown("controllers"))
 
 # --- ELI ---------------------------------------------------------------------
 # Only when the link is switched on. Standalone, none of this exists.
@@ -943,11 +954,16 @@ func _process_eli_talk() -> void:
         eli_voice.stop_listening()
     _talk_latched = held
 
+## What ELI just did or why not, for a few seconds: shown whatever readouts are on.
+func eli_notice() -> String:
+    if eli_link == null or not eli_link.enabled or Time.get_ticks_msec() >= _eli_notice_until_ms:
+        return ""
+    return "ELI: %s" % _eli_notice.to_upper()
+
+## Where ELI is and how the link is: the STATUS readout.
 func eli_status() -> String:
     if eli_link == null or not eli_link.enabled:
         return ""
-    if Time.get_ticks_msec() < _eli_notice_until_ms:
-        return "ELI: %s" % _eli_notice.to_upper()
     var trouble: String = eli_link.status()
     if not trouble.is_empty():
         return trouble.to_upper()

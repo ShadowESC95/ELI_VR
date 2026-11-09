@@ -38,6 +38,17 @@ func set_value(path: String, value) -> void:
         cur = cur[key]
     cur[keys[-1]] = value
 
+## Takes a setting out, so the settings file no longer carries it.
+func remove_value(path: String) -> void:
+    var keys := path.split(".")
+    var cur = data
+    for i in range(keys.size() - 1):
+        if typeof(cur) != TYPE_DICTIONARY or not cur.has(keys[i]):
+            return
+        cur = cur[keys[i]]
+    if typeof(cur) == TYPE_DICTIONARY:
+        cur.erase(keys[-1])
+
 func apply_profile(name: String) -> bool:
     var path := "res://config/profiles/%s.json" % name
     if not FileAccess.file_exists(path):

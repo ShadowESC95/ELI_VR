@@ -1,12 +1,15 @@
 class_name ControlDock
 extends CanvasLayer
 
+const HudReadoutsClass = preload("res://scripts/ui/hud_readouts.gd")
+
 var app: Node
 var panel: PanelContainer
 var room_select: OptionButton
 var env_select: OptionButton
 var theme_select: OptionButton
 var quality_select: OptionButton
+var readout_toggles := {}           # "all" or a readout's id -> its switch
 
 func setup(p_app: Node, registry, config) -> void:
     app = p_app
@@ -105,6 +108,18 @@ func setup(p_app: Node, registry, config) -> void:
     console_toggle.toggled.connect(func(v): app.set_spatial_console_enabled(v))
     root.add_child(console_toggle)
 
+    # the HUD's readouts, each on its own or all at once, kept in ELI VR's settings (HudReadouts)
+    var readouts = app.get("readouts")
+    if readouts != null:
+        var readouts_label := Label.new()
+        readouts_label.text = "HUD READOUTS" + ("  (diagnostic mode: this run only)" if readouts.diagnostic else "")
+        root.add_child(readouts_label)
+        _readout_toggle(root, "all", "All readouts")
+        for piece in HudReadoutsClass.PIECES:
+            _readout_toggle(root, str(piece["id"]), str(piece["about"]))
+        readouts.changed.connect(show_readouts)
+        show_readouts()
+
     var exit_button := Button.new()
     exit_button.text = "Exit ELI VR"
     exit_button.pressed.connect(func(): app.request_exit())
@@ -113,8 +128,28 @@ func setup(p_app: Node, registry, config) -> void:
     var help := RichTextLabel.new()
     help.fit_content = true
     help.bbcode_enabled = true
-    help.text = "[color=#63ddff]XR[/color]\nTrigger: select  • sticks: move/turn\n\n[color=#63ddff]Flat[/color]\nRight mouse: look\nWASD/QE: move\nF1: settings\nF2: desktop\nF3: performance HUD\nF5: rebuild room"
+    help.text = "[color=#63ddff]XR[/color]\nTrigger: select  • sticks: move/turn\n\n[color=#63ddff]Flat[/color]\nRight mouse: look\nWASD/QE: move\nF1: settings\nF2: desktop\nF3: HUD readouts, all at once\nF5: rebuild room"
     root.add_child(help)
+
+func _readout_toggle(parent: VBoxContainer, id: String, text: String) -> void:
+    var toggle := CheckButton.new()
+    toggle.text = text
+    toggle.toggled.connect(func(on: bool) -> void:
+        if id == "all":
+            app.readouts.set_all(on)
+        else:
+            app.readouts.set_shown(id, on)
+    )
+    parent.add_child(toggle)
+    readout_toggles[id] = toggle
+
+## The switches say how the readouts stand, however they were switched: here, F3, the console, the wrist.
+func show_readouts() -> void:
+    var readouts = app.get("readouts")
+    if readouts == null:
+        return
+    for id in readout_toggles:
+        readout_toggles[id].set_pressed_no_signal(readouts.all_shown() if id == "all" else readouts.shown(id))
 
 func _select(parent: VBoxContainer, label_text: String, ids: Array, source: Dictionary, name_key: String, current: String) -> OptionButton:
     var l := Label.new()

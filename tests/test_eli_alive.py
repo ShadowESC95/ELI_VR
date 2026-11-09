@@ -103,6 +103,24 @@ class Alive(unittest.TestCase):
         self.check("the_range_tells_each_guns_part_in_the_result")
         self.check("a_click_on_a_flat_screen_fires_the_first_gun")
 
+    def test_the_hud_readouts_are_off_for_normal_use_and_switched_each_or_all(self) -> None:
+        self.check("the_readouts_are_off_for_normal_use_each_or_all_switched_and_kept")
+        self.check("a_diagnostic_run_shows_every_readout_and_what_is_switched_lasts_that_run")
+        self.check("the_hud_says_only_the_readouts_switched_on_and_always_what_must_be_seen")
+        self.check("the_hud_and_the_input_diagnostics_on_the_camera_go_when_switched_off")
+        self.check("the_calibration_coordinates_show_only_with_their_readout")
+
+    def test_the_pointer_is_recalibrated_by_the_chord_or_from_the_wrist(self) -> None:
+        self.check("the_chord_shows_its_hold_then_recalibrates_once_says_so_and_goes")
+        self.check("letting_the_chord_go_early_or_firing_with_both_triggers_recalibrates_nothing")
+        self.check("b_y_alone_toggles_the_console_on_letting_go_and_the_chord_never_does")
+        self.check("recalibrate_pointer_takes_both_triggers_pressed_afresh_and_gives_them_back")
+        self.check("a_recalibration_without_both_controllers_says_so_and_waits")
+
+    def test_the_wrist_menu_and_the_settings_dock_reach_recalibration_and_every_readout(self) -> None:
+        self.check("the_wrist_menu_recalibrates_and_switches_each_readout_or_all_saying_how_they_stand")
+        self.check("the_settings_dock_switches_each_readout_or_all_and_follows_the_other_switches")
+
 
 class Screens(Alive):
     """The screens in the rooms show ELI's real log and state, and nothing made up."""

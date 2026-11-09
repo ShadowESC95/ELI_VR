@@ -70,7 +70,12 @@
   },
   "ui": {
     "desktop_dock": true,
-    "performance_hud": true,
+    "readouts": {
+      "fps": false,
+      "controllers": false,
+      "input": false,
+      "status": false
+    },
     "show_help_on_start": true,
     "console_distance_m": 2.7,
     "wrist_menu": true,
@@ -78,7 +83,6 @@
   },
   "developer": {
     "log_level": "info",
-    "show_fps": true,
     "allow_experimental": true
   },
   "eli_bridge": {
@@ -96,8 +100,7 @@
   },
   "diagnostics": {
     "hardware_doctor_on_first_run": true,
-    "write_session_report": true,
-    "xr_input_overlay": false
+    "write_session_report": true
   },
   "network": {
     "mode": "local_only",

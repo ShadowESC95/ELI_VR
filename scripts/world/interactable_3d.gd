@@ -10,12 +10,18 @@ var _base_color := Color("#101b23")
 var _accent_color := Color("#63ddff")
 var mesh_instance: MeshInstance3D
 var text_label: Label3D
+var _size := Vector2.ONE
+var _pixel_size := 0.0
+
+## The words never run past the button: a label wider than this share of it is drawn smaller to fit.
+const LABEL_FILL := 0.88
 
 func setup(p_label: String, p_kind: String, p_value: String, accent: Color, size := Vector2(0.92, 0.30)) -> void:
     label = p_label
     kind = p_kind
     value = p_value
     _accent_color = accent
+    _size = size
     collision_layer = 2
     collision_mask = 0
 
@@ -45,7 +51,22 @@ func setup(p_label: String, p_kind: String, p_value: String, accent: Color, size
     text_label.modulate = Color("#f4fbff")
     text_label.position = Vector3(0, 0, 0.04)
     text_label.no_depth_test = true
+    _pixel_size = text_label.pixel_size
+    _fit_label()
     add_child(text_label)
+
+## New words on the button (a toggle saying how it stands), fitted as the first were.
+func set_label(p_label: String) -> void:
+    label = p_label
+    if text_label:
+        text_label.text = label
+        _fit_label()
+
+func _fit_label() -> void:
+    var font: Font = text_label.font if text_label.font != null else ThemeDB.fallback_font
+    var wide: float = font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, text_label.font_size).x * _pixel_size
+    var room: float = _size.x * LABEL_FILL
+    text_label.pixel_size = _pixel_size * (room / wide if wide > room else 1.0)
 
 func activate() -> void:
     activated.emit(kind, value)

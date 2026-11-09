@@ -1,6 +1,8 @@
 class_name XRStatusHUD
 extends Node3D
 
+const HudReadoutsClass = preload("res://scripts/ui/hud_readouts.gd")
+
 var app: Node
 var label: Label3D
 var elapsed: float = 0.0
@@ -15,30 +17,25 @@ func setup(p_app: Node, camera: XRCamera3D) -> void:
     label.modulate = Color("#dff8ff")
     label.position = Vector3(0.62, 0.32, -1.12)
     label.no_depth_test = true
+    label.visible = false
     camera.add_child(label)
 
+# What it says is the readouts that are on and what must be seen whatever is on (HudReadouts); with
+# nothing to say it shows nothing.
 func _process(delta: float) -> void:
-    if label == null or app == null:
+    if label == null or app == null or app.readouts == null:
+        return
+    # the label rides on the camera, outside this node: it goes with this node's own visibility
+    if not visible:
+        label.visible = false
         return
 
     elapsed += delta
-    if elapsed < 0.25:
+    if elapsed < HudReadoutsClass.REFRESH_SECONDS:
         return
     elapsed = 0.0
 
-    var quality: String = str(app.config.get_value("graphics.quality", "auto"))
-    var tier: String = str(app.capabilities.get("hardware_class", "unknown"))
-    var desktop: String = str(app.desktop_status())
-
-    label.text = (
-        "ELI VR\n"
-        + "%d FPS  •  %s\n" % [Engine.get_frames_per_second(), tier.to_upper()]
-        + "%s\n" % str(app.current_environment_name())
-        + "QUALITY %s  •  DESKTOP %s" % [quality.to_upper(), desktop]
-    )
-    var eli: String = str(app.eli_status())
-    if not eli.is_empty():
-        label.text += "\n" + eli
-    var leaving: String = str(app.exit_notice())
-    if not leaving.is_empty():
-        label.text += "\n" + leaving
+    var lines: PackedStringArray = app.readouts.lines(app)
+    label.visible = not lines.is_empty()
+    if label.visible:
+        label.text = "\n".join(lines)

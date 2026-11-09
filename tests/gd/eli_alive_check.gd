@@ -9,6 +9,14 @@ const EliMotionClass = preload("res://scripts/eli/eli_motion.gd")
 const EliInitiativeClass = preload("res://scripts/eli/eli_initiative.gd")
 const EliPlayClass = preload("res://scripts/eli/eli_play.gd")
 const EliLinkClass = preload("res://scripts/eli/eli_link.gd")
+const AppScript = preload("res://scripts/app.gd")
+const HudReadoutsClass = preload("res://scripts/ui/hud_readouts.gd")
+const CalibrationWidgetClass = preload("res://scripts/xr/calibration_widget.gd")
+const WristMenuClass = preload("res://scripts/xr/wrist_menu.gd")
+const StatusHudClass = preload("res://scripts/xr/status_hud.gd")
+const InputDiagnosticsClass = preload("res://scripts/xr/input_diagnostics.gd")
+const ControlDockClass = preload("res://scripts/ui/control_dock.gd")
+const RegistryClass = preload("res://scripts/core/registry.gd")
 
 # Stands in for the app: a camera where you stand, a room, and the BUILD action, which takes a while.
 class StandIn extends Node3D:
@@ -124,6 +132,7 @@ func _run() -> void:
     await _range_checks()
     await _link_checks()
     _voice_checks()
+    await _controls_checks()
     quit()
 
 func _piece(id: String, game_id: String, role: String, tag: String, index: int, shape: String, pos: Array) -> Dictionary:
@@ -557,6 +566,8 @@ class Kept extends RefCounted:
         return saved.get(key, fallback)
     func set_value(key, value) -> void:
         saved[key] = value
+    func remove_value(key) -> void:
+        saved.erase(key)
     func save_runtime() -> void:
         pass
 
@@ -586,3 +597,259 @@ func _voice_checks() -> void:
     _check("a_microphone_giving_only_silence_is_passed_over_and_the_one_heard_is_kept", silent and heard
            and settings.saved.get("eli_bridge.microphone_found") == listed[1], "silent %s heard %s kept %s" % [silent, heard, settings.saved])
     voice.queue_free()
+
+# Stands in for the calibration manager (XRControllerCalibration): counts the calibrations asked for.
+class FakeCalibration extends Node:
+    signal calibrated(offset_m: Vector3, yaw_deg: float)
+    signal calibration_reset
+    var yaw_deg := 4.0
+    var calls := 0
+    var tracked := true
+    func calibrate_hands() -> bool:
+        calls += 1
+        if tracked:
+            calibrated.emit(Vector3(0.012, -0.03, 0.05), yaw_deg)
+        return tracked
+    func offset_centimeters() -> Vector3:
+        return Vector3(1.2, -3.0, 5.0)
+
+# The HUD's readouts, recalibrating the pointer, and the wrist menu and the settings dock that switch
+# them, with the real app's switches (app.gd, not in the tree: nothing of it starts).
+func _controls_checks() -> void:
+    var defaults = JSON.parse_string(FileAccess.get_file_as_string("res://config/defaults.json"))
+    var defaults_off: bool = HudReadoutsClass.ids().all(
+        func(piece): return defaults["ui"]["readouts"].get(piece) == false)
+    var settings := Kept.new()
+    settings.saved["ui.performance_hud"] = true
+    var readouts = HudReadoutsClass.new()
+    readouts.setup(settings, false)
+    var off_at_first: bool = not readouts.any_shown() and not settings.saved.has("ui.performance_hud")
+    readouts.set_shown("fps", true)
+    var one_kept: bool = readouts.shown("fps") and settings.saved.get("ui.readouts.fps") == true and readouts.state() == "SOME"
+    readouts.toggle_all()                       # some shown: all go
+    var all_gone: bool = not readouts.any_shown()
+    readouts.toggle_all()                       # none shown: all come back
+    var all_back: bool = readouts.all_shown() and HudReadoutsClass.ids().all(
+        func(piece): return settings.saved.get("ui.readouts.%s" % piece) == true)
+    _check("the_readouts_are_off_for_normal_use_each_or_all_switched_and_kept", defaults_off and off_at_first
+           and one_kept and all_gone and all_back,
+           "defaults off %s, at first %s, one %s, gone %s, back %s, kept %s" % [defaults_off, off_at_first, one_kept,
+           all_gone, all_back, settings.saved])
+
+    var diagnostic_settings := Kept.new()
+    var diagnostic = HudReadoutsClass.new()
+    diagnostic.setup(diagnostic_settings, true)
+    var all_on: bool = diagnostic.all_shown()
+    diagnostic.set_shown("fps", false)
+    var normal = HudReadoutsClass.new()
+    normal.setup(diagnostic_settings, false)
+    _check("a_diagnostic_run_shows_every_readout_and_what_is_switched_lasts_that_run", all_on
+           and not diagnostic.shown("fps") and diagnostic.shown("input") and diagnostic_settings.saved.is_empty()
+           and not normal.any_shown(), "all on %s, kept %s" % [all_on, diagnostic_settings.saved])
+
+    # the HUD says the readouts that are on, and the second press that closes ELI VR whatever is on
+    var registry = RegistryClass.new()
+    registry.load_all()
+    var app = AppScript.new()
+    app.config = Kept.new()
+    app.registry = registry
+    app.capabilities = {"hardware_class": "desktop"}
+    app.xr_active = true
+    app.readouts = HudReadoutsClass.new()
+    app.readouts.setup(app.config, false)
+    var quiet: PackedStringArray = app.readouts.lines(app)
+    app._exit_armed_until_ms = Time.get_ticks_msec() + 60000
+    var leaving: PackedStringArray = app.readouts.lines(app)
+    var notice: String = app.exit_notice()
+    app.readouts.set_shown("fps", true)
+    var with_fps: PackedStringArray = app.readouts.lines(app)
+    app._exit_armed_until_ms = 0
+    _check("the_hud_says_only_the_readouts_switched_on_and_always_what_must_be_seen", quiet.is_empty()
+           and leaving.size() == 1 and not notice.is_empty() and leaving[0] == notice and with_fps.size() == 2 and "FPS" in with_fps[0]
+           and "OFFSET" not in "".join(with_fps), "quiet %s leaving %s fps %s" % [quiet, leaving, with_fps])
+
+    # the status HUD and the input diagnostics ride on the camera: they still go when they are switched off
+    var camera := XRCamera3D.new()
+    root.add_child(camera)
+    app.readouts.set_all(false)
+    var hud = StatusHudClass.new()
+    hud.setup(app, camera)
+    root.add_child(hud)
+    await _frames(HudReadoutsClass.REFRESH_SECONDS * 2.0)
+    var hud_quiet: bool = not hud.label.visible
+    app.readouts.set_shown("fps", true)
+    await _frames(HudReadoutsClass.REFRESH_SECONDS * 2.0)
+    var hud_fps: bool = hud.label.visible and "FPS" in hud.label.text
+    var diagnostics = InputDiagnosticsClass.new()
+    diagnostics.setup(camera, null, null, null, null)
+    diagnostics.visible = false
+    root.add_child(diagnostics)
+    await _frames(0.2)
+    var input_hidden: bool = not diagnostics.label.visible
+    diagnostics.visible = true
+    await _frames(0.2)
+    var input_shown: bool = diagnostics.label.visible
+    _check("the_hud_and_the_input_diagnostics_on_the_camera_go_when_switched_off", hud_quiet and hud_fps
+           and input_hidden and input_shown, "hud quiet %s, with fps %s; input hidden %s, shown %s" % [hud_quiet,
+           hud_fps, input_hidden, input_shown])
+    hud.queue_free()
+    diagnostics.queue_free()
+
+    # the chord: B/Y on both, its hold shown filling, then the existing calibration once, said, and gone
+    var manager := FakeCalibration.new()
+    root.add_child(manager)
+    var widget = CalibrationWidgetClass.new()
+    widget.setup(manager, null, null, null, Color("#63ddff"))
+    root.add_child(widget)
+    var alone := [0]
+    widget.chord_button_alone.connect(func(): alone[0] += 1)
+    var hold: float = CalibrationWidgetClass.CHORD_HOLD_SECONDS
+    var idle: bool = not widget.visible
+    widget.advance(hold * 0.4, true, true, false, false)
+    var filling: bool = (widget.visible and widget.progress_fill.visible and absf(widget.progress_fill.scale.x - 0.4) < 0.01
+                         and widget.status_label.text.begins_with("HOLD") and manager.calls == 0)
+    widget.advance(hold * 0.7, true, true, false, false)
+    var done: bool = manager.calls == 1 and widget.visible and widget.status_label.text == "POINTER RECALIBRATED"
+    widget.advance(hold, true, true, false, false)
+    var once: bool = manager.calls == 1
+    widget.advance(CalibrationWidgetClass.CONFIRM_SECONDS + 0.05, false, false, false, false)
+    var gone: bool = not widget.visible and alone[0] == 0
+    _check("the_chord_shows_its_hold_then_recalibrates_once_says_so_and_goes", idle and filling and done and once and gone,
+           "idle %s filling %s (%s, %s) done %s (%s) once %s gone %s" % [idle, filling, widget.progress_fill.scale.x,
+           widget.status_label.text, done, manager.calls, once, gone])
+
+    # let go early, nothing; the old grips and triggers chord is a gun in each hand firing, and does nothing
+    widget.advance(hold * 0.5, true, true, false, false)
+    widget.advance(0.02, false, false, false, false)
+    var dropped: bool = not widget.visible and manager.calls == 1
+    widget.advance(hold * 2.0, false, false, true, true)
+    var guns: bool = not widget.visible and manager.calls == 1
+    _check("letting_the_chord_go_early_or_firing_with_both_triggers_recalibrates_nothing", dropped and guns,
+           "dropped %s, triggers %s, calls %d" % [dropped, guns, manager.calls])
+
+    # B/Y on its own is the console's, told on letting go; the chord never is, whichever was first
+    alone[0] = 0
+    widget.advance(0.02, true, false, false, false)
+    var not_yet: bool = alone[0] == 0
+    widget.advance(0.02, false, false, false, false)
+    var left_alone: bool = alone[0] == 1
+    widget.advance(0.02, false, true, false, false)
+    widget.advance(0.02, true, true, false, false)
+    widget.advance(0.02, true, false, false, false)
+    widget.advance(0.02, false, false, false, false)
+    _check("b_y_alone_toggles_the_console_on_letting_go_and_the_chord_never_does", not_yet and left_alone and alone[0] == 1,
+           "before letting go %s, alone %s, after the chord %d" % [not_yet, left_alone, alone[0]])
+
+    # RECALIBRATE POINTER arms it: both triggers, pressed afresh, take the pose; the triggers are the
+    # panel's until both are let go, so nothing behind it is pressed
+    widget.advance(CalibrationWidgetClass.CONFIRM_SECONDS + 0.05, false, false, false, false)
+    app.calibration_widget = widget
+    app.apply_console_action("system", "recalibrate")
+    var armed: bool = widget.is_armed() and widget.visible and CalibrationWidgetClass.takes_triggers()
+    widget.advance(hold * 1.5, false, false, false, true)        # the trigger that pressed the button
+    var waits: bool = manager.calls == 1
+    widget.advance(0.02, false, false, false, false)
+    widget.advance(hold * 1.05, false, false, true, true)
+    var taken: bool = manager.calls == 2 and widget.status_label.text == "POINTER RECALIBRATED" and not widget.is_armed()
+    var still_held: bool = CalibrationWidgetClass.takes_triggers()
+    widget.advance(0.02, false, false, false, false)
+    var given_back: bool = not CalibrationWidgetClass.takes_triggers()
+    app.apply_console_action("system", "recalibrate")
+    app.apply_console_action("system", "recalibrate")
+    widget.advance(CalibrationWidgetClass.CONFIRM_SECONDS + 0.05, false, false, false, false)
+    var stopped: bool = not widget.is_armed() and not widget.visible and not CalibrationWidgetClass.takes_triggers()
+    _check("recalibrate_pointer_takes_both_triggers_pressed_afresh_and_gives_them_back", armed and waits and taken
+           and still_held and given_back and stopped, "armed %s waits %s taken %s held %s back %s stopped %s" % [armed,
+           waits, taken, still_held, given_back, stopped])
+
+    # a recalibration that cannot see both controllers says so and stays armed for another go
+    manager.tracked = false
+    widget.toggle_recalibration()
+    widget.advance(0.02, false, false, false, false)
+    widget.advance(hold * 1.05, false, false, true, true)
+    var told: bool = manager.calls == 3 and widget.is_armed() and "BOTH CONTROLLERS" in widget.status_label.text
+    widget.toggle_recalibration()
+    widget.advance(0.02, false, false, false, false)
+    # and with the trim panel open, the panel still closes once it is closed
+    widget.toggle()
+    widget.advance(hold * 1.05, true, true, false, false)
+    widget.advance(CalibrationWidgetClass.CONFIRM_SECONDS + 0.05, false, false, false, false)
+    var open_after: bool = widget.visible and manager.calls == 4
+    widget.toggle()
+    var closes: bool = not widget.visible
+    manager.tracked = true
+    _check("a_recalibration_without_both_controllers_says_so_and_waits", told and open_after and closes,
+           "calls %d armed %s said %s; panel open after %s, closes %s" % [manager.calls, widget.is_armed(),
+           widget.status_label.text, open_after, closes])
+
+    # the coordinates on the calibration panel go with their readout
+    app.readouts.set_all(false)
+    app._apply_readouts()
+    var plain: String = widget.status_label.text
+    app.readouts.set_shown("controllers", true)
+    app._apply_readouts()
+    var with_offsets: String = widget.status_label.text
+    _check("the_calibration_coordinates_show_only_with_their_readout", "X:" not in plain and "X:+1.2" in with_offsets
+           and "Z:+5.0" in with_offsets and "YAW:+4.0" in with_offsets, "off %s / on %s" % [plain, with_offsets])
+
+    # the wrist menu: recalibrate, and each readout and all of them, saying how they stand, fitted to
+    # their buttons, the deck sized from the eyes
+    app.readouts.set_all(false)
+    var hand := XRController3D.new()
+    root.add_child(hand)
+    var wrist = WristMenuClass.new()
+    wrist.setup(app, hand, null, camera, registry, app.config)
+    root.add_child(wrist)
+    var said := {}
+    var fitted := true
+    for b in wrist.button_nodes:
+        said[str(b.get_meta("base_label"))] = b
+        var label3d: Label3D = b.text_label
+        var font: Font = label3d.font if label3d.font != null else ThemeDB.fallback_font
+        var wide: float = font.get_string_size(b.label, HORIZONTAL_ALIGNMENT_LEFT, -1, label3d.font_size).x * label3d.pixel_size
+        fitted = fitted and wide <= WristMenuClass.BUTTON.x + 0.001
+    var listed: bool = said.has("RECALIBRATE POINTER") and said.has("READOUTS") and HudReadoutsClass.PIECES.all(
+        func(piece): return said.has(str(piece["label"])) and said[str(piece["label"])].label == "%s: OFF" % piece["label"])
+    camera.global_position = Vector3.ZERO
+    wrist._set_open(true)
+    wrist.global_position = Vector3(0.0, 0.0, -0.45)
+    wrist._fit_to_eye()
+    var deck: Vector2 = wrist.deck_size
+    var seen_deg: float = rad_to_deg(2.0 * atan(maxf(deck.x, deck.y) * wrist.scale.x * 0.5 / 0.45))
+    said["FPS"].activate()
+    var fps_on: bool = app.readouts.shown("fps") and said["FPS"].label == "FPS: ON" and said["READOUTS"].label == "READOUTS: SOME"
+    var stays_open: bool = wrist.visible
+    said["READOUTS"].activate()
+    var all_off: bool = not app.readouts.any_shown() and said["FPS"].label == "FPS: OFF"
+    said["RECALIBRATE POINTER"].activate()
+    var closed_armed: bool = not wrist.visible and widget.is_armed() and CalibrationWidgetClass.takes_triggers()
+    wrist._set_open(true)               # its buttons are pressed with the trigger: the pointer has it back
+    var says_stop: bool = (said["RECALIBRATE POINTER"].label == "STOP RECALIBRATING"
+                           and not CalibrationWidgetClass.takes_triggers())
+    said["RECALIBRATE POINTER"].activate()
+    var stopped_here: bool = not widget.is_armed() and not wrist.visible and not CalibrationWidgetClass.takes_triggers()
+    _check("the_wrist_menu_recalibrates_and_switches_each_readout_or_all_saying_how_they_stand", listed and fitted
+           and absf(seen_deg - WristMenuClass.DECK_SPAN_DEG) < 0.5 and fps_on and stays_open and all_off and closed_armed
+           and says_stop and stopped_here, "listed %s fitted %s seen %.1f deg fps %s open %s all off %s armed %s stop %s %s" % [
+           listed, fitted, seen_deg, fps_on, stays_open, all_off, closed_armed, says_stop, stopped_here])
+
+    # the settings dock: a switch for each readout and for all, following switches made elsewhere
+    var dock = ControlDockClass.new()
+    dock.setup(app, registry, app.config)
+    root.add_child(dock)
+    var listed_dock: bool = dock.readout_toggles.has("all") and HudReadoutsClass.ids().all(
+        func(piece): return dock.readout_toggles.has(piece))
+    dock.readout_toggles["input"].button_pressed = true
+    var input_on: bool = app.readouts.shown("input") and app.config.saved.get("ui.readouts.input") == true
+    app.readouts.toggle_all()                           # F3, the console's HUD or READOUTS on the wrist
+    var follows: bool = not dock.readout_toggles["input"].button_pressed and not dock.readout_toggles["all"].button_pressed
+    dock.readout_toggles["all"].button_pressed = true
+    var all_from_dock: bool = app.readouts.all_shown()
+    _check("the_settings_dock_switches_each_readout_or_all_and_follows_the_other_switches", listed_dock and input_on
+           and follows and all_from_dock, "listed %s input %s follows %s all %s" % [listed_dock, input_on, follows,
+           all_from_dock])
+
+    for node in [dock, wrist, hand, widget, manager, camera]:
+        node.queue_free()
+    app.free()
+    await _frames(0.1)

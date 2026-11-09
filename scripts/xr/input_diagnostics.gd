@@ -29,6 +29,7 @@ func setup(
     label.modulate = Color("#d9f7ff")
     label.position = Vector3(0.0, -0.42, -1.25)
     label.no_depth_test = true
+    label.visible = visible
     camera.add_child(label)
 
     _connect_controller(left, "L")
@@ -60,9 +61,17 @@ func _connect_controller(controller: XRController3D, side: String) -> void:
             ]
     )
 
+# The label rides on the camera, outside this node: it is shown only while this node is (the INPUT
+# readout, HudReadouts), and nothing is written while it is not. What is pressed is still logged.
 func _process(delta: float) -> void:
+    if label == null:
+        return
+    if label.visible != visible:
+        label.visible = visible
+    if not visible:
+        return
     elapsed += delta
-    if elapsed < 0.10 or label == null:
+    if elapsed < 0.10:
         return
     elapsed = 0.0
 

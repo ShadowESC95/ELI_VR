@@ -1,32 +1,31 @@
 class_name PerformanceHud
 extends CanvasLayer
 
+const HudReadoutsClass = preload("res://scripts/ui/hud_readouts.gd")
+
+## From the window's edges, as the settings dock stands from its corner.
+const MARGIN_PX := 20
+
 var app: Node
 var label: Label
+var elapsed: float = 0.0
 
 func setup(p_app: Node) -> void:
     app = p_app
     label = Label.new()
-    label.position = Vector2(20, 820)
+    # kept to the bottom left of the window whatever its size, growing upwards
+    label.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT, Control.PRESET_MODE_MINSIZE, MARGIN_PX)
+    label.grow_vertical = Control.GROW_DIRECTION_BEGIN
     label.add_theme_font_size_override("font_size", 16)
     label.add_theme_color_override("font_color", Color("#bcefff"))
     add_child(label)
 
-func _process(_delta: float) -> void:
-    if not label or not app:
+# What it says is the readouts that are on and what must be seen whatever is on (HudReadouts).
+func _process(delta: float) -> void:
+    if not label or not app or app.readouts == null:
         return
-    var opt: String = str(app.optimizer.capability_summary()) if app.optimizer else ""
-    label.text = "FPS %d  |  %s  |  %s  |  XR %s  |  Desktop %s  |  %s" % [
-        Engine.get_frames_per_second(),
-        str(app.current_room_name()),
-        str(app.current_environment_name()),
-        "ON" if app.xr_active else "FLAT",
-        str(app.desktop_status()),
-        opt
-    ]
-    var eli: String = str(app.eli_status())
-    if not eli.is_empty():
-        label.text += "  |  " + eli
-    var leaving: String = str(app.exit_notice())
-    if not leaving.is_empty():
-        label.text += "  |  " + leaving
+    elapsed += delta
+    if elapsed < HudReadoutsClass.REFRESH_SECONDS:
+        return
+    elapsed = 0.0
+    label.text = "  |  ".join(app.readouts.lines(app))
