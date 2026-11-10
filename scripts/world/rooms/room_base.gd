@@ -40,6 +40,12 @@ func show_eli(_eli: Dictionary) -> void:
 func pin_spot(_kind: String, _index: int) -> Variant:
     return null
 
+# The order a room keeps its records of a kind in (books by time, beliefs by what they are about):
+# the records, as ELI's world sent them, in that order; a record's place in it is the index pin_spot
+# is asked for. As sent, for a room that keeps no order of its own.
+func arrange(_kind: String, records: Array) -> Array:
+    return records
+
 # Anything a room moves by hand each frame.
 func _animate(_delta: float) -> void:
     pass

@@ -47,13 +47,15 @@ var _flash_left := 0.0
 var turn := 0.0                 # which way its front faces, in ELI's degrees round from straight ahead
 # Records that, pinned, are written out where they stand: a belief, a memory, what ELI found for
 # you, what it wrote, what it is playing, a picture it saw, and a thought it had.
-const WRITTEN := ["claim", "memory", "found", "written", "playing", "seen", "thought"]
-const TYPED := ["DejaVu Sans Mono", "Liberation Mono", "Menlo", "Consolas", "Courier New", "monospace"]
+# A book or a memory is an EliBook (scripts/eli/eli_book.gd), written out wherever it stands.
+const WRITTEN := ["claim", "memory", "found", "written", "playing", "seen", "thought", "book"]
 var lines: Array = []               # what a written record says, line by line, when ELI sends it so
 var prop := ""                      # a real thing the body has (assets/models/<prop>), when that is what it is
 var picture := ""                   # the path ELI v3 serves a picture this record shows at
 var art := {}                       # a painting's style and colours
 var thought := {}                   # a thought sheet's own measures: its kind, chance, decision, status, outcome
+var claim := {}                     # a belief's own measures, when ELI v3 sends them (see _sheet)
+var importance := 0.5               # how much the record matters; for a belief, the chance it is right
 const ART_STYLES := ["rings", "stripes", "waves", "cells", "blooms", "horizon", "rays", "drift"]
 var _text_key := ""
 var _pin := Transform3D.IDENTITY
@@ -89,6 +91,8 @@ func refresh(data: Dictionary, first: bool = false) -> void:
     picture = str(data.get("picture", ""))
     piece = data.get("piece", {}) if typeof(data.get("piece")) == TYPE_DICTIONARY else {}
     thought = data.get("thought", {}) if typeof(data.get("thought")) == TYPE_DICTIONARY else {}
+    claim = data.get("claim", {}) if typeof(data.get("claim")) == TYPE_DICTIONARY else {}
+    importance = clampf(float(data.get("importance", 0.5)), 0.0, 1.0) if data.get("importance") != null else 0.5
     var pos: Array = form.get("pos", [0.0, 0.0, 0.0])
     if not driven:
         _target = _pin.origin if pinned else EliSenses.from_protocol(pos)
@@ -189,6 +193,17 @@ func pin_to(spot: Transform3D) -> void:
     if moved and kind in WRITTEN:
         _shape()
 
+## The room keeps no place for it any more (more records than places, or another order): it stands
+## where ELI's world says, as a record with no place does.
+func unpin() -> void:
+    if not pinned:
+        return
+    pinned = false
+    _pin = Transform3D.IDENTITY
+    basis = Basis.IDENTITY
+    if kind in WRITTEN:
+        _shape()
+
 # A thought ELI had, pinned up: a sheet in its kind's colour, the kind on a tab at its top, with
 # what ELI thought, decided and why, how sure it was and what became of it written down it.
 func _thought_sheet() -> void:
@@ -223,32 +238,127 @@ func _thought_sheet() -> void:
     dot.position = Vector3(0.24, 0.405, 0.02)
     _body.add_child(dot)
 
-# A belief pinned up: a sheet of paper with what ELI believes written on it, and a red pin.
+# A belief pinned up as a case card: what ELI holds (the fact, in its own words), a bar filled to the
+# chance it is right with that chance written beside it, since when it has held and when ELI learned
+# it, what it rests on, and a stamp when something else disputes it. The strip along its top is in the
+# record's colour (ELI v3 colours a contested belief amber). ELI v3's "claim" carries the parts
+# (relation, value, chance, since, learned, basis, contested, sources); without it the card shows the
+# name and ELI's own sentence for it, and the chance is the record's importance (v3 sends the chance there).
+const CARD_MEASURE := 34            # characters to a card's line
+static func card_size() -> Vector2:
+    var distance := Reading.before_board()
+    var e := Reading.em(distance)
+    var line := Reading.line_height(Reading.typed(), distance)
+    var width := (CARD_MEASURE * Reading.MONO_ADVANCE + 2.0) * e
+    return Vector2(width, e * 2.0 + line * (2.0 * 1.2 + 1.6 + 4.0) + e)
+
 func _sheet() -> void:
     _name_tag.visible = false
     _material = null
+    var card := card_size()
+    var distance := Reading.before_board()
+    var e := Reading.em(distance)
+    var font := Reading.typed()
+    var paper_colour := Color(0.95, 0.93, 0.87)
     var paper := StandardMaterial3D.new()
-    paper.albedo_color = Color(0.93, 0.9, 0.82).lerp(colour, 0.25)
+    paper.albedo_color = paper_colour
     paper.roughness = 0.95
+    paper.emission_enabled = true               # lit or not, the writing on it stays readable
+    paper.emission = paper_colour
+    paper.emission_energy_multiplier = 0.18
     var sheet := MeshInstance3D.new()
     var quad := QuadMesh.new()
-    quad.size = Vector2(0.62, 0.8)
+    quad.size = card
     sheet.mesh = quad
     sheet.material_override = paper
+    sheet.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
     _body.add_child(sheet)
-    _write(Color(0.08, 0.07, 0.07), 0.56, Vector3(0, 0.34, 0.002), 0.0016, 0.0013)
+    var strip := MeshInstance3D.new()
+    var band := BoxMesh.new()
+    band.size = Vector3(card.x, e * 0.6, 0.004)
+    strip.mesh = band
+    strip.material_override = MaterialKit.light(colour, 0.9)
+    strip.position = Vector3(0, card.y * 0.5 - e * 0.3, 0.002)
+    _body.add_child(strip)
+    var ink := Reading.ink(paper_colour)
+    var left := -card.x * 0.5 + e
+    var width := card.x - 2.0 * e
+    var y := card.y * 0.5 - e * 1.1
+    var fact := label
+    if not str(claim.get("value", "")).is_empty():
+        fact = "%s: %s" % [str(claim.get("relation", "")).replace("_", " "), str(claim.get("value"))]
+    y = _card_text(fact, distance, width, 2, Vector2(left, y), ink, 1.2)
+    # how sure: a bar filled to the chance, and the chance beside it
+    var sure := float(claim.get("chance", importance)) if claim.get("chance") != null else importance
+    var bar_w := width * 0.6
+    var bar_h := e * 0.55
+    var track := MeshInstance3D.new()
+    var track_box := BoxMesh.new()
+    track_box.size = Vector3(bar_w, bar_h, 0.002)
+    track.mesh = track_box
+    track.material_override = MaterialKit.light(ink.lerp(paper_colour, 0.75), 1.0)
+    track.position = Vector3(left + bar_w * 0.5, y - bar_h * 0.9, 0.002)
+    _body.add_child(track)
+    var fill := MeshInstance3D.new()
+    var fill_box := BoxMesh.new()
+    fill_box.size = Vector3(maxf(0.001, bar_w * clampf(sure, 0.0, 1.0)), bar_h, 0.003)
+    fill.mesh = fill_box
+    fill.material_override = MaterialKit.light(ink, 1.0)
+    fill.position = Vector3(left + bar_w * clampf(sure, 0.0, 1.0) * 0.5, y - bar_h * 0.9, 0.003)
+    _body.add_child(fill)
+    fill.name = "Sureness"
+    var odds := Reading.label("chance %d%%" % int(round(sure * 100.0)), distance, ink, 0.0, font)
+    odds.text = Reading.fit(odds.text, distance, width - bar_w - e, 1, font)[0]
+    odds.position = Vector3(left + bar_w + e * 0.6, y - bar_h * 0.2, 0.003)
+    _body.add_child(odds)
+    y -= Reading.line_height(font, distance) * 1.6
+    var details := []
+    if claim.has("since") or claim.has("learned"):
+        var held := ("since " + Reading.day(claim.get("since"))) if Reading.day(claim.get("since")) != "" else ""
+        var learned := ("learned " + Reading.day(claim.get("learned"))) if Reading.day(claim.get("learned")) != "" else ""
+        details.append(" · ".join([held, learned].filter(func(t): return not t.is_empty())))
+        if not str(claim.get("basis", "")).is_empty():
+            details.append(str(claim.get("basis")))
+        var sources = claim.get("sources", [])
+        if typeof(sources) == TYPE_ARRAY and not sources.is_empty():
+            details.append("rests on %d record%s" % [sources.size(), "" if sources.size() == 1 else "s"])
+    elif not meaning.is_empty():
+        details.append(meaning)
+    y = _card_text("\n".join(details), distance, width, 4, Vector2(left, y), Reading.ink(paper_colour, ink.lerp(paper_colour, 0.2)), 1.0)
+    var disputed := bool(claim.get("contested", false)) or str(claim.get("status", "")) == "disputed"
+    if disputed:
+        var stamp := Reading.label(str(claim.get("status", "")).to_upper() if str(claim.get("status", "")) == "disputed" else "CONTESTED",
+                                   distance, Color(0.72, 0.05, 0.04), 0.0, font, 1.3)
+        stamp.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+        stamp.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+        stamp.position = Vector3(card.x * 0.18, -card.y * 0.32, 0.004)
+        stamp.rotation.z = 0.22
+        stamp.name = "Stamp"
+        _body.add_child(stamp)
     var pin := MeshInstance3D.new()
     var head := SphereMesh.new()
-    head.radius = 0.022
-    head.height = 0.044
+    head.radius = e * 0.45
+    head.height = e * 0.9
     pin.mesh = head
     var red := StandardMaterial3D.new()
     red.albedo_color = Color(0.85, 0.08, 0.06)
     red.emission_enabled = true
     red.emission = Color(0.6, 0.04, 0.03)
     pin.material_override = red
-    pin.position = Vector3(0, 0.37, 0.02)
+    pin.position = Vector3(0, card.y * 0.5 - e * 0.3, e * 0.4)
     _body.add_child(pin)
+    _text_key = _words_key()
+
+# A block of a card's writing from `at` (its top left) down, cut to `rows` lines; where the next starts.
+func _card_text(text: String, distance: float, width: float, rows: int, at: Vector2, ink: Color, scale: float) -> float:
+    if text.strip_edges().is_empty():
+        return at.y
+    var font := Reading.typed()
+    var shown := Reading.fit(text, distance, width, rows, font, scale)
+    var words := Reading.label("\n".join(shown), distance, ink, 0.0, font, scale)
+    words.position = Vector3(at.x, at.y, 0.003)
+    _body.add_child(words)
+    return at.y - Reading.line_height(font, distance, scale) * shown.size() - Reading.em(distance) * 0.4
 
 # What a written record says: its name, and below it what it means, in a column `width` metres wide
 # whose top middle is `top`. Left-aligned text in a Label3D starts at the label's position, so the
@@ -288,53 +398,8 @@ func _write(ink: Color, width: float, top: Vector3, title_pixel: float, words_pi
     words.position = top - Vector3(0, maxf(0.16 * title_pixel / 0.0016, name_height + 0.012), 0)
     words.render_priority = 1
     if typed:
-        var mono := SystemFont.new()
-        mono.font_names = PackedStringArray(TYPED)
-        words.font = mono
+        words.font = Reading.typed()
     _body.add_child(words)
-
-# A memory kept in the Memory Archive: a book stood face out on the shelf, leaning back a little,
-# what ELI remembers written on a plate on its cover and its page edges lit in the memory's colour.
-func _cover() -> void:
-    _name_tag.visible = false
-    _material = null
-    var leather := StandardMaterial3D.new()
-    leather.albedo_color = Color(0.2, 0.12, 0.08).lerp(colour, 0.12)
-    leather.roughness = 0.6
-    var pages := StandardMaterial3D.new()
-    pages.albedo_color = Color(0.92, 0.88, 0.78)
-    pages.emission_enabled = true
-    pages.emission = colour * clampf(glow, 0.0, 1.0)
-    pages.emission_energy_multiplier = 1.2
-    var paper := StandardMaterial3D.new()
-    paper.albedo_color = Color(0.93, 0.9, 0.82)
-    paper.roughness = 0.95
-    var book := Node3D.new()
-    book.rotation.x = -0.12
-    _body.add_child(book)
-    for part in [[Vector3(0.36, 0.46, 0.012), Vector3(0, 0.23, 0.024), leather],     # the front board
-                 [Vector3(0.36, 0.46, 0.012), Vector3(0, 0.23, -0.024), leather],    # the back board
-                 [Vector3(0.012, 0.46, 0.06), Vector3(-0.174, 0.23, 0.0), leather],  # the spine
-                 [Vector3(0.34, 0.44, 0.036), Vector3(0.008, 0.23, 0.0), pages]]:    # the pages between
-        var block := MeshInstance3D.new()
-        var mesh := BoxMesh.new()
-        mesh.size = part[0]
-        block.mesh = mesh
-        block.position = part[1]
-        block.material_override = part[2]
-        block.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-        book.add_child(block)
-    var plate := MeshInstance3D.new()
-    var quad := QuadMesh.new()
-    quad.size = Vector2(0.3, 0.39)
-    plate.mesh = quad
-    plate.material_override = paper
-    plate.position = Vector3(0.006, 0.23, 0.031)
-    book.add_child(plate)
-    var held := _body
-    _body = book                    # the writing goes on the book, leaning with it
-    _write(Color(0.1, 0.07, 0.05), 0.27, Vector3(0.006, 0.405, 0.032), 0.0011, 0.0009)
-    _body = held
 
 func _words_key() -> String:
     return "%s|%s|%s|%s" % [label, meaning, "\n".join(lines), picture]
@@ -569,8 +634,14 @@ func end_grab() -> void:
     _held = false
     position.y = maxf(position.y, 0.0)
     _target = position
-    if kind != "memory" and kind != "goal":     # a record can be picked up; moving one changes nothing in ELI
+    # a record (a belief, a thought, a memory, a book, a goal) can be taken down and read; moving
+    # one changes nothing in ELI, and let go it goes back to its place. What ELI built, and a piece
+    # of a game, stays where it is put.
+    if record().is_empty():
         let_go.emit(self)
+    elif pinned:
+        _target = _pin.origin
+        basis = _pin.basis
 
 func _process(delta: float) -> void:
     _clock += delta
@@ -627,9 +698,6 @@ func _shape() -> void:
     _name_tag.visible = true
     if kind == "claim" and pinned:
         _sheet()
-        return
-    if kind == "memory" and pinned:
-        _cover()
         return
     if kind == "found" and pinned:
         _paper(Color(0.96, 0.95, 0.91), "pin", true)

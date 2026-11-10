@@ -39,10 +39,13 @@ func setup(
     aim_pose = p_aim_pose
     fallback_pose = p_fallback_pose
     pointer_origin = p_pointer_origin
+    add_to_group("world_manipulators")     # a book held in one hand turns its pages for the other
 
 func _physics_process(delta: float) -> void:
     if controller == null:
         return
+    if grabbed != null and not is_instance_valid(grabbed):
+        grabbed = null                  # taken away while in the hand (ELI's world let it go)
 
     var squeeze: float = controller.get_float("grip")
     var grip_now: bool = squeeze > (LET_GO if grip_before else HOLD) or (
@@ -60,6 +63,9 @@ func _physics_process(delta: float) -> void:
             var stick: Vector2 = controller.get_vector2("primary")
             if grabbed.has_method("hold"):
                 grabbed.hold(origin, direction, stick, delta)
+                # what it holds may use the trigger of the hand holding it (a book turns its page)
+                if grabbed.has_method("press"):
+                    grabbed.press(controller.is_button_pressed("trigger_click"))
                 grip_before = grip_now
                 _holding[controller.get_instance_id()] = true
                 return

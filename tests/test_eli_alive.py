@@ -241,5 +241,41 @@ class Screens(Alive):
         self.check("the_rebuilt_rooms_shaders_compile_and_the_mountain_has_its_birds")
 
 
+    def test_writing_is_sized_for_where_it_is_read_and_stands_out_from_its_paper(self) -> None:
+        self.check("writing_is_sized_for_where_it_is_read_and_stands_out_from_its_paper")
+
+    def test_a_book_cuts_its_writing_into_pages_that_fit_and_says_on_its_cover_what_it_is_and_when(self) -> None:
+        self.check("a_book_cuts_its_writing_into_pages_that_fit_and_keeps_every_word_in_order")
+        self.check("a_book_says_on_its_cover_and_spine_what_it_is_and_when")
+
+    def test_a_book_taken_down_opens_in_the_hand_turns_its_pages_and_goes_back(self) -> None:
+        self.check("a_book_taken_down_opens_in_the_hand_turns_its_pages_and_goes_back_to_its_place")
+        self.check("a_hand_holding_a_book_is_known_to_the_book_for_the_other_hand")
+
+    def test_the_archive_shelves_elis_books_by_time_and_bare_shelves_say_why(self) -> None:
+        self.check("the_archive_shelves_elis_books_by_time_with_a_plate_where_each_month_begins")
+        self.check("bare_shelves_say_why_from_the_data")
+
+    def test_elis_room_is_built_once_and_has_a_bookcase_of_its_own_books(self) -> None:
+        self.check("elis_room_is_built_once_with_the_look_eli_gave_it")
+        self.check("elis_room_has_a_bookcase_of_its_own_books_a_shelf_for_each_kind")
+
+    def test_the_evidence_wall_shows_beliefs_disputes_exhibits_and_threads(self) -> None:
+        self.check("a_belief_is_a_case_card_saying_how_sure_eli_is_and_since_when")
+        self.check("the_evidence_wall_pins_up_nothing_that_is_not_elis")
+        self.check("disputes_come_first_with_their_question_and_thread_runs_between_related_cards")
+        self.check("the_exhibits_are_the_records_elis_beliefs_rest_on")
+
+    def test_the_evidence_wall_scores_actions_charts_figures_and_lays_out_lessons(self) -> None:
+        self.check("the_scoreboard_says_how_often_each_action_worked_how_that_changed_and_what_worked_instead")
+        self.check("the_charts_show_how_often_elis_figures_proved_right_week_by_week")
+        self.check("the_case_files_of_what_eli_learned_lie_on_the_desk")
+        self.check("a_bare_board_says_why_from_the_data")
+
+    def test_a_record_let_go_goes_back_and_one_without_a_place_lets_go_of_it(self) -> None:
+        self.check("a_record_let_go_goes_back_to_its_place_and_is_not_moved_in_elis_world")
+        self.check("a_record_that_loses_its_place_lets_go_of_it")
+
+
 if __name__ == "__main__":
     unittest.main()

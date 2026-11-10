@@ -34,6 +34,20 @@ func _world(round_no: int, room_id: String) -> Dictionary:
         if prop:
             form["prop"] = prop
         objects.append({"id": "soak_%d_%d" % [round_no, i], "name": "Thing %d" % i, "room": room_id, "form": form})
+    # ELI's records too: a book (shelved where the room keeps books, a case file on the Evidence Wall's
+    # desk), a belief with its own measures and a memory, so their shelves, cards and pages come and go
+    var when := 1_790_000_000.0 + 86400.0 * round_no
+    for of in ["conversation", "lesson"]:
+        objects.append({"id": "soak_book_%d_%s" % [round_no, of], "name": "Book %d" % round_no, "kind": "book", "room": room_id,
+                        "when": when, "form": {"shape": "board", "colour": "#6b4f9a", "pos": [0.0, 0.0, 3.0]},
+                        "book": {"of": of, "title": "Book %d" % round_no, "from": when, "to": when + 3600.0, "shelf": "Round %d" % round_no,
+                                 "sections": [{"heading": "One", "text": "word ".repeat(300)}]}})
+    objects.append({"id": "soak_claim_%d" % round_no, "name": "colour: blue", "kind": "claim", "room": room_id, "importance": 0.6,
+                    "claim": {"relation": "colour", "value": "blue", "chance": 0.6, "since": when, "learned": when,
+                              "sources": [{"id": "m%d" % round_no, "text": "blue", "when": when}]},
+                    "form": {"shape": "board", "colour": "#d9e4f2", "pos": [1.0, 1.0, 3.0]}})
+    objects.append({"id": "soak_memory_%d" % round_no, "name": "A memory", "kind": "memory", "room": room_id,
+                    "meaning": "A memory kept in round %d." % round_no, "form": {"shape": "orb", "colour": "#9fd8ff", "pos": [-1.0, 1.0, 3.0]}})
     return {"objects": objects}
 
 func _run() -> void:
@@ -81,6 +95,8 @@ func _run() -> void:
             var t := Time.get_ticks_msec()
             factory.build(room_root, env_id, theme, config)
             var took := Time.get_ticks_msec() - t
+            var built := room_root.get_children().filter(func(c): return not c.is_queued_for_deletion())
+            things.pinner = built[0] if not built.is_empty() and built[0].has_method("pin_spot") else null
             things.show_room(rooms[i % rooms.size()])
             things.apply_world_state(_world(round_no, rooms[i % rooms.size()]))
             for _f in 3:

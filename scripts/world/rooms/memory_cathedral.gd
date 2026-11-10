@@ -2,22 +2,36 @@ class_name MemoryCathedralRoom
 extends RoomBase
 
 # The Memory Archive: a round hall of marble open to the stars, its walls shelved floor to roof
-# with books, some of them lit from within and brightening and fading. ELI's memories stand face
-# out on the shelves ahead at eye height, what each remembers written on its cover. Reading
+# with books, some of them lit from within and brightening and fading. Ahead, on the shelves a hand
+# reaches, stand ELI's own books (EliBook, on the shared Bookcase): its conversations, sessions,
+# logs and stretches of time, oldest to the left and newest to the right along the shelf at eye
+# height and on along the one below, a brass plate where each month begins; to the right, the
+# stories ELI wrote from its records. Between those shelves its latest memories stand face out, what
+# each remembers written on its cover. Any of them can be taken down, opened and read. Reading
 # corners with lamps, a librarian's desk, catalogue cabinets and a clock keep the floor.
 
 const BAYS := 12
 const BAY_RADIUS := 14.6
-const EYE_SHELF := 1.06             # the board ELI's memories stand on, face out
-const SHELF_GAP := 0.45             # between boards, as a library's are
+const SHELF_GAP := 0.45             # between boards above the ones a hand reaches, as a library's are
 const SHELF_FRONT := 0.32           # how far a board reaches into the room from the bay's face
+const SHELF_DEPTH := 0.46
 const MEMORY_BAYS := [8, 9, 7, 10]  # straight ahead first, then either side
 const MEMORY_SLOTS := 5
+const RECORD_BAYS := [7, 8, 9, 10]  # ELI's books, left to right as you face them
+const STORY_BAYS := [11]            # the stories ELI wrote, on the right
+const LEAN := 0.12                  # a book stood face out leans back this far, in radians
 
 # each bay as wide as its part of the ring, so they meet with no gap between them
 var bay_width := 2.0 * BAY_RADIUS * sin(PI / float(BAYS))
+# the shelves a hand takes books from, for this reader (Bookcase.reachable_tops): spine-out rows of
+# ELI's books, and the one below eye level where memories stand face out
+var _reach_tops: Array = []
+var _record_cases: Array = []       # Bookcases, in reading order: each bay's halves along a row, row by row
+var _story_cases: Array = []
+var _book_slots: Array = []         # where the arranged books stand, by their place in the order
 
 func _build() -> void:
+    _reach_tops = Bookcase.reachable_tops(EliBook.measure({}).y)
     var env := environment(Color(0.20, 0.22, 0.30).lerp(accent, 0.15), 0.8)
     star_sky(env, Vector3(0.0, 0.92, -0.38), 30.0, 1.6)     # the galaxy stands over the roof
 
@@ -61,30 +75,68 @@ func _shelves() -> void:
     for i in BAYS:
         var bay := Node3D.new()
         bay.transform = _bay(i)
+        bay.name = "Bay_%d" % i
         add_child(bay)
+        _bays[i] = bay
         box(Vector3(bay_width, 15.0, 0.12), dark, Vector3(0, 7.5, -0.14), bay)
         for x in [-bay_width * 0.5 + 0.06, 0.0, bay_width * 0.5 - 0.06]:
             box(Vector3(0.12 if x != 0.0 else 0.08, 15.0, 0.5), wood, Vector3(x, 7.5, 0.09), bay)
         box(Vector3(bay_width + 0.3, 0.45, 0.62), wood, Vector3(0, 15.0, 0.12), bay)     # the cornice
         for y in _boards():
-            box(Vector3(bay_width - 0.1, 0.05, 0.46), wood, Vector3(0, y, SHELF_FRONT - 0.23), bay)
-        _books(bay, rng, i in MEMORY_BAYS)
-        if i % 2 == 0 and not i in MEMORY_BAYS:
+            box(Vector3(bay_width - 0.1, 0.05, SHELF_DEPTH), wood, Vector3(0, y, SHELF_FRONT - SHELF_DEPTH * 0.5), bay)
+        _books(bay, rng, i)
+        if i % 2 == 0 and not i in MEMORY_BAYS and not i in STORY_BAYS:
             _ladder(bay, wood, brass, rng.randf_range(-2.0, 2.0))
+    _cases()
 
-# The heights of a bay's boards, floor to roof: big books at the bottom, room above the eye-level
-# board for a book stood face out, and a library's spacing from there up.
+# The bays' shelves for ELI's books, as Bookcases: each bay in two halves either side of its middle
+# upright, the eye-level row across every bay first and then the row below; the stories' bay the same.
+func _cases() -> void:
+    _record_cases.clear()
+    _story_cases.clear()
+    var rows := _record_rows()
+    var half := bay_width * 0.5 - 0.14
+    for list in [[RECORD_BAYS, _record_cases], [STORY_BAYS, _story_cases]]:
+        for top in rows:
+            for b in list[0]:
+                for side in [-1.0, 1.0]:
+                    var case := Bookcase.new()
+                    case.name = "Books_%d_%d_%s" % [b, int(top * 100.0), "l" if side < 0.0 else "r"]
+                    var centre := Vector3(side * (half * 0.5 + 0.05), 0.0, SHELF_FRONT - SHELF_DEPTH * 0.5)
+                    case.setup(half - 0.06, SHELF_DEPTH, [top + 0.025], _bay(b) * Transform3D(Basis.IDENTITY, centre))
+                    case.position = centre
+                    (_bays[b] as Node3D).add_child(case)
+                    (list[1] as Array).append(case)
+
+# The rows of ELI's books: the reachable shelves but the one memories stand on.
+func _record_rows() -> Array:
+    return _reach_tops.filter(func(t): return t != memory_board())
+
+## The board ELI's memories stand on, face out: the reachable one below eye level.
+func memory_board() -> float:
+    return _reach_tops[1] if _reach_tops.size() > 1 else _reach_tops[0]
+
+var _bays := {}                     # bay number -> its node
+
+# The heights of a bay's boards, floor to roof: big books at the bottom, the shelves a hand reaches
+# (for this reader: Bookcase.reachable_tops), and a library's spacing from there up.
 func _boards() -> Array:
-    var heights := [0.1, 0.58, EYE_SHELF]
-    var y := EYE_SHELF + 0.62
+    var heights := [0.1]
+    var reached := _reach_tops.duplicate()
+    reached.sort()
+    heights.append_array(reached)
+    var y: float = reached[-1] + (reached[-1] - reached[-2] if reached.size() > 1 else SHELF_GAP)
     while y < 14.6:
         heights.append(y)
         y += SHELF_GAP
     return heights
 
 # Every shelf of a bay filled with books, as one batch: leathers of every age, a few lit. Less
-# detail means fewer, broader books, not empty shelves.
-func _books(bay: Node3D, rng: RandomNumberGenerator, keeps_memories: bool) -> void:
+# detail means fewer, broader books, not empty shelves. The rows that keep ELI's own books, and the
+# places its memories stand, are left for them.
+func _books(bay: Node3D, rng: RandomNumberGenerator, index: int) -> void:
+    var keeps_memories: bool = index in MEMORY_BAYS
+    var keeps_books: bool = index in RECORD_BAYS or index in STORY_BAYS
     const LEATHERS := [Color(0.36, 0.08, 0.06), Color(0.24, 0.12, 0.07), Color(0.42, 0.27, 0.15), Color(0.1, 0.19, 0.13),
                        Color(0.08, 0.11, 0.22), Color(0.06, 0.05, 0.05), Color(0.62, 0.52, 0.38), Color(0.3, 0.05, 0.12)]
     var placed: Array = []          # [transform, colour, lit]
@@ -96,6 +148,8 @@ func _books(bay: Node3D, rng: RandomNumberGenerator, keeps_memories: bool) -> vo
         for half in [-1.0, 1.0]:
             var x := (0.06 if half > 0.0 else -bay_width * 0.5 + 0.14)
             var end := (bay_width * 0.5 - 0.14 if half > 0.0 else -0.06)
+            if keeps_books and y in _record_rows():
+                break                                   # ELI's books stand here
             while x < end:
                 var width := rng.randf_range(0.025, 0.075) * broad
                 if x + width > end:
@@ -103,7 +157,7 @@ func _books(bay: Node3D, rng: RandomNumberGenerator, keeps_memories: bool) -> vo
                 if rng.randf() < 0.025:
                     x += rng.randf_range(0.1, 0.35)     # a gap where books are out
                     continue
-                if keeps_memories and y == EYE_SHELF and _memory_slot_near(x, width):
+                if keeps_memories and y == memory_board() and _memory_slot_near(x, width):
                     x += width                          # room kept for a memory stood face out
                     continue
                 var tall := minf(rng.randf_range(0.22, 0.42) * (1.2 if k == 0 else 1.0), room_above - 0.02)
@@ -249,10 +303,57 @@ func _notice_board() -> void:
 func pin_spot(kind: String, index: int) -> Variant:
     if kind == "thought":
         return _notice_at() * Transform3D(Basis.IDENTITY, NOTICE_PLACES[index]) if index >= 0 and index < NOTICE_PLACES.size() else null
+    if kind == "book":
+        return _book_slots[index] if index >= 0 and index < _book_slots.size() else null
     if kind != "memory" or index < 0 or index >= MEMORY_BAYS.size() * MEMORY_SLOTS:
         return null
-    var place := Vector3(_memory_x(index % MEMORY_SLOTS), EYE_SHELF + 0.025, SHELF_FRONT - 0.12)
-    return _bay(MEMORY_BAYS[index / MEMORY_SLOTS]) * Transform3D(Basis.IDENTITY, place)
+    var place := Vector3(_memory_x(index % MEMORY_SLOTS), memory_board() + 0.025, SHELF_FRONT - 0.12)
+    return _bay(MEMORY_BAYS[index / MEMORY_SLOTS]) * Transform3D(Basis(Vector3.RIGHT, -LEAN), place)
+
+## ELI's books in the order the shelves keep them: the records by the time they are of, oldest
+## first, and the stories ELI wrote after them on their own shelves, by when they were written.
+## Where each stands is worked out here, for pin_spot to give.
+func arrange(kind: String, records: Array) -> Array:
+    if kind != "book":
+        return records
+    var by_time := func(a, b): return EliBook.when_of(a) < EliBook.when_of(b)
+    var told := records.filter(func(r): return not _is_story(r))
+    var stories := records.filter(func(r): return _is_story(r))
+    told.sort_custom(by_time)
+    stories.sort_custom(by_time)
+    _book_slots = Bookcase.shelve(_record_cases, told, _shelf_of) + Bookcase.shelve(_story_cases, stories, _shelf_of)
+    return told + stories
+
+static func _is_story(record: Dictionary) -> bool:
+    return str(EliBook.book_of(record).get("of", "")) == "story"
+
+# The group a book is shelved under: the shelf ELI v3 named for it, or the month it is of.
+static func _shelf_of(record: Dictionary) -> String:
+    var named := str(EliBook.book_of(record).get("shelf", "")).strip_edges()
+    return named if not named.is_empty() else Reading.month(EliBook.when_of(record))
+
+## The shelves say what is on them: ELI's books where it keeps them, or why there are none.
+func show_eli(eli: Dictionary) -> void:
+    var words := ""
+    if not bool(eli.get("connected", false)):
+        words = EliReadout.idle_reason(eli)
+    elif eli.has("can") and not "books" in eli.get("can", []):
+        words = "this ELI does not keep books yet"
+    var told := 0
+    var stories := 0
+    for record in (eli.get("state", {}) as Dictionary).get("objects", []):
+        if typeof(record) == TYPE_DICTIONARY and str(record.get("kind", "")) == "book" and str(record.get("room", "")) == "memory_archive":
+            if _is_story(record):
+                stories += 1
+            else:
+                told += 1
+    for pair in [[_record_cases, told], [_story_cases, stories]]:
+        var cases: Array = pair[0]
+        if cases.is_empty():
+            continue
+        if pair[1] == 0:
+            Bookcase.shelve(cases, [], _shelf_of)       # none left: their plates go with them
+        (cases[0] as Bookcase).show_empty(words if not words.is_empty() else ("nothing on record yet" if pair[1] == 0 else ""))
 
 func _columns_and_roof(marble: Material) -> void:
     var column := MeshKitClass.lathe(PackedVector2Array([

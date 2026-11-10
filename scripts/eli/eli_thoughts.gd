@@ -51,21 +51,9 @@ func _colour(kind: String) -> Color:
         _: return own.lightened(0.35)
 
 func _wrap(text: String) -> String:
-    var words := text.split(" ", false)
-    var lines: Array[String] = []
-    var line := ""
-    for word in words:
-        if (line + " " + word).strip_edges().length() > LINE and not line.is_empty():
-            lines.append(line)
-            line = word
-            if lines.size() == LINES:
-                break
-        else:
-            line = (line + " " + word).strip_edges()
-    if lines.size() < LINES and not line.is_empty():
-        lines.append(line)
-    var shown := "\n".join(lines)
-    return shown if shown.length() >= text.length() - 1 else shown + "…"
+    var lines := Reading.wrap_lines(text, LINE)
+    var shown := "\n".join(lines.slice(0, LINES))
+    return shown if lines.size() <= LINES else shown + "…"
 
 func _rise(thought: Dictionary) -> void:
     var label := Label3D.new()

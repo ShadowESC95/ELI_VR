@@ -547,7 +547,7 @@ func _apply_current_room() -> void:
     if env_id.is_empty():
         env_id = str(room.get("environment","core_station"))
     var theme = registry.theme(str(config.get_value("world.theme","cyan")))
-    room_factory.build(room_root,env_id,theme,config)
+    room_factory.build(room_root,env_id,theme,config,_eli_mood)
     if ambient_audio: ambient_audio.play_environment(env_id)
     _build_portals()
     _apply_eli_mood()
@@ -760,6 +760,8 @@ func _show_eli_in_room() -> void:
         "state": _eli_state,
         "mind": eli_mind_name() if eli_link != null and eli_link.connected else "",
         "mode": eli_presence.mode if eli_presence != null else "",
+        # what this ELI said it sends, so a bare board can say it is not sent rather than that there is none
+        "can": eli_link.capabilities if eli_link != null and eli_link.connected else [],
     }
     for room in room_root.get_children():
         if room.has_method("show_eli") and not room.is_queued_for_deletion():

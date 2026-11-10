@@ -5,7 +5,6 @@ extends Node3D
 # dark face. What it shows comes from ELI's world (its log, its status, what is on its mind); with
 # nothing to show it says so, and never fills itself with made-up text.
 
-const FONTS := ["DejaVu Sans Mono", "Liberation Mono", "Menlo", "Consolas", "Courier New", "monospace"]
 const FONT_SIZE := 32
 const ADVANCE := 0.6           # a monospaced glyph is about this wide for its height
 
@@ -14,8 +13,12 @@ var columns := 44
 var tint := Color("#63ddff")
 var _title: Label3D
 var _lines: Array[Label3D] = []
-var _font: SystemFont
+var _font: Font
 var _pixel := 0.001
+
+## As many columns as a screen this wide shows when read from where it is seen whole (Reading).
+static func columns_for(width: float) -> int:
+    return Reading.columns(width * 0.92, Reading.stand_back(width))
 
 static func make(screen_size: Vector2, title: String, colour: Color, cols: int = 44) -> InfoScreen:
     var screen := InfoScreen.new()
@@ -26,8 +29,7 @@ static func make(screen_size: Vector2, title: String, colour: Color, cols: int =
     return screen
 
 func _build(title: String) -> void:
-    _font = SystemFont.new()
-    _font.font_names = PackedStringArray(FONTS)
+    _font = Reading.typed()
     var face := MeshInstance3D.new()
     var quad := QuadMesh.new()
     quad.size = size

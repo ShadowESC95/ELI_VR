@@ -136,17 +136,7 @@ static func mind_lines(eli: Dictionary, tint: Color, kinds: Array = []) -> Array
     return lines
 
 static func _wrap(text: String, width: int) -> Array:
-    var out := []
-    var line := ""
-    for word in text.split(" ", false):
-        if (line + " " + word).strip_edges().length() > width and not line.is_empty():
-            out.append(line)
-            line = word
-        else:
-            line = (line + " " + word).strip_edges()
-    if not line.is_empty():
-        out.append(line)
-    return out
+    return Reading.wrap_lines(text, width)
 
 ## What is on your agenda soon, from ELI's own: when, then what, earliest first.
 static func coming_lines(eli: Dictionary, tint: Color) -> Array:

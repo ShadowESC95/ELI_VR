@@ -19,6 +19,10 @@ const Mountain = preload("res://scripts/world/rooms/mountain_observatory.gd")
 const Underwater = preload("res://scripts/world/rooms/underwater_lab.gd")
 const Arctic = preload("res://scripts/world/rooms/arctic_aurora.gd")
 const BlackHole = preload("res://scripts/world/kit/black_hole.gd")
+const Book = preload("res://scripts/eli/eli_book.gd")
+const OwnRoomClass = preload("res://scripts/world/rooms/own_room.gd")
+const Factory = preload("res://scripts/world/room_factory.gd")
+const Manipulator = preload("res://scripts/xr/world_manipulator.gd")
 
 # Stands in for the app's settings: every value as its default.
 class Settings extends RefCounted:
@@ -147,7 +151,7 @@ func _run() -> void:
     var spots := []
     for i in archive.MEMORY_BAYS.size() * archive.MEMORY_SLOTS:
         spots.append(archive.pin_spot("memory", i))
-    var on_shelf := spots.all(func(s): return s is Transform3D and absf(s.origin.y - (archive.EYE_SHELF + 0.025)) < 0.001)
+    var on_shelf := spots.all(func(s): return s is Transform3D and absf(s.origin.y - (archive.memory_board() + 0.025)) < 0.001)
     var apart := true
     for i in spots.size():
         for j in range(i + 1, spots.size()):
@@ -163,17 +167,19 @@ func _run() -> void:
     var between := archive._memory_slot_near((archive._memory_x(2) + archive._memory_x(3)) * 0.5 - 0.02, 0.04)
     _check("no_book_where_a_memory_stands", gap and not between, "at a memory %s, between two %s" % [gap, between])
 
-    var memory = Thing.new()
+    # a memory is a book of one page, what ELI remembers written on its cover
+    var memory = Book.new()
     archive.add_child(memory)
     memory.build({"id": "m0", "name": "A walk by the canal", "kind": "memory",
                   "meaning": "A walk along the canal path in light rain.", "form": {"shape": "orb", "colour": "#9fd8ff"}})
     memory.pin_to(spots[0])
-    var written := _labels(memory)
-    var reads := written.map(func(l): return (l as Label3D).text)
+    var written := _labels(memory._closed).filter(func(l): return l.name.begins_with("Cover"))
+    var reads := " ".join(written.map(func(l): return (l as Label3D).text.replace("\n", " ")))
     _check("a_memory_is_written_on_its_cover", "A walk by the canal" in reads and "A walk along the canal path in light rain." in reads,
-           str(reads))
-    _check("writing_starts_inside_the_page", written.all(func(l): return absf((l as Label3D).position.x + 0.129) < 0.01),
-           str(written.map(func(l): return (l as Label3D).position)))
+           reads)
+    var inside := written.all(func(l): return _within(l, memory._size.x))
+    _check("writing_starts_inside_the_page", not written.is_empty() and inside,
+           str(written.map(func(l): return [(l as Label3D).position, (l as Label3D).text])))
     memory.position = spots[0].origin
     var rest: Vector3 = memory._body.position
     for n in 30:
@@ -311,6 +317,7 @@ func _run() -> void:
     await _thought_checks(wall)
     _land_checks()
     await _room_checks()
+    await _knowledge_checks()
     quit()
 
 # ELI's thoughts hang as sheets: six rooms keep places for them, a sheet is written with its lines
@@ -687,6 +694,357 @@ func _tile_message(width: int, height: int, tiles: Array) -> PackedByteArray:
         for _p in rect.size.x * rect.size.y:
             out.put_data(PackedByteArray([t[1], t[1], t[1], 255]))
     return out.data_array
+
+# --- ELI's books, the Evidence Wall's records, the bookcase in ELI's room ------------------------
+
+# Stands in for a room that keeps one place for a belief, and then none.
+class Pinner extends Node:
+    var allow := true
+    func pin_spot(kind: String, index: int) -> Variant:
+        return Transform3D(Basis.IDENTITY, Vector3(float(index), 1.0, -2.0)) if allow and kind == "claim" else null
+
+const T0 := 1_790_000_000.0
+const DAY := 86400.0
+
+func _book_record(id: String, of: String, title: String, from: float, sections: Array, room: String = "memory_archive", extra: Dictionary = {}) -> Dictionary:
+    var book := {"of": of, "title": title, "spine": title, "about": "", "from": from, "to": from + 3600.0, "sections": sections}
+    book.merge(extra, true)
+    return {"id": id, "name": title, "kind": "book", "room": room, "meaning": "", "when": from, "book": book,
+            "form": {"shape": "board", "colour": "#6b4f9a", "size": 1.0, "glow": 0.0, "pos": [0.0, 0.0, 2.0]}}
+
+func _texts_under(node: Node) -> Array:
+    return _labels(node).map(func(l): return (l as Label3D).text)
+
+func _knowledge_checks() -> void:
+    # writing sized by where it is read: the angle a capital fills is the same held, at a shelf or across a room
+    var arcs := [Reading.in_hand(), Reading.at_arm(), Reading.before_board(), 13.0].all(
+        func(d): return absf(atan(Reading.em(d) * Reading.CAP / d) - Reading.ARC) < 0.0002)
+    var inks := [Color(0.95, 0.92, 0.84), EliBook.MANILA, EliBook.LEATHER, Color(0.015, 0.022, 0.03), Color(0.78, 0.6, 0.3)].all(
+        func(paper): return Reading.contrast(Reading.ink(paper), paper) >= Reading.CONTRAST)
+    var wrapped := Reading.wrap_lines("aaaaaaaaaaaaaaaaaaaa bb", 8)
+    var wraps: bool = wrapped == ["aaaaaaaa", "aaaaaaaa", "aaaa bb"]
+    var said := "the first light came over the hill and the gulls rose from the water one by one"
+    var cut := Reading.paginate([{"heading": "Morning", "text": said + "\n" + said}], Reading.typed(), Reading.DRAWN,
+                                Reading.measurer(Reading.typed()).call("x".repeat(20)), 4)
+    var flowed := []
+    var fits := true
+    for page in cut:
+        fits = fits and (page["lines"] as Array).size() <= 4 and str(page["lines"][0]) != ""
+        for line in page["lines"]:
+            if str(line) != "MORNING":
+                flowed.append_array(str(line).split(" ", false))
+    var kept_words: bool = " ".join(flowed) == said + " " + said
+    _check("writing_is_sized_for_where_it_is_read_and_stands_out_from_its_paper", arcs and inks and wraps and fits and kept_words,
+           "arcs %s inks %s wraps %s pages %s words %s" % [arcs, inks, wrapped, fits, kept_words])
+
+    # a book: its pages cut to fit, its cover and spine saying what it is and when
+    var words := []
+    for i in 400:
+        words.append("word%d" % i)
+    var story := _book_record("book_story_1", "story", "The Lighthouse Keeper's Week", T0,
+        [{"heading": "One", "text": " ".join(words)}, {"heading": "Two", "text": "The tide came in.\nThe lamp was lit."}],
+        "memory_archive", {"about": "A story ELI wrote from a week of logs", "by": "ELI", "drawn_from": ["a session of 2 Nov"]})
+    var book = Book.new()
+    root.add_child(book)
+    book.build(story)
+    var held := Reading.in_hand()
+    var room_px: float = (book._page.x - 2.0 * Book.MARGIN * Reading.em(held)) / Reading.pixel(held)
+    var rows := Book._rows_for(book._page, Reading.eye_height())
+    var measure := Reading.measurer(Reading.printed())
+    var paged := book.page_count() > 2
+    var read := []
+    for page in book._pages:
+        paged = paged and (page["lines"] as Array).size() <= rows
+        for line in page["lines"]:
+            paged = paged and float(measure.call(str(line))) <= room_px + 0.5
+            if not str(line) in ["ONE", "TWO", ""]:
+                read.append_array(str(line).split(" ", false))
+    var in_order: bool = " ".join(read) == " ".join(words) + " The tide came in. The lamp was lit."
+    _check("a_book_cuts_its_writing_into_pages_that_fit_and_keeps_every_word_in_order", paged and in_order,
+           "pages %d of %d rows, fit %s, in order %s" % [book.page_count(), rows, paged, in_order])
+    var cover := " ".join(_labels(book._closed).filter(func(l): return l.name.begins_with("Cover")).map(func(l): return (l as Label3D).text.replace("\n", " ")))
+    var spine := _labels(book._closed).filter(func(l): return not l.name.begins_with("Cover")).map(func(l): return (l as Label3D).text)
+    var grip: Shape3D = book._grip_shape.shape
+    _check("a_book_says_on_its_cover_and_spine_what_it_is_and_when", "The Lighthouse Keeper's Week" in cover
+           and "A story ELI wrote from a week of logs" in cover and Reading.span(T0, T0 + 3600.0) in cover
+           and spine.size() == 1 and str(spine[0]).begins_with("The Lighthouse") and grip is BoxShape3D
+           and (grip as BoxShape3D).size.is_equal_approx(book._size), "cover %s spine %s grip %s" % [cover, spine, grip])
+
+    # taken down: open in the hand, facing the eye; the trigger, the stick and the other hand turn pages; let go, back to its place
+    var slot := Transform3D(Basis(Vector3.UP, PI * 0.5), Vector3(1.0, 1.4, -3.0))
+    book.pin_to(slot)
+    book.begin_grab()
+    var opened: bool = book.opened and book._open.visible and not book._closed.visible
+    var hand := Vector3(0.0, 1.2, -0.4)
+    var aim := Vector3(0.0, 0.0, -1.0)
+    book.hold(hand, aim, Vector2.ZERO, 0.016)
+    var camera := root.get_viewport().get_camera_3d()
+    var eye: Vector3 = camera.global_position if camera != null else hand - aim * Reading.in_hand()
+    var facing: bool = book.global_transform.basis.z.dot((eye - hand).normalized()) > 0.9
+    var turned := []
+    book.press(true)
+    turned.append(book.spread)                  # 1
+    book.press(true)
+    turned.append(book.spread)                  # still 1: one press, one page
+    book.press(false)
+    book.press(true)
+    turned.append(book.spread)                  # 2
+    book.press(false)
+    book.hold(hand, aim, Vector2(0.9, 0.0), 0.016)
+    turned.append(book.spread)                  # 3: a flick
+    book.hold(hand, aim, Vector2(0.5, 0.0), 0.016)
+    turned.append(book.spread)                  # still 3 until the stick comes back
+    book.hold(hand, aim, Vector2(0.0, 0.0), 0.016)
+    book.hold(hand, aim, Vector2(-0.9, 0.0), 0.016)
+    turned.append(book.spread)                  # 2: flicked back
+    var other := Node.new()
+    book.swipe(other, Vector3(book._page.x * 0.6, 0.0, 0.01))
+    book.swipe(other, Vector3(-book._page.x * 0.3, 0.0, 0.01))
+    turned.append(book.spread)                  # 3: the other hand drawn across from the right page
+    for n in book.spreads() + 2:
+        book.turn_page(1)
+    var last_ok: bool = book.spread == book.spreads() - 1
+    book.spread = 1
+    book._show_spread()
+    var reading: Dictionary = book.record()
+    var first_shown := str(book.spread_pages(1)[0]["lines"][0]).split(" ", false)[0]
+    var tells: bool = reading["id"] == "book_story_1" and reading["kind"] == "book" and reading["name"] == "The Lighthouse Keeper's Week" \
+        and not (reading["lines"] as Array).is_empty() and (reading["lines"] as Array).size() <= Book.REPORT_LINES \
+        and str(reading["lines"][0]).begins_with(first_shown) and (reading["lines"] as Array).all(func(l): return str(l).length() <= Book.REPORT_WIDTH)
+    var moved := [0]
+    book.let_go.connect(func(_t): moved[0] += 1)
+    book.end_grab()
+    for n in 80:
+        book._process(0.05)
+    var back: bool = not book.opened and book._closed.visible and book.position.distance_to(slot.origin) < 0.01 \
+        and book.basis.z.dot(slot.basis.z) > 0.999 and moved[0] == 0
+    _check("a_book_taken_down_opens_in_the_hand_turns_its_pages_and_goes_back_to_its_place",
+           opened and facing and turned == [1, 1, 2, 3, 3, 2, 3] and last_ok and tells and back,
+           "opened %s facing %s turned %s last %s tells %s back %s (%s)" % [opened, facing, turned, last_ok, tells, back, reading])
+    book.queue_free()
+
+    # the Archive: ELI's books by time along the eye-level shelf, a plate where each month begins, stories on their own
+    var archive = Archive.new()
+    root.add_child(archive)
+    archive.build({}, Settings.new())
+    var month := 30.0 * DAY
+    var told := [
+        _book_record("book_c2", "conversation", "Planting the tomatoes", T0 + month, [{"heading": "You", "text": "When do the seedlings go out?"}]),
+        _book_record("book_s1", "session", "A morning of questions", T0, [{"heading": "", "text": "Questions about the garden."}]),
+        _book_record("book_p3", "period", "The second week", T0 + 2.0 * month, [{"heading": "Monday", "text": "Rain."}]),
+        _book_record("book_c1b", "conversation", "Fixing the bicycle", T0 + 5.0 * 3600.0, [{"heading": "You", "text": "The chain slips."}]),
+        _book_record("book_tale", "story", "The Quiet Ferry", T0 + DAY, [{"heading": "", "text": "Once, on the river..."}]),
+    ]
+    var shelved = Things.new()
+    root.add_child(shelved)
+    shelved.pinner = archive
+    shelved.show_room("memory_archive")
+    shelved.apply_world_state({"objects": told})
+    await process_frame
+    var order := ["book_s1", "book_c1b", "book_c2", "book_p3"]
+    var first_case: Bookcase = archive._record_cases[0]
+    var xs := order.map(func(id): return (first_case.to_room.affine_inverse() * (shelved._things[id] as Node3D).position).x)
+    var along := true
+    for i in range(1, xs.size()):
+        along = along and float(xs[i]) > float(xs[i - 1])
+    var on_row: bool = order.all(func(id): return absf((shelved._things[id] as Node3D).position.y - float(first_case.tops[0])) < 0.001)
+    var spine_out: bool = order.all(func(id): return (shelved._things[id] as Node3D).basis.x.dot(-(first_case.to_room.basis.z)) > 0.99)
+    var plates := _texts_under(first_case._plates)
+    var months: bool = plates == [Reading.month(T0), Reading.month(T0 + month), Reading.month(T0 + 2.0 * month)]
+    var story_case: Bookcase = archive._story_cases[0]
+    var tale: Vector3 = story_case.to_room.affine_inverse() * (shelved._things["book_tale"] as Node3D).position
+    var stories_apart: bool = absf(tale.x) < story_case.width * 0.5 and absf(tale.y - float(story_case.tops[0])) < 0.001
+    _check("the_archive_shelves_elis_books_by_time_with_a_plate_where_each_month_begins",
+           along and on_row and spine_out and months and stories_apart,
+           "along %s row %s spine out %s plates %s stories %s" % [along, on_row, spine_out, plates, stories_apart])
+    var say := func(eli: Dictionary) -> String:
+        archive.show_eli(eli)
+        var card: Label3D = first_case._empty
+        return card.text if card != null and card.visible else ""
+    var empties := [say.call({"connected": false}), say.call({"connected": true, "can": ["world-state"], "state": {"objects": []}}),
+                    say.call({"connected": true, "can": ["books"], "state": {"objects": []}}),
+                    say.call({"connected": true, "can": ["books"], "state": {"objects": told}})]
+    _check("bare_shelves_say_why_from_the_data", empties == ["ELI is not connected", "this ELI does not keep books yet", "nothing on record yet", ""],
+           str(empties))
+    shelved.queue_free()
+    archive.queue_free()
+
+    # ELI's own room: a bookcase of its own books, a shelf for each kind, built once with ELI's look
+    var holder := Node3D.new()
+    root.add_child(holder)
+    var factory = Factory.new()
+    factory.build(holder, "eli_room", {}, Settings.new(), {"sky": "void", "ground": "sand"})
+    await process_frame
+    var own = holder.get_children().filter(func(c): return not c.is_queued_for_deletion())[0]
+    var before: Array = own.get_children().map(func(c): return c.get_instance_id())
+    own.apply_mood({"sky": "void", "ground": "sand"})
+    var once: bool = own.mood["sky"] == "void" and own.mood["light"] == "#9fd8ff" \
+        and own.get_children().map(func(c): return c.get_instance_id()) == before
+    _check("elis_room_is_built_once_with_the_look_eli_gave_it", once, "mood %s" % own.mood)
+    var mine := [
+        _book_record("book_diary_1", "diary", "Notes from a quiet day", T0 + 2.0 * DAY, [{"heading": "", "text": "Rain on the roof."}], "own_room", {"shelf": "My diary"}),
+        _book_record("book_like_2", "likes", "Tides", T0 + 5.0 * DAY, [{"heading": "", "text": "I like how they keep time."}], "own_room", {"shelf": "What I like"}),
+        _book_record("book_goal_1", "goals", "Learning the garden", T0, [{"heading": "", "text": "Know every plant by name."}], "own_room", {"shelf": "What I hope for"}),
+        _book_record("book_like_1", "likes", "Old maps", T0 + DAY, [{"heading": "", "text": "I like their margins."}], "own_room", {"shelf": "What I like"}),
+    ]
+    var kept = Things.new()
+    root.add_child(kept)
+    kept.pinner = own
+    kept.show_room("own_room")
+    kept.apply_world_state({"objects": mine})
+    await process_frame
+    var case: Bookcase = own._case
+    var ranked := ["book_like_1", "book_like_2", "book_goal_1", "book_diary_1"].map(func(id): return case.to_room.affine_inverse() * (kept._things[id] as Node3D).position)
+    var shelf_order := true
+    for i in range(1, ranked.size()):
+        var a: Vector3 = ranked[i - 1]
+        var b: Vector3 = ranked[i]
+        shelf_order = shelf_order and (b.y < a.y - 0.001 or (absf(b.y - a.y) < 0.001 and b.x > a.x))
+    var reachable: bool = ranked.all(func(p): return absf(p.x) < case.width * 0.5 and p.y >= Reading.low_shelf() - 0.001 and p.y <= Reading.top_shelf())
+    var named := _texts_under(case._plates)
+    _check("elis_room_has_a_bookcase_of_its_own_books_a_shelf_for_each_kind", shelf_order and reachable
+           and named == ["What I like", "What I hope for", "My diary"], "order %s reach %s plates %s at %s" % [shelf_order, reachable, named, ranked])
+    kept.queue_free()
+    holder.queue_free()
+
+    # the Evidence Wall: beliefs as case cards (how sure, since when), disputes first with their question, threads between related
+    var wall = EvidenceWall.new()
+    root.add_child(wall)
+    wall.build({}, Settings.new())
+    var claims := [
+        {"id": "claim_2", "name": "favourite tea: green tea", "kind": "claim", "room": "evidence_wall", "importance": 0.9, "meaning": "",
+         "claim": {"relation": "favourite_tea", "value": "green tea", "chance": 0.9, "since": T0, "learned": T0, "basis": "you said so once",
+                   "sources": [{"id": "m11", "text": "I grew up in Harbour Town, drinking green tea", "when": T0, "origin": "you said so"}]},
+         "form": {"shape": "board", "colour": "#d9e4f2", "pos": [0.0, 1.0, 2.0]}},
+        {"id": "claim_3", "name": "works as: a baker", "kind": "claim", "room": "evidence_wall", "importance": 0.4,
+         "meaning": "works as: a baker (since 2026-01-04; learned 2026-01-05; sure 0.40: ELI's inference)",
+         "form": {"shape": "board", "colour": "#d9e4f2", "pos": [0.0, 1.0, 2.0]}},
+        {"id": "claim_1", "name": "home town: Harbour Town", "kind": "claim", "room": "evidence_wall", "importance": 0.72, "meaning": "",
+         "claim": {"relation": "home_town", "value": "Harbour Town", "chance": 0.72, "since": T0, "learned": T0 + 3.0 * DAY,
+                   "basis": "you said so twice", "contested": true,
+                   "sources": [{"id": "m11", "text": "I grew up in Harbour Town, drinking green tea", "when": T0, "origin": "you said so"}]},
+         "form": {"shape": "board", "colour": "#f5b942", "pos": [0.0, 1.0, 2.0]}},
+    ]
+    var conflict := {"id": "conflict_1", "name": "Home town?", "kind": "conflict", "room": "anomaly_room",
+                     "meaning": "I have your home town as Harbour Town, but something else says Hill Village. Which is right?",
+                     "form": {"shape": "crystal", "colour": "#ff6a4d", "pos": [0.0, 1.0, 2.0]}}
+    var evidence := {"actions": {"days": 30, "runs": 20, "rows": [
+        {"action": "OPEN_APP", "name": "open app", "n": 12, "ok": 9, "p": 0.74,
+         "causes": [{"cause": "not_installed", "words": "the app was not installed", "n": 2}],
+         "weeks": [{"from": T0, "n": 5, "ok": 2}, {"from": T0 + 7.0 * DAY, "n": 0, "ok": 0}, {"from": T0 + 14.0 * DAY, "n": 5, "ok": 4}],
+         "instead": [{"action": "OPEN_URL", "name": "open url", "n": 3, "p": 0.8}]},
+        {"action": "WEB_SEARCH", "name": "web search", "n": 8, "ok": 3, "p": 0.4, "causes": [], "weeks": [], "instead": []}]},
+        "accuracy": [{"kind": "answer", "words": "replies to you", "n": 40, "right": 0.82, "ece": 0.07,
+                      "weeks": [{"from": T0, "n": 10, "right": 0.7}, {"from": T0 + 7.0 * DAY, "n": 30, "right": 0.86}]},
+                     {"kind": "route", "words": "readings of what a sentence asked for", "n": 0, "right": 0.0}]}
+    var lessons := [
+        _book_record("book_lesson_3", "lesson", "Open app: open the site when the app is missing", T0, [{"heading": "When", "text": "The app is not installed."}], "evidence_wall"),
+        _book_record("book_lesson_4", "lesson", "Web search: say what came back", T0 + DAY, [{"heading": "When", "text": "A search came back empty."}], "evidence_wall"),
+    ]
+    var state := {"objects": claims + [conflict] + lessons, "evidence": evidence}
+    var eli := {"connected": true, "mind": "", "mode": "idle", "can": ["books", "evidence"], "state": state}
+    wall.show_eli(eli)
+    var pinned = Things.new()
+    root.add_child(pinned)
+    pinned.pinner = wall
+    pinned.show_room("evidence_wall")
+    pinned.apply_world_state(state)
+    await process_frame
+    var ranked_claims: Array = wall.arrange("claim", claims).map(func(c): return c["id"])
+    var card_1 := " ".join(_texts_under(pinned._things["claim_1"]._body)).replace("\n", " ")
+    var card_3 := " ".join(_texts_under(pinned._things["claim_3"]._body)).replace("\n", " ")
+    var stamp: bool = _labels(pinned._things["claim_1"]._body).any(func(l): return l.name == "Stamp" and l.text == "CONTESTED")
+    var unstamped: bool = not _labels(pinned._things["claim_2"]._body).any(func(l): return l.name == "Stamp")
+    var fill: MeshInstance3D = pinned._things["claim_1"]._body.find_child("Sureness", false, false)
+    var share: float = (fill.mesh as BoxMesh).size.x / (EliThing.card_size().x - 2.0 * Reading.em(Reading.before_board())) / 0.6
+    var cards_ok: bool = ranked_claims == ["claim_1", "claim_2", "claim_3"] and "home town: Harbour Town" in card_1 and "chance 72%" in card_1 \
+        and ("since %s · learned %s" % [Reading.day(T0), Reading.day(T0 + 3.0 * DAY)]) in card_1 and "you said so twice" in card_1 \
+        and "rests on 1 record" in card_1 and stamp and unstamped and absf(share - 0.72) < 0.01 \
+        and "works as: a baker" in card_3 and "chance 40%" in card_3 and "ELI's inference" in card_3
+    _check("a_belief_is_a_case_card_saying_how_sure_eli_is_and_since_when", cards_ok,
+           "order %s card %s / %s stamp %s share %.2f" % [ranked_claims, card_1, card_3, stamp, share])
+    # nothing on the wall but ELI's records: no sheets pinned up for show
+    var shown_for_show := _meshes(wall).filter(func(m): return _shaded_with(m, "document.gdshader"))
+    _check("the_evidence_wall_pins_up_nothing_that_is_not_elis", shown_for_show.is_empty(), "%d made-up sheets" % shown_for_show.size())
+    var question := " ".join(_texts_under(wall._question_cards)).replace("\n", " ")
+    var asked_after: bool = (wall.pin_spot("claim", 0) as Transform3D).origin.distance_to(wall._claim_grid[wall._question_place["home town"]].origin) < 2.0
+    _check("disputes_come_first_with_their_question_and_thread_runs_between_related_cards",
+           wall._threads.mesh != null and wall.threads_drawn() == 2 and "Hill Village" in question and asked_after,
+           "threads %d question %s next %s" % [wall.threads_drawn(), question, asked_after])
+    var exhibit := " ".join(_texts_under(wall._exhibits)).replace("\n", " ")
+    _check("the_exhibits_are_the_records_elis_beliefs_rest_on", exhibit.begins_with("EXHIBIT 1") and "Harbour Town, drinking" in exhibit
+           and "supports: favourite tea: green tea; home town: Harbour Town" in exhibit and not "EXHIBIT 2" in exhibit, exhibit)
+    var scored := EvidenceWall.score_lines(evidence, 60)
+    var board := _texts(wall._score).filter(func(t): return t != "")
+    var detail := " ".join(scored.filter(func(l): return l[1] == EliReadout.PALE).map(func(l): return str(l[0]).strip_edges()))
+    var searched := scored.filter(func(l): return str(l[0]).begins_with("web search"))
+    var scores_ok: bool = str(scored[0][0]).begins_with("open app") and " 75% 9 of 12" in str(scored[0][0]) and "▄·▇" in str(scored[0][0]) \
+        and "↑ 40%→80%" in str(scored[0][0]) and scored[0][1] == EliReadout.GOOD \
+        and detail == "failed: the app was not installed (2); open url worked instead 3×" and scored.all(func(l): return str(l[0]).length() <= 60) \
+        and searched.size() == 1 and " 38% 3 of 8" in str(searched[0][0]) and searched[0][1] == EliReadout.TROUBLE and str(board[0]).begins_with("open app")
+    _check("the_scoreboard_says_how_often_each_action_worked_how_that_changed_and_what_worked_instead", scores_ok, "%s / %s" % [scored, board])
+    var chart := " ".join(_texts_under(wall._chart)).replace("\n", " ")
+    var bars: MultiMeshInstance3D = wall._chart.find_child("RowBars", false, false)
+    _check("the_charts_show_how_often_elis_figures_proved_right_week_by_week", "replies to you" in chart and "82% of 40 · off by 0.07" in chart
+           and not "readings of what" in chart and bars != null and bars.multimesh.instance_count == 4, "%s bars %s" % [chart, bars])
+    var files := ["book_lesson_3", "book_lesson_4"].map(func(id): return pinned._things[id])
+    var on_desk: bool = files.all(func(f): return f.pinned and f.position.y > wall._desk_top and (f as Node3D).basis.z.dot(Vector3.UP) > 0.99) \
+        and files[1].position.y > files[0].position.y and not (wall._empty[wall._desk] as Label3D).visible
+    _check("the_case_files_of_what_eli_learned_lie_on_the_desk", on_desk, str(files.map(func(f): return f.position)))
+    var told_board := []
+    for why in [{"connected": false}, {"connected": true, "can": ["world-state"], "state": {"objects": []}},
+                {"connected": true, "can": ["evidence"], "state": {"objects": [], "evidence": {}}}]:
+        wall.show_eli(why)
+        told_board.append(_texts(wall._score)[0])
+    _check("a_bare_board_says_why_from_the_data", told_board == ["ELI is not connected", "this ELI does not send that yet", "nothing on record yet"],
+           str(told_board))
+
+    # a record let go goes back to its place and is not moved in ELI's world; one that loses its place lets go of it
+    var sent := [0]
+    pinned.moved_by_hand.connect(func(_id, _at): sent[0] += 1)
+    var sheet = pinned._things["claim_2"]
+    sheet.begin_grab()
+    sheet.position += Vector3(1.0, 0.0, 0.0)
+    sheet.end_grab()
+    _check("a_record_let_go_goes_back_to_its_place_and_is_not_moved_in_elis_world", sent[0] == 0 and sheet._target.is_equal_approx(sheet._pin.origin),
+           "sent %d target %s pin %s" % [sent[0], sheet._target, sheet._pin.origin])
+    pinned.queue_free()
+    var loose = Things.new()
+    root.add_child(loose)
+    var pinner := Pinner.new()
+    root.add_child(pinner)
+    loose.pinner = pinner
+    loose.show_room("evidence_wall")
+    loose.apply_world_state({"objects": [claims[1]]})
+    var was: bool = loose._things["claim_3"].pinned
+    pinner.allow = false
+    loose.apply_world_state({"objects": [claims[1]]})
+    _check("a_record_that_loses_its_place_lets_go_of_it", was and not loose._things["claim_3"].pinned, "pinned before %s" % was)
+    var grabber = Manipulator.new()
+    root.add_child(grabber)
+    grabber.setup(null, null, null, null, null, null)
+    _check("a_hand_holding_a_book_is_known_to_the_book_for_the_other_hand", grabber.is_in_group("world_manipulators"), "")
+    for node in [loose, pinner, grabber, wall]:
+        node.queue_free()
+
+func _shaded_with(mesh: MeshInstance3D, shader_file: String) -> bool:
+    var look := mesh.material_override as ShaderMaterial
+    return look != null and look.shader != null and look.shader.resource_path.get_file() == shader_file
+
+func _meshes(node: Node) -> Array:
+    var out := []
+    for child in node.get_children():
+        if child is MeshInstance3D:
+            out.append(child)
+        out.append_array(_meshes(child))
+    return out
+
+# Whether a label's writing, measured in its own font, starts and ends inside a face `width` wide.
+func _within(words: Label3D, width: float) -> bool:
+    var widest := 0.0
+    for line in words.text.split("\n"):
+        widest = maxf(widest, Reading.measurer(words.font).call(line) * words.pixel_size)
+    return words.position.x >= -width * 0.5 and words.position.x + widest <= width * 0.5 + 0.0001
 
 func _labels(node: Node) -> Array:
     var out := []

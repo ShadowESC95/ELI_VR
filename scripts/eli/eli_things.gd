@@ -16,6 +16,7 @@ signal dropped(thing)
 
 const ThingClass = preload("res://scripts/eli/eli_thing.gd")
 const ArmClass = preload("res://scripts/eli/eli_arm.gd")
+const BookClass = preload("res://scripts/eli/eli_book.gd")
 # The mobile renderer lights a mesh with eight lamps at most, and the rooms
 # have their own. Only the brightest few of ELI's things carry a real light.
 const MAX_LAMPS := 4
@@ -97,6 +98,7 @@ func _apply(objects: Array) -> void:
     var seen := {}
     var counted := {}              # kind -> how many of that kind are placed so far
     var games_here := {}
+    var order := _arranged(objects)
     for data in objects:
         if typeof(data) != TYPE_DICTIONARY or str(data.get("room", "")) != room:
             continue
@@ -114,7 +116,8 @@ func _apply(objects: Array) -> void:
                 changed.emit(_things[id])
         else:
             var form_of: Dictionary = data.get("form", {})
-            var thing = ArmClass.new() if str(form_of.get("shape", "")) == "arm" else ThingClass.new()
+            var thing = ArmClass.new() if str(form_of.get("shape", "")) == "arm" else (
+                BookClass.new() if BookClass.is_book(data) else ThingClass.new())
             add_child(thing)
             thing.build(data)
             thing.let_go.connect(_on_let_go)
@@ -125,9 +128,11 @@ func _apply(objects: Array) -> void:
         _forms[id] = form
         var record := str(data.get("kind", ""))
         if pinner != null and is_instance_valid(pinner) and pinner.has_method("pin_spot"):
-            var spot = pinner.pin_spot(record, int(counted.get(record, 0)))
+            var spot = pinner.pin_spot(record, int(order.get(id, counted.get(record, 0))))
             if spot is Transform3D:
                 _things[id].pin_to(spot)
+            else:
+                _things[id].unpin()     # no place for it now: not left standing in another record's
         counted[record] = int(counted.get(record, 0)) + 1
     for id in _things.keys():
         if not seen.has(id):
@@ -140,6 +145,25 @@ func _apply(objects: Array) -> void:
     # what an ELI that says how things look sent first is what was here before you came
     if objects.any(func(o): return typeof(o) == TYPE_DICTIONARY and o.has("form")):
         _settled = true
+
+# Where each record of this room stands among its kind, when the room keeps them in an order of its
+# own (RoomBase.arrange: books by time, beliefs by what they are about): id -> its place in the order.
+func _arranged(objects: Array) -> Dictionary:
+    var out := {}
+    if pinner == null or not is_instance_valid(pinner) or not pinner.has_method("arrange"):
+        return out
+    var by_kind := {}
+    for data in objects:
+        if typeof(data) == TYPE_DICTIONARY and str(data.get("room", "")) == room and data.has("form"):
+            var kind := str(data.get("kind", ""))
+            if not by_kind.has(kind):
+                by_kind[kind] = []
+            by_kind[kind].append(data)
+    for kind in by_kind:
+        var ordered: Array = pinner.arrange(kind, by_kind[kind])
+        for i in ordered.size():
+            out[str((ordered[i] as Dictionary).get("id", ""))] = i
+    return out
 
 func _share_lamps() -> void:
     var lit := standing().filter(func(t): return t.lamp != null)

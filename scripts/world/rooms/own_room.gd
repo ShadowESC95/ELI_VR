@@ -6,6 +6,12 @@ extends RoomBase
 # (ELI v3 keeps them; see eli/world/building.py there). This draws its choice:
 # a sky by name, or one it painted itself from two colours, stars and a sun;
 # ground by name or of any colour, flat or rising into hills.
+#
+# Behind you stands ELI's bookcase: its own books (EliBook, on the shared Bookcase), a shelf for
+# each kind in turn, what it likes and does not, what it believes and thinks, how it looks back,
+# what it hopes for and its diary, each by the time it is of, a brass plate where each kind begins
+# with ELI's own name for it. Any of them can be taken down, opened and read; with none, the case
+# says so.
 
 # sky -> [panorama, reach, ground height, where the light comes from, its warmth]
 const PHOTO_SKIES := {
@@ -25,13 +31,31 @@ const GROUNDS := {
     "dark": ["marble_black", 3.0, Color.WHITE, 1.0, false],
 }
 const RADIUS := 13.0
+const DEFAULT_MOOD := {"sky": "stars", "light": "#9fd8ff", "ground": "stone", "mist": 0.15}
+# The shelves of ELI's own books, in this order; a kind ELI v3 sends that is not here comes after.
+const SHELF_ORDER := ["likes", "dislikes", "beliefs", "thoughts", "reflection", "goals", "diary"]
+## Where the bookcase stands: behind you, a third of the way to the edge of the ground, facing you.
+const CASE_BEARING := 180.0
+const CASE_OUT := 0.35
 
-var mood := {"sky": "stars", "light": "#9fd8ff", "ground": "stone", "mist": 0.15}
+var mood := DEFAULT_MOOD.duplicate()
+var _case: Bookcase
+var _book_slots: Array = []
+var _books: Array = []              # the books last shelved, and what ELI's world last said: a room
+var _eli := {}                      # built again with a new look puts them back on its new case
+
+# ELI's mood as the room is first built with it (RoomFactory, before build), so it is built once.
+func take_mood(new_mood: Dictionary) -> void:
+    mood = _moody(new_mood)
+
+static func _moody(new_mood: Dictionary) -> Dictionary:
+    var wanted := DEFAULT_MOOD.duplicate()
+    wanted.merge(new_mood, true)
+    return wanted
 
 # Called when ELI's world says the room has changed.
 func apply_mood(new_mood: Dictionary) -> void:
-    var wanted := {"sky": "stars", "light": "#9fd8ff", "ground": "stone", "mist": 0.15}
-    wanted.merge(new_mood, true)
+    var wanted := _moody(new_mood)
     if wanted == mood:
         return
     mood = wanted
@@ -41,6 +65,10 @@ func apply_mood(new_mood: Dictionary) -> void:
     _turning.clear()
     _blinking.clear()
     _build()
+    if not _books.is_empty():
+        arrange("book", _books)
+    if not _eli.is_empty():
+        show_eli(_eli)
 
 func _build() -> void:
     var light := Color(str(mood.get("light", "#9fd8ff")))
@@ -74,6 +102,7 @@ func _build() -> void:
         env.fog_sky_affect = 0.25 * mist
 
     _ground(light)
+    _bookcase(light)
     lamp(Vector3(0, 4.2, 0), light, 0.9, 16.0)
     if motes:
         drift(Vector3(0, 2.2, 0), Vector3(11, 2.2, 11), 180, light.lightened(0.4), 0.028, Vector3(0.2, 0.25, -0.1), 0.1, 0.8)
@@ -109,6 +138,65 @@ func _painted_sky(light: Color) -> Environment:
     else:
         sun(Vector3(0.2, 0.9, -0.3), light.lerp(Color.WHITE, 0.4), 0.7)
     return env
+
+# ELI's bookcase: three shelves or so a hand reaches, as wide as both arms take from standing in one
+# place, as deep as its books, facing the middle of the room; lit in the room's own light.
+func _bookcase(light: Color) -> void:
+    var book := EliBook.measure({})
+    var tops := Bookcase.reachable_tops(book.y)
+    var a := deg_to_rad(CASE_BEARING)
+    var at := Vector3(sin(a), 0.0, -cos(a)) * RADIUS * CASE_OUT
+    var facing := Basis(Vector3.UP, atan2(-at.x, -at.z))
+    _case = Bookcase.new()
+    _case.name = "Bookcase"
+    _case.transform = Transform3D(facing, at)
+    _case.setup(Reading.reach() * 2.0, book.x * 1.25, tops, _case.transform)
+    add_child(_case)
+    _case.build_case(MaterialKitClass.surface("planks", 1.6, Color(0.36, 0.25, 0.18), 0.9), book.y)
+    lamp(_case.transform * Vector3(0, Reading.eye_height() + 0.6, 1.2), light.lerp(Color(1.0, 0.86, 0.66), 0.5), 0.8, 4.0)
+
+## ELI's own books: shelf by shelf in SHELF_ORDER, each shelf by the time its books are of.
+func arrange(kind: String, records: Array) -> Array:
+    if kind != "book" or _case == null:
+        return records
+    _books = records
+    var ordered := records.duplicate()
+    ordered.sort_custom(_shelved_before)
+    _book_slots = Bookcase.shelve([_case], ordered, func(r): return str(EliBook.book_of(r).get("shelf", "")))
+    return ordered
+
+static func _shelved_before(a: Dictionary, b: Dictionary) -> bool:
+    var ka := _shelf_rank(a)
+    var kb := _shelf_rank(b)
+    return ka < kb if ka != kb else EliBook.when_of(a) < EliBook.when_of(b)
+
+static func _shelf_rank(record: Dictionary) -> int:
+    var at := SHELF_ORDER.find(str(EliBook.book_of(record).get("of", "")))
+    return at if at >= 0 else SHELF_ORDER.size()
+
+func pin_spot(kind: String, index: int) -> Variant:
+    if kind == "book":
+        return _book_slots[index] if index >= 0 and index < _book_slots.size() else null
+    return null
+
+func show_eli(eli: Dictionary) -> void:
+    _eli = eli
+    if _case == null:
+        return
+    var books := 0
+    for record in (eli.get("state", {}) as Dictionary).get("objects", []):
+        if typeof(record) == TYPE_DICTIONARY and str(record.get("kind", "")) == "book" and str(record.get("room", "")) == "own_room":
+            books += 1
+    if books == 0:
+        Bookcase.shelve([_case], [], func(_r): return "")      # none left: their plates go with them
+    var words := ""
+    if not bool(eli.get("connected", false)):
+        words = EliReadout.idle_reason(eli)
+    elif eli.has("can") and not "books" in eli.get("can", []):
+        words = "this ELI does not keep books yet"
+    elif books == 0:
+        words = "nothing on record yet"
+    _case.show_empty(words)
 
 func _ground(light: Color) -> void:
     var ground: Array = GROUNDS.get(str(mood.get("ground", "stone")), GROUNDS["stone"])

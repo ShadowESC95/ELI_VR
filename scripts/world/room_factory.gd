@@ -41,7 +41,8 @@ func build(
     parent: Node3D,
     environment_id: String,
     p_theme: Dictionary,
-    config
+    config,
+    eli_mood: Dictionary = {}
 ) -> void:
     current_environment_id = environment_id
     for child in parent.get_children():
@@ -59,6 +60,9 @@ func build(
         var room = REBUILT[environment_id].new()
         room.name = environment_id
         parent.add_child(room)
+        # ELI's own room is built the way ELI made it the first time, not plain and then again
+        if not eli_mood.is_empty() and room.has_method("take_mood"):
+            room.take_mood(eli_mood)
         room.build(theme, config)
         return
 
