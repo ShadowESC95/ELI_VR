@@ -22,7 +22,8 @@ func _build() -> void:
     _ground()
     _stones()
     _instrument()
-    flock(Vector3(30, 34, -70), 46.0, 6, 0.1)
+    # a pair of buzzards and their young circling over the plateau in front, out of reach of the terrace
+    flock("raptor", Vector3(30.0, 0.0, -70.0), 0.0, 40.0, 5, _land.base_y)
     if motes:
         drift(Vector3(0, 2.2, 0), Vector3(12, 2.2, 12), 200, Color(1.0, 0.85, 0.7), 0.03, DAWN, 0.25, 0.7)
     probe(Vector3(30, 14, 30))

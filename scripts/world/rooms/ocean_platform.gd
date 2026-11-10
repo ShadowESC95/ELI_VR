@@ -1,12 +1,27 @@
 class_name OceanPlatformRoom
 extends RoomBase
 
-# Ocean Platform: a deck on legs out at sea as the sun goes down. The water
-# moves and carries the sunset; buoys ride it, a beacon turns, birds circle.
+# Ocean Platform: a deck on legs out at sea as the sun goes down. The swell
+# really moves near the rig and carries the sunset and the sun's glitter;
+# buoys, the boat and the foam round the legs ride the same waves; a beacon
+# turns; gulls work the air round the rig, beating and gliding.
 
 const SUNSET := Vector3(0.711, 0.148, -0.687)
+const SEA_Y := -2.6               # the still water line, metres below the deck
+const SEA_REACH := 4500.0         # how far out the sea is laid
+# The swell, one train per row: direction (x, z), wavelength (m), height (m, half the crest to
+# trough), and how far the water goes round in it (Gerstner steepness). A calm sea at sunset: a
+# long swell and the shorter waves the evening breeze raises, none steep enough to break
+# (height over wavelength well under 1/7). Their speed is deep water's, from their length.
+const SWELL := [
+    [Vector2(1.0, 0.25), 48.0, 0.32, 0.35],
+    [Vector2(0.6, -0.8), 21.0, 0.16, 0.4],
+    [Vector2(-0.3, 1.0), 9.0, 0.07, 0.45],
+    [Vector2(0.9, 0.45), 4.3, 0.03, 0.5],
+]
 
-var _floating: Array = []     # [node, rest height, phase, tilt]
+var _floating: Array = []     # [node, height above the water, how much it leans with the swell, its heading]
+var _sea: ShaderMaterial
 
 func _build() -> void:
     var env := environment(Color(0.55, 0.5, 0.6), 1.0)
@@ -15,28 +30,64 @@ func _build() -> void:
     env.ambient_light_energy = 1.15
     sun(SUNSET, Color(1.0, 0.68, 0.45), 1.5)
 
-    var sea := add(MeshKitClass.annulus(0.0, 4500.0, 128), MaterialKitClass.shader("res://assets/shaders/water.gdshader", {
-        "photo": load("res://assets/skies/sunset_sea.jpg"),
-    }), Vector3(0, -2.6, 0))
-    sea.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-
+    _water()
     _rig()
     _afloat()
     _far_rocks()
     _stores()
     _shoals()
-    flock(Vector3(-20, 22, -60), 40.0, 7, 0.14)
+    # gulls round the rig, out past the deck and the beacon, over the water
+    flock("gull", Vector3.ZERO, 15.0, 55.0, 14, SEA_Y)
     if motes:
         drift(Vector3(0, 2.0, 0), Vector3(12, 2, 12), 160, Color(1.0, 0.85, 0.7), 0.025, Vector3(1, 0.1, 0.2), 0.4, 0.6)
     probe(Vector3(30, 14, 30))
 
+# The sea: rings finest under the rig (MeshKit.disc), the swell moved on it in water.gdshader.
+func _water() -> void:
+    var rings := 140
+    var first := 0.4
+    var growth := MeshKitClass.disc_growth(SEA_REACH, rings, first)
+    var waves := PackedVector4Array()
+    var steep := PackedFloat32Array()
+    for train in SWELL:
+        var way: Vector2 = (train[0] as Vector2).normalized()
+        waves.append(Vector4(way.x, way.y, float(train[1]), float(train[2])))
+        steep.append(float(train[3]))
+    _sea = MaterialKitClass.shader("res://assets/shaders/water.gdshader", {
+        "photo": load("res://assets/skies/sunset_sea.jpg"), "sun_dir": SUNSET.normalized(),
+        "waves": waves, "steep": steep, "growth": growth,
+        "offset": SEA_REACH / (exp(growth * float(rings)) - 1.0),
+    })
+    var sea := add(MeshKitClass.disc(SEA_REACH, rings, 160, first), _sea, Vector3(0, SEA_Y, 0))
+    sea.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+
+## The water's height at (x, z) now: the same swell the sea is drawn with (water.gdshader), read at
+## the point under it (the swell's sideways sway, a few centimetres, is left out).
+func sea_height(x: float, z: float) -> float:
+    var y := SEA_Y
+    for train in SWELL:
+        var way: Vector2 = (train[0] as Vector2).normalized()
+        var k := TAU / float(train[1])
+        y += float(train[2]) * sin(k * (way.x * x + way.y * z) - sqrt(9.81 * k) * _clock)
+    return y
+
 func _animate(_delta: float) -> void:
+    _sea.set_shader_parameter("clock", _clock)
     for entry in _floating:
         var node := entry[0] as Node3D
-        var phase := float(entry[2])
-        node.position.y = float(entry[1]) + sin(_clock * 0.9 + phase) * 0.16 + sin(_clock * 0.37 + phase * 2.0) * 0.1
-        node.rotation.x = sin(_clock * 0.7 + phase) * float(entry[3])
-        node.rotation.z = cos(_clock * 0.55 + phase * 1.3) * float(entry[3])
+        var x := node.position.x
+        var z := node.position.z
+        node.position.y = sea_height(x, z) + float(entry[1])
+        var lean := float(entry[2])
+        if lean > 0.0:
+            # lean with the water's slope under it, still facing its own way
+            var step := 0.6
+            var dx := (sea_height(x + step, z) - sea_height(x - step, z)) / (2.0 * step)
+            var dz := (sea_height(x, z + step) - sea_height(x, z - step)) / (2.0 * step)
+            var up := Vector3(-dx * lean, 1.0, -dz * lean).normalized()
+            var axis := Vector3.UP.cross(up)
+            var tilt := Basis(axis.normalized(), Vector3.UP.angle_to(up)) if axis.length() > 1e-5 else Basis.IDENTITY
+            node.basis = tilt * Basis(Vector3.UP, float(entry[3]))
 
 func _rig() -> void:
     var boards := MaterialKitClass.surface("planks", 2.4, Color(1.15, 1.0, 0.9), 0.85)
@@ -52,7 +103,7 @@ func _rig() -> void:
     for i in 6:
         var angle := TAU * float(i) / 6.0
         add(leg, steel, Vector3(cos(angle) * 7.6, -5.0, sin(angle) * 7.6))
-        _foam(Vector3(cos(angle) * 7.6, -2.55, sin(angle) * 7.6), 0.38, 1.3, float(i))
+        _foam(Vector3(cos(angle) * 7.6, SEA_Y + 0.05, sin(angle) * 7.6), 0.38, 1.3, float(i))
 
     var post := CylinderMesh.new()
     post.top_radius = 0.022
@@ -111,21 +162,36 @@ func _afloat() -> void:
     for i in 5:
         var angle := rng.randf() * TAU
         var distance := rng.randf_range(16.0, 60.0)
-        var buoy := add(body, red, Vector3(cos(angle) * distance, -2.5, sin(angle) * distance))
+        var buoy := add(body, red, Vector3(cos(angle) * distance, SEA_Y, sin(angle) * distance))
         blink(glow(Vector3(0, 2.4, 0), Color(1.0, 0.3, 0.2), 1.2, 2.0, 0.9, buoy), rng.randf_range(2.0, 3.4), rng.randf() * 3.0)
-        _floating.append([buoy, -2.5, rng.randf() * TAU, 0.12])
+        _floating.append([buoy, 0.0, 1.0, 0.0])
 
-    # a small boat tied up below
+    # a small boat tied up below: a clinker dinghy (MeshKit.hull), its seats across it, a line to the
+    # nearest leg
     var hull_wood := MaterialKitClass.surface("planks", 1.2, Color(0.9, 0.75, 0.6))
+    hull_wood.cull_mode = BaseMaterial3D.CULL_DISABLED
+    var seat_wood := MaterialKitClass.surface("planks", 0.8, Color(0.75, 0.6, 0.45))
     var boat := Node3D.new()
-    boat.position = Vector3(11.5, -2.4, 3.0)
+    boat.position = Vector3(11.5, SEA_Y, 3.0)
     boat.rotation.y = 0.5
     add_child(boat)
-    var shell := add(MeshKitClass.lathe(PackedVector2Array([
-        Vector2(0.0, 0.5), Vector2(1.0, 0.5), Vector2(1.05, 0.4), Vector2(0.75, -0.1), Vector2(0.0, -0.3),
-    ]), 20), hull_wood, Vector3.ZERO, boat)
-    shell.scale = Vector3(1.0, 1.0, 2.6)
-    _floating.append([boat, -2.4, 1.3, 0.07])
+    var length := 3.6
+    var beam := 1.4
+    var depth := 0.55
+    add(MeshKitClass.hull(length, beam, depth), hull_wood, Vector3(0, depth * 0.55, 0), boat)
+    for along in [-0.3, 0.05, 0.3]:
+        box(Vector3(beam * (0.92 if along < 0.2 else 0.7), 0.04, 0.24), seat_wood, Vector3(0, depth * 0.55 - 0.08, along * length), boat)
+    var leg := Vector3(7.6, 0.0, 0.0)       # the nearest of the rig's legs
+    var bow := boat.position + Vector3(0, depth * 0.8, -length * 0.45).rotated(Vector3.UP, boat.rotation.y)
+    var line := PackedVector3Array()
+    for k in 9:
+        var t := float(k) / 8.0
+        line.append(bow.lerp(leg + Vector3(0, SEA_Y + 1.1, 0), t) + Vector3(0, -0.5 * sin(t * PI), 0))
+    var rope := StandardMaterial3D.new()
+    rope.albedo_color = Color(0.55, 0.45, 0.3)
+    rope.roughness = 0.9
+    add(MeshKitClass.beam(line, Vector3.UP.cross(line[8] - line[0]).normalized(), 0.025, 0.025), rope)
+    _floating.append([boat, 0.0, 1.0, boat.rotation.y])
 
 # What a working platform keeps on deck (scanned, assets/models).
 func _stores() -> void:
@@ -166,9 +232,9 @@ func _shoals() -> void:
         var angle := rng.randf_range(0.6, 5.4)
         var distance := rng.randf_range(13.0, 26.0)
         var size := rng.randf_range(1.4, 2.8)
-        var at := Vector3(cos(angle) * distance, -2.6 - rng.randf_range(0.1, 0.5), sin(angle) * distance)
+        var at := Vector3(cos(angle) * distance, SEA_Y - rng.randf_range(0.1, 0.5), sin(angle) * distance)
         prop("coast_rocks_05" if i % 2 else "sand_rocks_small_01", at, rng.randf() * 360.0, size)
-        _foam(Vector3(at.x, -2.55, at.z), 0.6 * size, 2.0 * size, 10.0 + float(i))
+        _foam(Vector3(at.x, SEA_Y + 0.05, at.z), 0.6 * size, 2.0 * size, 10.0 + float(i))
 
 # Foam at the waterline round something standing in the sea: a ring from `inner` to `outer` metres.
 func _foam(at: Vector3, inner: float, outer: float, seed_value: float) -> void:
@@ -176,7 +242,7 @@ func _foam(at: Vector3, inner: float, outer: float, seed_value: float) -> void:
         "inner": inner, "outer": outer, "seed": seed_value, "energy": 0.7,
     }), at)
     ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-    _floating.append([ring, at.y, seed_value * 0.7, 0.0])
+    _floating.append([ring, at.y - SEA_Y, 0.0, 0.0])
 
 func _far_rocks() -> void:
     var dark := MaterialKitClass.surface("rock", 30.0, Color(0.16, 0.14, 0.16), 1.0, true)

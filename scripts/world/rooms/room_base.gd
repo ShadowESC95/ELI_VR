@@ -7,6 +7,7 @@ extends Node3D
 
 const MeshKitClass = preload("res://scripts/world/kit/mesh_kit.gd")
 const MaterialKitClass = preload("res://scripts/world/kit/material_kit.gd")
+const FlockClass = preload("res://scripts/world/kit/flock.gd")
 
 var accent := Color("#63ddff")
 var secondary := Color("#6f8995")
@@ -128,21 +129,26 @@ func environment(fill: Color, fill_energy: float) -> Environment:
     return env
 
 # The real night sky, turned so the heart of the Milky Way stands in the
-# direction `towards`.
-func star_sky(env: Environment, towards: Vector3, roll_deg: float = -25.0, energy: float = 1.5) -> void:
+# direction `towards`. The sky's material comes back: a room on the ground sets
+# its air and twilight on it (space_sky.gdshader), and anything that must show
+# the same stars (the black hole's bent light) reads its stars and turn from it.
+func star_sky(env: Environment, towards: Vector3, roll_deg: float = -25.0, energy: float = 1.5) -> ShaderMaterial:
     var in_map := Vector3(0.873, -0.485, 0.055).normalized()   # where the galactic centre is in the map
     var turn := Basis(in_map, deg_to_rad(roll_deg)) * Basis(Quaternion(towards.normalized(), in_map))
     var sky := Sky.new()
-    sky.sky_material = MaterialKitClass.shader("res://assets/shaders/space_sky.gdshader", {
+    var material := MaterialKitClass.shader("res://assets/shaders/space_sky.gdshader", {
         "stars": load("res://assets/space/starmap_8k.jpg"),
         "orient": turn,
         "energy": energy,
         "contrast": 1.2,
+        "lod": 0.5,
     })
+    sky.sky_material = material
     sky.radiance_size = Sky.RADIANCE_SIZE_256
     env.background_mode = Environment.BG_SKY
     env.sky = sky
     env.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
+    return material
 
 # A photograph of a real place as the surroundings. The same picture lights
 # the room and shows in reflections. `reach` is how far the photo's ground is
@@ -223,25 +229,17 @@ func drift(centre: Vector3, extents: Vector3, amount: int, colour: Color, size: 
     add_child(field)
     return field
 
-# A few birds wheeling in the distance. Small, dark, and never still.
-func flock(centre: Vector3, radius: float, count: int, speed: float = 0.12) -> void:
-    var dark := StandardMaterial3D.new()
-    dark.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-    dark.albedo_color = Color(0.03, 0.03, 0.04)
-    dark.cull_mode = BaseMaterial3D.CULL_DISABLED
-    var wing := PrismMesh.new()
-    wing.size = Vector3(1.5, 0.02, 0.45)
-    var rng := RandomNumberGenerator.new()
-    rng.seed = int(radius) + count
-    for i in count:
-        var orbit := Node3D.new()
-        orbit.position = centre + Vector3(0, rng.randf_range(-6.0, 6.0), 0)
-        orbit.rotation = Vector3(rng.randf_range(-0.15, 0.15), rng.randf() * TAU, 0.0)
-        add_child(orbit)
-        var bird := add(wing, dark, Vector3(radius * rng.randf_range(0.6, 1.0), 0, 0), orbit)
-        bird.rotation = Vector3(deg_to_rad(90.0), 0.0, deg_to_rad(rng.randf_range(-20.0, 20.0)))
-        bird.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-        spin(orbit, Vector3.UP, speed * rng.randf_range(0.7, 1.3))
+# Birds or fish of `kind` ("gull", "raptor", "fish", "reef_fish": kit/flock.gd) going as a flock
+# round `centre`, out past `keep_out` metres from it and back before `roam`, in their kind's band
+# of height over the surface below them: level at `surface` (the sea), or `under`'s height at
+# (x, z) where the ground is not level (a seabed: LandKit.y_at). Birds beat their wings and glide,
+# fish swim and coast.
+func flock(kind: String, centre: Vector3, keep_out: float, roam: float, count: int, surface: float,
+           under: Callable = Callable()) -> MultiMeshInstance3D:
+    var birds = FlockClass.new()
+    birds.setup(kind, centre, keep_out, roam, count, surface, under)
+    add_child(birds)
+    return birds
 
 # A round room to be indoors in: floor, wall and ceiling. The wall and
 # ceiling face inwards.

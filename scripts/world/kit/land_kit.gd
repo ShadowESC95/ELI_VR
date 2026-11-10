@@ -30,6 +30,7 @@ var rise := 16.0
 var bowl := 0.0
 var base_y := -0.14
 var fade := 0.0
+var dunes := Vector4.ZERO      # a dune field over the land (MeshKit.dune_height): wind x, z, spacing, height
 var ground: MeshInstance3D
 
 static var _blades := {}
@@ -54,10 +55,11 @@ static func blend(base: String, base_tile: float, base_tint: Color, over: String
 
 ## Land laid under a room (a child of it), shaped as MeshKit.terrain shapes it: level at `base` inside
 ## `flat_m` of the middle, rising into the noise over `rise_m`, the far edges lifted by `bowl_m`, and
-## settling back to `base` over its last `edge_fade` metres where a photograph's ground takes over.
+## settling back to `base` over its last `edge_fade` metres where a photograph's ground takes over;
+## `dune_field` (wind x, wind z, crest spacing m, height m) lays wind-built dunes over it.
 static func lay(room: Node3D, material: Material, seed_value: int, frequency: float, octaves: int, size_m: float,
                 cell_count: int, height_m: float, flat_m: float, rise_m: float, bowl_m: float = 0.0, base: float = -0.14,
-                edge_fade: float = 0.0) -> LandKit:
+                edge_fade: float = 0.0, dune_field: Vector4 = Vector4.ZERO) -> LandKit:
     var land := LandKit.new()
     land.noise = FastNoiseLite.new()
     land.noise.seed = seed_value
@@ -71,15 +73,16 @@ static func lay(room: Node3D, material: Material, seed_value: int, frequency: fl
     land.bowl = bowl_m
     land.base_y = base
     land.fade = edge_fade
+    land.dunes = dune_field
     land.ground = MeshInstance3D.new()
-    land.ground.mesh = MeshKit.terrain(size_m, cell_count, land.noise, height_m, flat_m, rise_m, bowl_m, base, edge_fade)
+    land.ground.mesh = MeshKit.terrain(size_m, cell_count, land.noise, height_m, flat_m, rise_m, bowl_m, base, edge_fade, dune_field)
     land.ground.material_override = material
     room.add_child(land.ground)
     return land
 
 ## The ground's height at a point: the figure the mesh was built from.
 func y_at(x: float, z: float) -> float:
-    return MeshKit.land_height(x, z, size, noise, height, flat, rise, bowl, base_y, fade)
+    return MeshKit.land_height(x, z, size, noise, height, flat, rise, bowl, base_y, fade, dunes)
 
 ## How the ground tilts at a point, as a basis whose up is the ground's normal, for a thing to lean with it.
 func tilt_at(x: float, z: float) -> Basis:

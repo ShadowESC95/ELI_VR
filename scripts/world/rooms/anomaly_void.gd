@@ -5,17 +5,33 @@ extends RoomBase
 # floor is cracked and glowing, pieces of it circle away towards the dark,
 # and nothing here quite holds still.
 
+const BlackHole = preload("res://scripts/world/kit/black_hole.gd")
+
 const HOLE := Vector3(-0.06, 0.50, -1.0)
+# The hole and its disc, in units of its mass (GM/c², see kit/black_hole.gd). The deck is HOLE_AWAY
+# metres from the hole's middle, and that is DECK_AWAY of these units: near enough for its light
+# to bend round it in plain sight, outside the disc and the photon sphere. The disc's gas reaches
+# from the innermost stable orbit (BlackHole.ISCO) out to DISC_OUT; the lens is drawn out to
+# LENS_REACH, where what bending is left is eased away.
+const HOLE_AWAY := 430.0
+const DECK_AWAY := 40.0
+const DISC_OUT := 22.0
+const LENS_REACH := 34.0
+# The deck sits this far above the disc's plane, so the disc is seen nearly edge on and its far
+# side, bent back towards you, stands over the shadow; and the disc is rolled a little off level.
+const ABOVE_DISC := deg_to_rad(11.0)
+const DISC_ROLL := deg_to_rad(-14.0)
 
 var _arcs: Array = []
+var _lens: MeshInstance3D
 
 func _build() -> void:
     var strange := accent.lerp(Color(0.9, 0.2, 0.75), 0.45)
     var env := environment(Color(0.20, 0.13, 0.26).lerp(strange, 0.25), 0.9)
-    star_sky(env, Vector3(-0.6, 0.3, 0.7), 80.0, 0.9)
-    sun(HOLE, Color(1.0, 0.74, 0.48), 2.4)      # the only light is the disc itself
+    var sky := star_sky(env, Vector3(-0.6, 0.3, 0.7), 80.0, 0.9)
+    sun(HOLE, Color(1.0, 0.8, 0.6), 2.4)        # the only light is the disc itself
 
-    _black_hole(strange)
+    _black_hole(sky)
     _deck(strange)
     _debris()
     _shards(strange)
@@ -24,33 +40,32 @@ func _build() -> void:
         drift(Vector3(0, 3.0, -4.0), Vector3(12, 4, 14), 320, strange.lightened(0.4), 0.035, HOLE, 0.9, 0.9)
     probe()
 
-func _black_hole(strange: Color) -> void:
-    var centre := HOLE.normalized() * 430.0
-    var dark := StandardMaterial3D.new()
-    dark.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-    dark.albedo_color = Color.BLACK
+# The black hole as light shows one (kit/black_hole.gd and black_hole.gdshader): its shadow, the
+# photon ring just outside it, the thin hot disc of gas brighter and bluer on the side coming
+# towards you, its far side bent up over the shadow and under it, and the stars behind pulled into
+# rings. It is drawn on a ball round the hole that shows exactly the sky at its edge.
+func _black_hole(sky: ShaderMaterial) -> void:
+    var mass := HOLE_AWAY / DECK_AWAY
+    var toward := HOLE.normalized()
+    var centre := toward * HOLE_AWAY
+    var back := -toward
+    var up := (Vector3.UP - back * Vector3.UP.dot(back)).normalized()
+    var axis := (up * cos(ABOVE_DISC) + back * sin(ABOVE_DISC)).normalized().rotated(back, DISC_ROLL)
+    var across := axis.cross(Vector3.RIGHT if absf(axis.x) < 0.9 else Vector3.FORWARD).normalized()
     var ball := SphereMesh.new()
-    ball.radius = 62.0
-    ball.height = 124.0
-    add(ball, dark, centre).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-
-    var disc := add(MeshKitClass.annulus(75.0, 235.0, 160), MaterialKitClass.shader("res://assets/shaders/accretion.gdshader", {
-        "cool": rgb(strange),
+    ball.radius = LENS_REACH * mass
+    ball.height = ball.radius * 2.0
+    ball.radial_segments = 64
+    ball.rings = 32
+    _lens = add(ball, MaterialKitClass.shader("res://assets/shaders/black_hole.gdshader", {
+        "lens": BlackHole.table(DECK_AWAY, LENS_REACH),
+        "hole": centre, "mass": mass, "reach": asin(LENS_REACH / DECK_AWAY), "sweep": BlackHole.SWEEP,
+        "spin": axis, "disc_x": across, "disc_in": BlackHole.ISCO, "disc_out": DISC_OUT,
+        "stars": sky.get_shader_parameter("stars"), "orient": sky.get_shader_parameter("orient"),
+        "star_energy": sky.get_shader_parameter("energy"), "contrast": sky.get_shader_parameter("contrast"),
+        "lod": sky.get_shader_parameter("lod"),
     }), centre)
-    # tipped towards us, so the whole whirlpool shows
-    disc.rotation = Vector3(deg_to_rad(64.0), 0.0, deg_to_rad(-14.0))
-    disc.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-
-    # light from behind the hole, bent round it into a ring
-    var bent := TorusMesh.new()
-    bent.inner_radius = 64.0
-    bent.outer_radius = 70.0
-    bent.rings = 128
-    bent.ring_segments = 8
-    var ring := add(bent, MaterialKitClass.light(Color(1.0, 0.86, 0.66), 2.6), centre)
-    ring.basis = Basis.looking_at(-centre.normalized(), Vector3.UP) * Basis(Vector3.RIGHT, PI * 0.5)
-    ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-    glow(centre, Color(1.0, 0.6, 0.3), 720.0, 1.3, 0.0)
+    _lens.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
 func _deck(strange: Color) -> void:
     var plating := MaterialKitClass.metal("hull_panels", 2.4, Color(0.52, 0.50, 0.58), 0.6)

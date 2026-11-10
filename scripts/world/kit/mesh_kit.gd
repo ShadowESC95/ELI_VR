@@ -8,7 +8,9 @@ extends RefCounted
 # A profile spun around the Y axis. Points are (radius, height), listed going
 # outward along the top, down the outside, then back in underneath. Each band
 # between two points is flat, which gives the hard edges of machined metal.
-static func lathe(profile: PackedVector2Array, segments: int = 64) -> ArrayMesh:
+# `arc` below a full turn spins it only that far, from the angle `from` (0 is
+# +X, turning towards +Z): a dome with its slit left open, a shutter leaf.
+static func lathe(profile: PackedVector2Array, segments: int = 64, from: float = 0.0, arc: float = TAU) -> ArrayMesh:
     var st := SurfaceTool.new()
     st.begin(Mesh.PRIMITIVE_TRIANGLES)
     var run := 0.0
@@ -22,8 +24,8 @@ static func lathe(profile: PackedVector2Array, segments: int = 64) -> ArrayMesh:
         var out := Vector2(-along.y, along.x)
         var girth := maxf((a.x + b.x) * 0.5, 0.01)
         for s in segments:
-            var t0 := TAU * float(s) / float(segments)
-            var t1 := TAU * float(s + 1) / float(segments)
+            var t0 := from + arc * float(s) / float(segments)
+            var t1 := from + arc * float(s + 1) / float(segments)
             var c0 := Vector3(cos(t0), 0.0, sin(t0))
             var c1 := Vector3(cos(t1), 0.0, sin(t1))
             _quad(
@@ -57,6 +59,50 @@ static func annulus(inner: float, outer: float, segments: int = 96) -> ArrayMesh
         )
     st.generate_tangents()
     return st.commit()
+
+# A disc lying in the XZ plane, facing up, made of rings that start `first` metres apart at the
+# middle and widen in proportion to their distance out (so a surface moved in its vertex shader,
+# like the sea's swell, has its finest grid where you are). The gap between rings at r metres out
+# is disc_step(r, ...). UVs are in metres.
+static func disc(radius: float, rings: int, segments: int, first: float) -> ArrayMesh:
+    var growth := disc_growth(radius, rings, first)
+    var st := SurfaceTool.new()
+    st.begin(Mesh.PRIMITIVE_TRIANGLES)
+    var inner := 0.0
+    for k in rings:
+        var outer := radius * (exp(growth * float(k + 1)) - 1.0) / (exp(growth * float(rings)) - 1.0)
+        for s in segments:
+            var t0 := TAU * float(s) / float(segments)
+            var t1 := TAU * float(s + 1) / float(segments)
+            var c0 := Vector3(cos(t0), 0.0, sin(t0))
+            var c1 := Vector3(cos(t1), 0.0, sin(t1))
+            var p00 := c0 * inner
+            var p01 := c1 * inner
+            var p11 := c1 * outer
+            var p10 := c0 * outer
+            _quad(st, p00, p01, p11, p10, Vector3.UP, Vector3.UP,
+                  Vector2(p00.x, p00.z), Vector2(p01.x, p01.z), Vector2(p11.x, p11.z), Vector2(p10.x, p10.z))
+        inner = outer
+    st.index()
+    return st.commit()
+
+## How fast disc()'s rings widen: the g for which ring k sits at radius·(e^{gk} − 1)/(e^{gn} − 1)
+## and the first is `first` metres out.
+static func disc_growth(radius: float, rings: int, first: float) -> float:
+    var lo := 1e-4
+    var hi := 1.0
+    for i in 60:
+        var g := (lo + hi) * 0.5
+        var r1 := radius * (exp(g) - 1.0) / (exp(g * float(rings)) - 1.0)
+        if r1 > first:
+            lo = g
+        else:
+            hi = g
+    return (lo + hi) * 0.5
+
+## The gap between disc()'s rings r metres out: g·(r + radius/(e^{gn} − 1)).
+static func disc_step(r: float, radius: float, rings: int, growth: float) -> float:
+    return growth * (r + radius / (exp(growth * float(rings)) - 1.0))
 
 # A rectangular beam following a path. `side` is the direction the beam is
 # wide in and stays fixed, so the path should lie in the plane across it.
@@ -104,23 +150,52 @@ static func arc(r0: float, y0: float, r1: float, y1: float, angle: float, steps:
 # The height of open ground at (x, z): level at `base_y` inside `flat` metres of the centre, where
 # the room's floor goes, rising into the noise over the next `rise` metres; `bowl` lifts the far
 # edges, for land that climbs away from you; `fade` (metres) settles the land back to `base_y`
-# over its last `fade` metres, so it meets a photograph's flat ground without a step. terrain()
-# is built from this, and LandKit stands things on it by the same figure.
+# over its last `fade` metres, so it meets a photograph's flat ground without a step. `dunes`
+# (see dune_height) lays a field of wind-built dunes over it. terrain() is built from this, and
+# LandKit stands things on it by the same figure.
 static func land_height(
     x: float, z: float, size: float, noise: FastNoiseLite, height: float,
-    flat: float, rise: float, bowl: float = 0.0, base_y: float = 0.0, fade: float = 0.0
+    flat: float, rise: float, bowl: float = 0.0, base_y: float = 0.0, fade: float = 0.0,
+    dunes: Vector4 = Vector4.ZERO
 ) -> float:
     var half := size * 0.5
     var r := Vector2(x, z).length()
     var lift := smoothstep(flat, flat + rise, r)
     var far := clampf((r - flat) / maxf(half - flat, 0.001), 0.0, 1.0)
     var settle := 1.0 if fade <= 0.0 else 1.0 - smoothstep(half - fade, half, maxf(absf(x), absf(z)))
-    return base_y + settle * lift * (height * (noise.get_noise_2d(x, z) * 0.5 + 0.5) + bowl * far * far)
+    return base_y + settle * lift * (height * (noise.get_noise_2d(x, z) * 0.5 + 0.5) + bowl * far * far
+                                     + dune_height(x, z, dunes, noise))
+
+# Dry sand slides when it lies steeper than this (its angle of repose, about 32 degrees, as a slope).
+const REPOSE := 0.625
+
+# Transverse dunes built by a wind blowing towards (dunes.x, dunes.y), crests `dunes.z` metres
+# apart and up to `dunes.w` high: each rises gently on its windward side to a sharp brink and
+# falls away on its slip face at the angle of repose, as dunes do. The crests wander (the noise
+# bends them) and the dunes grow and shrink along them. 0 when `dunes.w` is 0.
+static func dune_height(x: float, z: float, dunes: Vector4, noise: FastNoiseLite) -> float:
+    if dunes.w <= 0.0:
+        return 0.0
+    var wind := Vector2(dunes.x, dunes.y).normalized()
+    var p := Vector2(x, z)
+    var along := p.dot(wind)
+    var across := p.dot(Vector2(-wind.y, wind.x))
+    var s := along / dunes.z + 0.7 * noise.get_noise_2d(across * 0.3 + 1000.0, along * 0.08 - 500.0)
+    var f := s - floorf(s)
+    var tall := dunes.w * (0.6 + 0.4 * noise.get_noise_2d(x * 0.35 + 300.0, z * 0.35 - 700.0))
+    # the share of each dune's length its slip face takes, so the face lies at the angle of repose
+    var lee := clampf(tall / (REPOSE * dunes.z), 0.04, 0.45)
+    var brink := 1.0 - lee
+    if f < brink:
+        var t := f / brink
+        return tall * t * t * (3.0 - 2.0 * t)
+    return tall * (1.0 - (f - brink) / lee)
 
 # Open ground: a square of land centred on the origin, `cells` across, shaped by land_height.
 static func terrain(
     size: float, cells: int, noise: FastNoiseLite, height: float,
-    flat: float, rise: float, bowl: float = 0.0, base_y: float = 0.0, fade: float = 0.0
+    flat: float, rise: float, bowl: float = 0.0, base_y: float = 0.0, fade: float = 0.0,
+    dunes: Vector4 = Vector4.ZERO
 ) -> ArrayMesh:
     var step := size / float(cells)
     var half := size * 0.5
@@ -129,7 +204,7 @@ static func terrain(
     for j in cells + 1:
         for i in cells + 1:
             heights[j * (cells + 1) + i] = land_height(-half + step * i, -half + step * j, size, noise, height,
-                                                       flat, rise, bowl, base_y, fade)
+                                                       flat, rise, bowl, base_y, fade, dunes)
 
     var st := SurfaceTool.new()
     st.begin(Mesh.PRIMITIVE_TRIANGLES)
@@ -186,6 +261,48 @@ static func rock(seed_value: int, radius: float, lumps: float = 0.35, rings: int
     st.generate_tangents()
     return st.commit()
 
+# A mesa or a butte: a hill of flat-lying rock worn back to a hard cap. A flat top under its cap
+# rock, a cliff broken by ledges where softer beds weathered back, and the scree it sheds spread
+# round its foot. `radius` is the cap's, `height` the top's above the plain; `cap` below 1 makes
+# the cap narrow against the foot (a butte). Each seed is a different hill: the outline wanders
+# and the beds stand out by different amounts. Faces are flat, as broken rock is.
+static func mesa(seed_value: int, radius: float, height: float, cap: float = 1.0, segments: int = 56) -> ArrayMesh:
+    var noise := FastNoiseLite.new()
+    noise.seed = seed_value
+    noise.frequency = 1.0
+    noise.fractal_octaves = 3
+    # the profile out from the middle, top down: [share of the cap's radius, share of the height]
+    var profile := [[0.0, 1.0], [0.84, 1.0], [0.9, 0.985], [0.9, 0.9], [0.86, 0.87], [0.92, 0.85], [0.93, 0.66],
+                    [0.88, 0.63], [0.97, 0.6], [1.0, 0.54], [1.3, 0.38], [1.7, 0.2], [2.1, 0.06], [2.45, 0.0]]
+    var st := SurfaceTool.new()
+    st.begin(Mesh.PRIMITIVE_TRIANGLES)
+    var rings := []
+    for j in profile.size():
+        var ring := PackedVector3Array()
+        var spread: float = float(profile[j][0])
+        # the cap is narrower on a butte; the scree spreads as wide whatever the cap
+        var out := spread * cap if spread <= 1.0 else cap + (spread - 1.0)
+        for s in segments:
+            var a := TAU * float(s) / float(segments)
+            var round := Vector2(cos(a), sin(a))
+            var wander := 1.0 + 0.24 * noise.get_noise_2dv(round * 1.3) + 0.07 * noise.get_noise_2dv(round * 5.0 + Vector2(j, 0.0))
+            ring.append(Vector3(round.x * out * radius * wander, float(profile[j][1]) * height, round.y * out * radius * wander))
+        rings.append(ring)
+    for j in profile.size() - 1:
+        for s in segments:
+            var t := (s + 1) % segments
+            var a: Vector3 = rings[j][s]
+            var b: Vector3 = rings[j][t]
+            var c: Vector3 = rings[j + 1][t]
+            var d: Vector3 = rings[j + 1][s]
+            var out := ((a + b + c + d) * 0.25 * Vector3(1, 0, 1)).normalized() + Vector3.UP * 0.001
+            var normal := (c - a).cross(d - b).normalized()      # across the diagonals: whole even where a quad is a triangle
+            if normal.dot(out + Vector3.UP) < 0.0:
+                normal = -normal
+            _quad(st, a, b, c, d, normal, normal, Vector2(a.x, a.z), Vector2(b.x, b.z), Vector2(c.x, c.z), Vector2(d.x, d.z))
+    st.generate_tangents()
+    return st.commit()
+
 # A sheet hanging along a path: aurora, banners, falls of light. UV.x runs
 # along the path in metres, UV.y from 0 at the bottom to 1 at the top.
 static func curtain(path: PackedVector3Array, height: float) -> ArrayMesh:
@@ -233,12 +350,194 @@ static func plant(blades: int, width: float, height: float, lean: float, seed_va
     st.generate_tangents()
     return st.commit()
 
-# Two triangles, wound so the face shows from the side its normal points to.
+# A bird in flight, wings spread, `span` metres from tip to tip, facing −Z with its back up, made
+# to `shape` (the kinds are in kit/flock.gd: body length, the wing's leading and trailing edge at
+# stations out along it, where the wrist is, the plumage). Each wing is a thin cambered aerofoil
+# with an upper and a lower skin; the body is a tapering oval from the bill to a fanned tail. The
+# plumage is in the vertex colour (back and upper wing, underside, the dark wingtips), and every
+# vertex of a wing carries in UV2.x how far out along it it is (0 at the shoulder, 1 at the tip,
+# negative on the left wing; the body carries 0): that is what bird.gdshader bends at the shoulder
+# (bird_shoulder()) and the wrist to beat and to glide.
+static func bird(span: float, shape: Dictionary) -> ArrayMesh:
+    var st := SurfaceTool.new()
+    st.begin(Mesh.PRIMITIVE_TRIANGLES)
+    var length: float = float(shape["length"]) * span
+    var body: Color = shape["body"]
+    var back: Color = shape["mantle"]
+    var bill: Color = shape["bill"]
+    # the body: rings from the bill's tip (t = 0) to the tail's end (t = 1), each [t, half width,
+    # half height] as shares of the body's length; a last ring closes the tail
+    var rings: Array = shape["rings"]
+    var around := 8
+    for i in range(rings.size() - 1):
+        var a: Array = rings[i]
+        var b: Array = rings[i + 1]
+        var za := (float(a[0]) - 0.5) * length
+        var zb := (float(b[0]) - 0.5) * length
+        for s in around:
+            var t0 := TAU * float(s) / float(around)
+            var t1 := TAU * float(s + 1) / float(around)
+            var p00 := Vector3(cos(t0) * float(a[1]), sin(t0) * float(a[2]), 0.0) * length + Vector3(0, 0, za)
+            var p01 := Vector3(cos(t1) * float(a[1]), sin(t1) * float(a[2]), 0.0) * length + Vector3(0, 0, za)
+            var p11 := Vector3(cos(t1) * float(b[1]), sin(t1) * float(b[2]), 0.0) * length + Vector3(0, 0, zb)
+            var p10 := Vector3(cos(t0) * float(b[1]), sin(t0) * float(b[2]), 0.0) * length + Vector3(0, 0, zb)
+            var n0 := Vector3(cos(t0) * float(a[2]), sin(t0) * float(a[1]), 0.0).normalized()
+            var n1 := Vector3(cos(t1) * float(a[2]), sin(t1) * float(a[1]), 0.0).normalized()
+            var mid := (float(a[0]) + float(b[0])) * 0.5
+            var upper := sin((t0 + t1) * 0.5) > 0.2
+            var paint := bill if mid < float(shape["bill_to"]) else (back if upper and mid > 0.3 and mid < 0.8 else body)
+            if float(b[1]) <= 0.0 and float(b[2]) <= 0.0:
+                n0 = Vector3.BACK
+                n1 = Vector3.BACK
+            _quad(st, p00, p01, p11, p10, n0, n1, Vector2.ZERO, Vector2.ZERO, Vector2.ZERO, Vector2.ZERO, paint, Vector4.ZERO)
+
+    # the wings: strips between stations out from the shoulder, each an upper and a lower skin
+    # meeting at the leading and trailing edges
+    var shoulder := bird_shoulder(span, shape)
+    var reach := span * 0.5 - shoulder
+    var stations: Array = shape["stations"]
+    var lead: Array = shape["lead"]
+    var trail: Array = shape["trail"]
+    var chord_at := [0.0, 0.3, 0.65, 1.0]
+    for side in [-1.0, 1.0]:
+        for i in range(stations.size() - 1):
+            var f := [float(stations[i]), float(stations[i + 1])]
+            var top_rows := []
+            var under_rows := []
+            for k in 2:
+                var x: float = side * (shoulder + f[k] * reach)
+                var le: float = float(lead[i + k]) * span
+                var te: float = float(trail[i + k]) * span
+                var thick: float = float(shape["thickness"]) * span * (1.0 - 0.75 * f[k])
+                var camber: float = float(shape["camber"]) * span * (1.0 - 0.6 * f[k])
+                var top := []
+                var under := []
+                for chord in chord_at:
+                    var c: float = chord
+                    var hump := 4.0 * c * (1.0 - c)
+                    top.append(Vector3(x, camber * hump + thick * 0.5 * hump, lerpf(le, te, c)))
+                    under.append(Vector3(x, camber * hump - thick * 0.2 * hump, lerpf(le, te, c)))
+                top_rows.append(top)
+                under_rows.append(under)
+            var outer: float = (f[0] + f[1]) * 0.5
+            var tip := outer > float(shape["tips_from"])
+            var top_paint: Color = shape["tips"] if tip else back
+            var under_paint: Color = (shape["tips"] as Color).lerp(shape["under"], 0.35) if tip else shape["under"]
+            var spans := Vector4(side * f[0], side * f[1], side * f[1], side * f[0])
+            for c in 3:
+                _quad(st, top_rows[0][c], top_rows[0][c + 1], top_rows[1][c + 1], top_rows[1][c], Vector3.UP, Vector3.UP,
+                      Vector2.ZERO, Vector2.ZERO, Vector2.ZERO, Vector2.ZERO, top_paint, Vector4(spans.x, spans.x, spans.y, spans.y))
+                _quad(st, under_rows[0][c], under_rows[0][c + 1], under_rows[1][c + 1], under_rows[1][c], Vector3.DOWN, Vector3.DOWN,
+                      Vector2.ZERO, Vector2.ZERO, Vector2.ZERO, Vector2.ZERO, under_paint, Vector4(spans.x, spans.x, spans.y, spans.y))
+    return st.commit()
+
+# A small open boat's hull, `length` long and `beam` wide, `depth` from the gunwale to the keel at
+# its middle, bow towards −Z: sections lofted from a transom stern through a full middle to a
+# fine bow, the sheer rising fore and aft, the bilge rounded. Open at the top; a material that
+# shows both sides shows the inside of the hull too. UVs run in metres along and round it.
+static func hull(length: float, beam: float, depth: float) -> ArrayMesh:
+    var st := SurfaceTool.new()
+    st.begin(Mesh.PRIMITIVE_TRIANGLES)
+    var stations := 14
+    var round := 6
+    var sections := []
+    for i in stations + 1:
+        var t := float(i) / float(stations)          # 0 at the stern, 1 at the bow
+        var half := 0.5 * beam * (0.78 + 0.22 * sin(minf(t / 0.42, 1.0) * PI * 0.5)) if t <= 0.42 \
+            else 0.5 * beam * sqrt(maxf(1.0 - pow((t - 0.42) / 0.58, 2.0), 0.0))
+        var keel := depth * (0.8 + 0.2 * sin(t * PI)) * (1.0 - 0.6 * smoothstep(0.6, 1.0, t))
+        var sheer := 0.12 * depth * pow(1.0 - t, 2.0) + 0.45 * depth * pow(t, 3.0)
+        var section := []
+        for j in round + 1:
+            var a := float(j) / float(round) * PI * 0.5
+            section.append(Vector3(half * pow(sin(a), 0.6), sheer - (keel + sheer) * pow(cos(a), 1.4), (0.5 - t) * length))
+        sections.append(section)
+    for side in [-1.0, 1.0]:
+        for i in stations:
+            for j in round:
+                var a: Vector3 = sections[i][j] * Vector3(side, 1, 1)
+                var b: Vector3 = sections[i][j + 1] * Vector3(side, 1, 1)
+                var c: Vector3 = sections[i + 1][j + 1] * Vector3(side, 1, 1)
+                var d: Vector3 = sections[i + 1][j] * Vector3(side, 1, 1)
+                var normal := (c - a).cross(b - d).normalized()
+                if normal.dot(Vector3(side, -0.3, 0.0)) < 0.0:
+                    normal = -normal
+                _quad(st, a, b, c, d, normal, normal,
+                      Vector2(a.z, float(j) * 0.2), Vector2(b.z, float(j + 1) * 0.2),
+                      Vector2(c.z, float(j + 1) * 0.2), Vector2(d.z, float(j) * 0.2))
+        # the transom: the flat stern board
+        for j in round:
+            var a: Vector3 = sections[0][j] * Vector3(side, 1, 1)
+            var b: Vector3 = sections[0][j + 1] * Vector3(side, 1, 1)
+            _quad(st, Vector3(0.0, a.y, a.z), a, b, Vector3(0.0, b.y, b.z), Vector3.BACK, Vector3.BACK,
+                  Vector2(0.0, a.y), Vector2(a.x, a.y), Vector2(b.x, b.y), Vector2(0.0, b.y))
+    st.generate_tangents()
+    return st.commit()
+
+# A fish, `length` metres from snout to tail tip, facing −Z with its back up, made to `shape` (the
+# kinds are in kit/flock.gd): a deep, narrow body of rings [t, half width, half height] as shares
+# of its length, a forked tail fin and a dorsal fin standing in its middle plane. Back and belly
+# colours are in the vertex colour, and every vertex carries in UV2.x how far back along the fish
+# it is (0 at the snout, 1 at the tail's tip): what fish.gdshader swings to swim.
+static func fish(length: float, shape: Dictionary) -> ArrayMesh:
+    var st := SurfaceTool.new()
+    st.begin(Mesh.PRIMITIVE_TRIANGLES)
+    var rings: Array = shape["rings"]
+    var back: Color = shape["back"]
+    var belly: Color = shape["belly"]
+    var fin: Color = shape["fin"]
+    var around := 10
+    for i in range(rings.size() - 1):
+        var a: Array = rings[i]
+        var b: Array = rings[i + 1]
+        var za := (float(a[0]) - 0.5) * length
+        var zb := (float(b[0]) - 0.5) * length
+        for s in around:
+            var t0 := TAU * float(s) / float(around)
+            var t1 := TAU * float(s + 1) / float(around)
+            var p00 := Vector3(cos(t0) * float(a[1]), sin(t0) * float(a[2]), 0.0) * length + Vector3(0, 0, za)
+            var p01 := Vector3(cos(t1) * float(a[1]), sin(t1) * float(a[2]), 0.0) * length + Vector3(0, 0, za)
+            var p11 := Vector3(cos(t1) * float(b[1]), sin(t1) * float(b[2]), 0.0) * length + Vector3(0, 0, zb)
+            var p10 := Vector3(cos(t0) * float(b[1]), sin(t0) * float(b[2]), 0.0) * length + Vector3(0, 0, zb)
+            var n0 := Vector3(cos(t0) * float(a[2]), sin(t0) * float(a[1]), 0.0).normalized()
+            var n1 := Vector3(cos(t1) * float(a[2]), sin(t1) * float(a[1]), 0.0).normalized()
+            var paint := back if sin((t0 + t1) * 0.5) > 0.15 else belly
+            _quad(st, p00, p01, p11, p10, n0, n1, Vector2.ZERO, Vector2.ZERO, Vector2.ZERO, Vector2.ZERO, paint,
+                  Vector4(float(a[0]), float(a[0]), float(b[0]), float(b[0])))
+    # the fins: sheets in the middle plane, each laid twice so both faces show
+    var root: float = float(rings[rings.size() - 2][0])
+    var tail := [
+        [Vector3(0, 0.02, root), Vector3(0, 0.0, 1.0), Vector3(0, 0.16, 1.06), Vector3(0, 0.04, root)],
+        [Vector3(0, -0.02, root), Vector3(0, 0.0, 1.0), Vector3(0, -0.16, 1.06), Vector3(0, -0.04, root)],
+        [Vector3(0, float(shape["dorsal"]), 0.36), Vector3(0, float(shape["dorsal"]) + 0.07, 0.5),
+         Vector3(0, float(shape["dorsal"]) - 0.01, 0.62), Vector3(0, float(shape["dorsal"]) - 0.02, 0.45)],
+    ]
+    for sheet in tail:
+        var q := []
+        var spans := []
+        for v in sheet:
+            q.append(Vector3(v.x, v.y * length, (v.z - 0.5) * length))
+            spans.append(v.z)
+        for side in [1.0, -1.0]:
+            _quad(st, q[0], q[1], q[2], q[3], Vector3.RIGHT * side, Vector3.RIGHT * side,
+                  Vector2.ZERO, Vector2.ZERO, Vector2.ZERO, Vector2.ZERO, fin, Vector4(spans[0], spans[1], spans[2], spans[3]))
+    return st.commit()
+
+## Where a bird's wings meet its body: metres out from the middle (the body's widest half-width).
+static func bird_shoulder(span: float, shape: Dictionary) -> float:
+    var widest := 0.0
+    for ring in shape["rings"]:
+        widest = maxf(widest, float(ring[1]))
+    return widest * float(shape["length"]) * span * 0.8
+
+# Two triangles, wound so the face shows from the side its normal points to. `paint` (when its
+# alpha is above 0) is set as the vertex colour, and `spans` as UV2.x of p00, p01, p11, p10.
 static func _quad(
     st: SurfaceTool,
     p00: Vector3, p01: Vector3, p11: Vector3, p10: Vector3,
     n0: Vector3, n1: Vector3,
-    uv00: Vector2, uv01: Vector2, uv11: Vector2, uv10: Vector2
+    uv00: Vector2, uv01: Vector2, uv11: Vector2, uv10: Vector2,
+    paint: Color = Color(0, 0, 0, 0), spans = null
 ) -> void:
     var facing := (p01 - p00).cross(p10 - p00).dot(n0 + n1)
     var order := [0, 1, 2, 0, 2, 3] if facing < 0.0 else [0, 2, 1, 0, 3, 2]
@@ -246,6 +545,10 @@ static func _quad(
     var normals := [n0, n1, n1, n0]
     var uvs := [uv00, uv01, uv11, uv10]
     for i in order:
+        if paint.a > 0.0:
+            st.set_color(paint)
+        if spans is Vector4:
+            st.set_uv2(Vector2((spans as Vector4)[i], 0.0))
         st.set_normal(normals[i])
         st.set_uv(uvs[i])
         st.add_vertex(points[i])

@@ -215,6 +215,22 @@ class Screens(Alive):
         self.check("ground_cover_blades_are_drawn_and_the_guns_have_their_sounds")
         self.check("the_forest_stands_on_its_floor_with_boughs_and_cover")
 
+    def test_the_ocean_gulls_flock_bank_and_keep_over_the_sea_and_things_ride_its_swell(self) -> None:
+        self.check("the_ocean_gulls_are_birds_that_flock_bank_and_keep_their_height")
+        self.check("the_ocean_floats_its_buoys_and_boat_on_the_swell_it_draws")
+
+    def test_the_fish_under_the_sea_school_over_the_seabed(self) -> None:
+        self.check("the_underwater_fish_school_over_the_seabed")
+
+    def test_the_black_hole_bends_light_as_general_relativity_does(self) -> None:
+        self.check("light_bends_round_the_black_hole_as_general_relativity_bends_it")
+
+    def test_the_desert_is_dunes_and_mesas_under_a_moonless_night(self) -> None:
+        self.check("the_desert_is_wind_built_dunes_with_mesas_beyond_under_a_moonless_night")
+
+    def test_the_rebuilt_rooms_shaders_compile(self) -> None:
+        self.check("the_rebuilt_rooms_shaders_compile_and_the_mountain_has_its_birds")
+
 
 if __name__ == "__main__":
     unittest.main()

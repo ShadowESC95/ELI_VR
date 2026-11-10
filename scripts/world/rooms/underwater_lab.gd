@@ -5,7 +5,6 @@ extends RoomBase
 # shafts and ripples over the sand, kelp leans in the current, fish go by in
 # shoals, bubbles rise.
 
-var _shoals: Array = []
 var _land: LandKit
 
 func _build() -> void:
@@ -98,49 +97,12 @@ func _kelp() -> void:
         bed.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
         add_child(bed)
 
+# A school of mackerel going round the dome and a few reef fish keeping close to it, over the seabed
+# as it rises and falls (kit/flock.gd), swimming in bursts and coasting.
 func _fish() -> void:
-    var body := SphereMesh.new()
-    body.radius = 0.09
-    body.height = 0.18
-    body.radial_segments = 8
-    body.rings = 4
-    var rng := RandomNumberGenerator.new()
-    rng.seed = 88
-    var colours := [Color(0.95, 0.75, 0.25), Color(0.75, 0.85, 0.95), accent.lightened(0.3), Color(0.95, 0.45, 0.3)]
-    for s in 4:
-        var scales := StandardMaterial3D.new()
-        scales.albedo_color = colours[s]
-        scales.metallic = 0.5
-        scales.roughness = 0.3
-        scales.emission_enabled = true
-        scales.emission = colours[s]
-        scales.emission_energy_multiplier = 0.15
-        var carrier := Node3D.new()
-        carrier.position = Vector3(rng.randf_range(-8.0, 8.0), rng.randf_range(3.0, 9.0), rng.randf_range(-8.0, 8.0))
-        carrier.rotation.x = rng.randf_range(-0.12, 0.12)
-        add_child(carrier)
-        var many := MultiMesh.new()
-        many.transform_format = MultiMesh.TRANSFORM_3D
-        many.mesh = body
-        many.instance_count = 60
-        var ring := rng.randf_range(13.0, 24.0)
-        for i in 60:
-            var angle := rng.randf_range(0.0, 0.9)
-            var at := Vector3(cos(angle) * (ring + rng.randf_range(-1.5, 1.5)), rng.randf_range(-1.2, 1.2), sin(angle) * (ring + rng.randf_range(-1.5, 1.5)))
-            # nose along the way they are going, long and thin
-            var basis := Basis(Vector3.UP, -angle).scaled(Vector3(0.6, 0.8, 2.6) * rng.randf_range(0.7, 1.4))
-            many.set_instance_transform(i, Transform3D(basis, at))
-        var shoal := MultiMeshInstance3D.new()
-        shoal.multimesh = many
-        shoal.material_override = scales
-        shoal.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-        carrier.add_child(shoal)
-        spin(carrier, Vector3.UP, (0.16 + 0.05 * s) * (1.0 if s % 2 == 0 else -1.0))
-        _shoals.append([carrier, carrier.position.y, rng.randf() * TAU])
-
-func _animate(_delta: float) -> void:
-    for entry in _shoals:
-        (entry[0] as Node3D).position.y = float(entry[1]) + sin(_clock * 0.3 + float(entry[2])) * 1.4
+    var seabed := Callable(_land, "y_at")
+    flock("fish", Vector3.ZERO, 13.0, 30.0, 40, _land.base_y, seabed)
+    flock("reef_fish", Vector3(0.0, 0.0, 0.0), 11.5, 20.0, 12, _land.base_y, seabed)
 
 # The lab's bench, where what was brought up is looked at, and its shelves (real things, assets/models).
 func _bench() -> void:

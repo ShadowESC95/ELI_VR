@@ -13,6 +13,11 @@ const UpgradeBay = preload("res://scripts/world/rooms/fabrication_lab.gd")
 const Anomaly = preload("res://scripts/world/rooms/anomaly_void.gd")
 const Things = preload("res://scripts/eli/eli_things.gd")
 const Forest = preload("res://scripts/world/rooms/forest_sanctuary.gd")
+const Ocean = preload("res://scripts/world/rooms/ocean_platform.gd")
+const Desert = preload("res://scripts/world/rooms/desert_observatory.gd")
+const Mountain = preload("res://scripts/world/rooms/mountain_observatory.gd")
+const Underwater = preload("res://scripts/world/rooms/underwater_lab.gd")
+const BlackHole = preload("res://scripts/world/kit/black_hole.gd")
 
 # Stands in for the app's settings: every value as its default.
 class Settings extends RefCounted:
@@ -304,6 +309,7 @@ func _run() -> void:
            "style %d, hung %s, standing %s" % [styled, hung.eye_height(), standing.eye_height()])
     await _thought_checks(wall)
     _land_checks()
+    _room_checks()
     quit()
 
 # ELI's thoughts hang as sheets: six rooms keep places for them, a sheet is written with its lines
@@ -688,3 +694,217 @@ func _labels(node: Node) -> Array:
             out.append(child)
         out.append_array(_labels(child))
     return out
+
+# Every shader material under `node` (and the sky's) compiled: a shader that fails to compile
+# reports no uniforms.
+func _shaders_compile(node: Node, failed: Array) -> void:
+    var materials := []
+    if node is GeometryInstance3D and (node as GeometryInstance3D).material_override != null:
+        materials.append((node as GeometryInstance3D).material_override)
+    if node is GPUParticles3D:
+        materials.append((node as GPUParticles3D).process_material)
+    if node is WorldEnvironment and (node as WorldEnvironment).environment.sky != null:
+        materials.append((node as WorldEnvironment).environment.sky.sky_material)
+    for m in materials:
+        while m is ShaderMaterial:
+            var shader: Shader = (m as ShaderMaterial).shader
+            if shader != null and shader.get_shader_uniform_list().is_empty():
+                failed.append(shader.resource_path)
+            m = (m as ShaderMaterial).next_pass
+    for child in node.get_children():
+        _shaders_compile(child, failed)
+
+func _built(script) -> Node:
+    var room = script.new()
+    root.add_child(room)
+    room.build({}, Settings.new())
+    return room
+
+func _flock_of(room: Node):
+    for child in room.get_children():
+        if child.has_method("positions"):
+            return child
+    return null
+
+func _has_mesh(node: Node, kind: String) -> bool:
+    if node is MeshInstance3D and (node as MeshInstance3D).mesh != null and (node as MeshInstance3D).mesh.is_class(kind):
+        return true
+    for child in node.get_children():
+        if _has_mesh(child, kind):
+            return true
+    return false
+
+# The ocean's gulls, the desert's dunes and night, the anomaly's black hole: what the rooms are
+# made of, measured, not looked at.
+func _room_checks() -> void:
+    var failed := []
+    # --- the ocean: gulls that flock, bank into their turns, beat and glide, over the sea
+    var ocean = _built(Ocean)
+    _shaders_compile(ocean, failed)
+    var gulls = _flock_of(ocean)
+    var is_bird := false
+    var flies: bool = gulls != null
+    var banks := 0
+    var turns := 0
+    var flapped := false
+    var glided := false
+    if gulls != null:
+        var arrays: Array = gulls.multimesh.mesh.surface_get_arrays(0)
+        var spans: PackedVector2Array = arrays[Mesh.ARRAY_TEX_UV2]
+        var colours: PackedColorArray = arrays[Mesh.ARRAY_COLOR]
+        var widest := 0.0
+        for uv in spans:
+            widest = maxf(widest, absf(uv.x))
+        var dark: bool = colours.size() > 0 and Array(colours).any(func(c): return c.get_luminance() < 0.1)
+        is_bird = widest > 0.99 and dark and gulls.multimesh.use_custom_data and not _has_mesh(ocean, "PrismMesh")
+        var band: Vector2 = gulls.kind["band"]
+        var dt := 1.0 / 30.0
+        var before: PackedVector3Array = gulls.velocities().duplicate()
+        for frame in 900:
+            gulls.step(dt)
+            var now: PackedVector3Array = gulls.velocities()
+            for i in now.size():
+                var p: Vector3 = gulls.positions()[i]
+                var speed := now[i].length()
+                if frame > 150:
+                    var height: float = p.y - gulls.floor_y
+                    var out := Vector2(p.x - gulls.home.x, p.z - gulls.home.z).length()
+                    flies = flies and height > band.x - 2.0 and height < band.y + 4.0 and out > gulls.keep_out - 3.0 \
+                        and out < gulls.roam + 15.0 and speed >= gulls.kind["slowest"] - 0.01 and speed <= gulls.kind["fastest"] + 0.01
+                    # a bird turning hard leans into the turn: its back tips towards the side it turns to
+                    var forward := now[i].normalized()
+                    var turning := (now[i] - before[i]) / dt
+                    turning -= forward * turning.dot(forward)
+                    turning.y = 0.0
+                    if turning.length() > 2.0:
+                        turns += 1
+                        if gulls.pose(i).basis.y.dot(turning.normalized()) > 0.0:
+                            banks += 1
+                flapped = flapped or gulls._flap[i] > 0.99
+                glided = glided or gulls._flap[i] < 0.01
+            before = now.duplicate()
+    _check("the_ocean_gulls_are_birds_that_flock_bank_and_keep_their_height",
+           is_bird and flies and turns > 50 and banks > turns * 0.85 and flapped and glided,
+           "bird %s flies %s banks %d of %d turns, flapped %s glided %s" % [is_bird, flies, banks, turns, flapped, glided])
+
+    # --- the ocean's sea carries the swell it floats things on
+    ocean._clock = 7.3
+    ocean._animate(0.0)
+    var afloat: bool = not ocean._floating.is_empty()
+    for entry in ocean._floating:
+        var node: Node3D = entry[0]
+        afloat = afloat and absf(node.position.y - (ocean.sea_height(node.position.x, node.position.z) + float(entry[1]))) < 0.0001
+    var sea: ShaderMaterial = ocean._sea
+    var waves = sea.get_shader_parameter("waves")
+    var moves: bool = waves != null and waves.size() == ocean.SWELL.size() and absf(sea.get_shader_parameter("clock") - 7.3) < 0.001 \
+        and absf(ocean.sea_height(3.0, 4.0) - ocean.SEA_Y) > 0.0
+    _check("the_ocean_floats_its_buoys_and_boat_on_the_swell_it_draws", afloat and moves, "afloat %s moves %s" % [afloat, moves])
+    ocean.queue_free()
+
+    # --- the mountain's birds are a flock of their own kind
+    var mountain = _built(Mountain)
+    _shaders_compile(mountain, failed)
+    var raptors = _flock_of(mountain)
+    var soars: bool = raptors != null and raptors.kind == raptors.KINDS["raptor"] and not _has_mesh(mountain, "PrismMesh")
+    mountain.queue_free()
+
+    # --- the lab under the sea: schools of fish, swimming over the seabed as it rises and falls
+    var lab = _built(Underwater)
+    _shaders_compile(lab, failed)
+    var schools := []
+    var spheres := false
+    for child in lab.get_children():
+        if child.has_method("positions"):
+            schools.append(child)
+        for grand in [child] + child.get_children():
+            if grand is MultiMeshInstance3D and (grand as MultiMeshInstance3D).multimesh.mesh is SphereMesh:
+                spheres = true
+    var swims: bool = schools.size() >= 2 and not spheres and schools.all(func(f): return f.kind.get("swims", false))
+    var over_bed := true
+    for f in schools:
+        var band: Vector2 = f.kind["band"]
+        for frame in 600:
+            f.step(1.0 / 30.0)
+            if frame > 150:
+                for p in f.positions():
+                    var above: float = p.y - lab._land.y_at(p.x, p.z)
+                    over_bed = over_bed and above > band.x * 0.5 and above < band.y + 3.0
+    _check("the_underwater_fish_school_over_the_seabed", swims and over_bed,
+           "schools %d spheres %s over the bed %s" % [schools.size(), spheres, over_bed])
+    lab.queue_free()
+
+    # --- the anomaly: light bent as general relativity bends it, the shadow where rays fall in
+    var far := 4000.0
+    var b := 25.0
+    var angle := asin(sqrt(1.0 / (far * far * (1.0 / (b * b) + 2.0 / (far * far * far)))))
+    var series := 4.0 / b + 15.0 * PI / (4.0 * b * b) + 128.0 / (3.0 * b * b * b)
+    var bent := BlackHole.trace(far, angle)
+    var edge := BlackHole.shadow_angle(40.0)
+    var shadow: bool = BlackHole.trace(40.0, edge * 0.995) < 0.0 and BlackHole.trace(40.0, edge * 1.005) > 0.0 \
+        and absf(BlackHole.impact(40.0, edge) - BlackHole.CRITICAL) < 1e-6
+    var table: ImageTexture = BlackHole.table(40.0, 34.0)
+    var image := table.get_image()
+    var rows_ok: bool = image.get_format() == Image.FORMAT_RGH and image.get_width() == BlackHole.COLUMNS \
+        and image.get_height() == BlackHole.ROWS and is_equal_approx(image.get_pixel(BlackHole.COLUMNS - 1, 0).r, BlackHole.HORIZON_U) \
+        and image.get_pixel(BlackHole.COLUMNS - 1, BlackHole.ROWS - 1).r == 0.0 and BlackHole.table(40.0, 34.0) == table
+    var anomaly = Anomaly.new()
+    root.add_child(anomaly)
+    anomaly.build({}, Settings.new())
+    _shaders_compile(anomaly, failed)
+    var lens: ShaderMaterial = anomaly._lens.material_override
+    var sky: ShaderMaterial = null
+    for child in anomaly.get_children():
+        if child is WorldEnvironment:
+            sky = (child as WorldEnvironment).environment.sky.sky_material
+    var same_stars: bool = sky != null and lens.get_shader_parameter("stars") == sky.get_shader_parameter("stars") \
+        and lens.get_shader_parameter("orient") == sky.get_shader_parameter("orient") \
+        and lens.get_shader_parameter("star_energy") == sky.get_shader_parameter("energy") \
+        and lens.get_shader_parameter("lens") == table and not _has_mesh(anomaly, "TorusMesh")
+    _check("light_bends_round_the_black_hole_as_general_relativity_bends_it",
+           absf(bent - series) / series < 0.01 and shadow and rows_ok and same_stars,
+           "bent %.4f series %.4f shadow %s table %s same stars %s" % [bent, series, shadow, rows_ok, same_stars])
+    anomaly.queue_free()
+
+    # --- the desert: dunes with slip faces at the angle of repose, under a night sky with no moon
+    var desert = _built(Desert)
+    _shaders_compile(desert, failed)
+    var land: LandKit = desert._land
+    var wind := Vector2(land.dunes.x, land.dunes.y).normalized()
+    var lee := 0.0
+    var windward := 0.0
+    var step_m := 0.5
+    for line in 6:
+        var start := Vector2(-wind.y, wind.x) * (40.0 + 30.0 * line) - wind * 250.0
+        for k in 900:
+            var a := start + wind * step_m * k
+            var c := a + wind * step_m
+            var slope := (land.y_at(c.x, c.y) - land.y_at(a.x, a.y)) / step_m
+            if a.length() > land.flat + land.rise and c.length() < land.size * 0.5 - land.fade:
+                lee = maxf(lee, -slope)
+                windward = maxf(windward, slope)
+    var dunes_ok: bool = absf(lee - MeshKit.REPOSE) < 0.2 * MeshKit.REPOSE and windward < lee * 0.6
+    var night: ShaderMaterial = desert._sky
+    var mesas := 0
+    var sand := 0
+    var moonlit := false
+    for child in desert.get_children():
+        if child is MeshInstance3D and Vector2(child.position.x, child.position.z).length() > land.size * 0.7:
+            mesas += 1
+        if child is GPUParticles3D and (child as GPUParticles3D).lifetime < 1.0:
+            sand += 1
+        if child is DirectionalLight3D and (child as DirectionalLight3D).shadow_enabled:
+            moonlit = true
+    var ground: ShaderMaterial = land.ground.material_override
+    var night_ok: bool = night.get_shader_parameter("air") > 0.0 and night.get_shader_parameter("twilight") > 0.0 \
+        and (night.get_shader_parameter("sun_dir") as Vector3).y < 0.0 and not moonlit \
+        and ground.get_shader_parameter("mirage") == night.get_shader_parameter("twilight") \
+        and ground.get_shader_parameter("mirage_sun") == night.get_shader_parameter("sun_dir")
+    var wind_ok: bool = ground.get_shader_parameter("ripples") > 0.0 and ground.get_shader_parameter("drift") > 0.0 \
+        and ground.get_shader_parameter("haze") > 0.0 and sand >= 1
+    _check("the_desert_is_wind_built_dunes_with_mesas_beyond_under_a_moonless_night",
+           dunes_ok and night_ok and wind_ok and mesas >= 6,
+           "lee %.3f windward %.3f night %s wind %s mesas %d" % [lee, windward, night_ok, wind_ok, mesas])
+    desert.queue_free()
+
+    _check("the_rebuilt_rooms_shaders_compile_and_the_mountain_has_its_birds", failed.is_empty() and soars,
+           "failed %s soars %s" % [failed, soars])
