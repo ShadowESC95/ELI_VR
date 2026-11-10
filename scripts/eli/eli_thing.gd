@@ -59,6 +59,7 @@ var importance := 0.5               # how much the record matters; for a belief,
 const ART_STYLES := ["rings", "stripes", "waves", "cells", "blooms", "horizon", "rays", "drift"]
 var _text_key := ""
 var _pin := Transform3D.IDENTITY
+var _pin_size := Vector2.ZERO       # how big the room's place for it is, when it says
 var _made_height := 1.0
 
 func build(data: Dictionary) -> void:
@@ -183,11 +184,13 @@ func record() -> Dictionary:
         return {}
     return {"id": thing_id, "kind": kind, "name": label, "lines": lines if not lines.is_empty() else ([meaning] if not meaning.is_empty() else [])}
 
-## Stand at a place the room keeps for records of this kind (a belief pinned to the Evidence Wall).
-func pin_to(spot: Transform3D) -> void:
-    var moved := not pinned or not spot.is_equal_approx(_pin)
+## Stand at a place the room keeps for records of this kind (a belief pinned to the Evidence Wall),
+## as big as `size` when the room says (a sheet of its wall).
+func pin_to(spot: Transform3D, size: Vector2 = Vector2.ZERO) -> void:
+    var moved := not pinned or not spot.is_equal_approx(_pin) or size != _pin_size
     pinned = true
     _pin = spot
+    _pin_size = size
     _target = spot.origin
     basis = spot.basis
     if moved and kind in WRITTEN:
@@ -238,103 +241,21 @@ func _thought_sheet() -> void:
     dot.position = Vector3(0.24, 0.405, 0.02)
     _body.add_child(dot)
 
-# A belief pinned up as a case card: what ELI holds (the fact, in its own words), a bar filled to the
-# chance it is right with that chance written beside it, since when it has held and when ELI learned
-# it, what it rests on, and a stamp when something else disputes it. The strip along its top is in the
-# record's colour (ELI v3 colours a contested belief amber). ELI v3's "claim" carries the parts
-# (relation, value, chance, since, learned, basis, contested, sources); without it the card shows the
-# name and ELI's own sentence for it, and the chance is the record's importance (v3 sends the chance there).
-const CARD_MEASURE := 34            # characters to a card's line
-static func card_size() -> Vector2:
-    var distance := Reading.before_board()
-    var e := Reading.em(distance)
-    var line := Reading.line_height(Reading.typed(), distance)
-    var width := (CARD_MEASURE * Reading.MONO_ADVANCE + 2.0) * e
-    return Vector2(width, e * 2.0 + line * (2.0 * 1.2 + 1.6 + 4.0) + e)
-
+# A belief pinned up as a sheet of the Evidence Wall (EvidenceSheet): its kind on a strip in the
+# record's colour (ELI v3 colours a contested belief amber), the fact, a bar filled to the chance it
+# is right with the chance beside it, since when it has held and when ELI learned it, what it rests
+# on, and a stamp when something else disputes it, written at the size it is read at where it hangs.
+# As big as the place the room keeps for it (pin_to), or a sheet of the wall's own size.
+const SHEET := Vector2(0.52, 0.68)
 func _sheet() -> void:
     _name_tag.visible = false
     _material = null
-    var card := card_size()
-    var distance := Reading.before_board()
+    var size := _pin_size if _pin_size != Vector2.ZERO else SHEET
+    var view := EvidenceSheet.of_claim({"name": label, "meaning": meaning, "importance": importance, "claim": claim,
+                                        "form": {"colour": "#" + colour.to_html(false)}})
+    var distance := Reading.at_height(_pin.origin.y) if pinned else Reading.before_board()
+    EvidenceSheet.draw(_body, size, distance, view)
     var e := Reading.em(distance)
-    var font := Reading.typed()
-    var paper_colour := Color(0.95, 0.93, 0.87)
-    var paper := StandardMaterial3D.new()
-    paper.albedo_color = paper_colour
-    paper.roughness = 0.95
-    paper.emission_enabled = true               # lit or not, the writing on it stays readable
-    paper.emission = paper_colour
-    paper.emission_energy_multiplier = 0.18
-    var sheet := MeshInstance3D.new()
-    var quad := QuadMesh.new()
-    quad.size = card
-    sheet.mesh = quad
-    sheet.material_override = paper
-    sheet.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-    _body.add_child(sheet)
-    var strip := MeshInstance3D.new()
-    var band := BoxMesh.new()
-    band.size = Vector3(card.x, e * 0.6, 0.004)
-    strip.mesh = band
-    strip.material_override = MaterialKit.light(colour, 0.9)
-    strip.position = Vector3(0, card.y * 0.5 - e * 0.3, 0.002)
-    _body.add_child(strip)
-    var ink := Reading.ink(paper_colour)
-    var left := -card.x * 0.5 + e
-    var width := card.x - 2.0 * e
-    var y := card.y * 0.5 - e * 1.1
-    var fact := label
-    if not str(claim.get("value", "")).is_empty():
-        fact = "%s: %s" % [str(claim.get("relation", "")).replace("_", " "), str(claim.get("value"))]
-    y = _card_text(fact, distance, width, 2, Vector2(left, y), ink, 1.2)
-    # how sure: a bar filled to the chance, and the chance beside it
-    var sure := float(claim.get("chance", importance)) if claim.get("chance") != null else importance
-    var bar_w := width * 0.6
-    var bar_h := e * 0.55
-    var track := MeshInstance3D.new()
-    var track_box := BoxMesh.new()
-    track_box.size = Vector3(bar_w, bar_h, 0.002)
-    track.mesh = track_box
-    track.material_override = MaterialKit.light(ink.lerp(paper_colour, 0.75), 1.0)
-    track.position = Vector3(left + bar_w * 0.5, y - bar_h * 0.9, 0.002)
-    _body.add_child(track)
-    var fill := MeshInstance3D.new()
-    var fill_box := BoxMesh.new()
-    fill_box.size = Vector3(maxf(0.001, bar_w * clampf(sure, 0.0, 1.0)), bar_h, 0.003)
-    fill.mesh = fill_box
-    fill.material_override = MaterialKit.light(ink, 1.0)
-    fill.position = Vector3(left + bar_w * clampf(sure, 0.0, 1.0) * 0.5, y - bar_h * 0.9, 0.003)
-    _body.add_child(fill)
-    fill.name = "Sureness"
-    var odds := Reading.label("chance %d%%" % int(round(sure * 100.0)), distance, ink, 0.0, font)
-    odds.text = Reading.fit(odds.text, distance, width - bar_w - e, 1, font)[0]
-    odds.position = Vector3(left + bar_w + e * 0.6, y - bar_h * 0.2, 0.003)
-    _body.add_child(odds)
-    y -= Reading.line_height(font, distance) * 1.6
-    var details := []
-    if claim.has("since") or claim.has("learned"):
-        var held := ("since " + Reading.day(claim.get("since"))) if Reading.day(claim.get("since")) != "" else ""
-        var learned := ("learned " + Reading.day(claim.get("learned"))) if Reading.day(claim.get("learned")) != "" else ""
-        details.append(" · ".join([held, learned].filter(func(t): return not t.is_empty())))
-        if not str(claim.get("basis", "")).is_empty():
-            details.append(str(claim.get("basis")))
-        var sources = claim.get("sources", [])
-        if typeof(sources) == TYPE_ARRAY and not sources.is_empty():
-            details.append("rests on %d record%s" % [sources.size(), "" if sources.size() == 1 else "s"])
-    elif not meaning.is_empty():
-        details.append(meaning)
-    y = _card_text("\n".join(details), distance, width, 4, Vector2(left, y), Reading.ink(paper_colour, ink.lerp(paper_colour, 0.2)), 1.0)
-    var disputed := bool(claim.get("contested", false)) or str(claim.get("status", "")) == "disputed"
-    if disputed:
-        var stamp := Reading.label(str(claim.get("status", "")).to_upper() if str(claim.get("status", "")) == "disputed" else "CONTESTED",
-                                   distance, Color(0.72, 0.05, 0.04), 0.0, font, 1.3)
-        stamp.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-        stamp.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-        stamp.position = Vector3(card.x * 0.18, -card.y * 0.32, 0.004)
-        stamp.rotation.z = 0.22
-        stamp.name = "Stamp"
-        _body.add_child(stamp)
     var pin := MeshInstance3D.new()
     var head := SphereMesh.new()
     head.radius = e * 0.45
@@ -345,20 +266,9 @@ func _sheet() -> void:
     red.emission_enabled = true
     red.emission = Color(0.6, 0.04, 0.03)
     pin.material_override = red
-    pin.position = Vector3(0, card.y * 0.5 - e * 0.3, e * 0.4)
+    pin.position = Vector3(0, size.y * 0.5 - e * 0.35, e * 0.4)
     _body.add_child(pin)
     _text_key = _words_key()
-
-# A block of a card's writing from `at` (its top left) down, cut to `rows` lines; where the next starts.
-func _card_text(text: String, distance: float, width: float, rows: int, at: Vector2, ink: Color, scale: float) -> float:
-    if text.strip_edges().is_empty():
-        return at.y
-    var font := Reading.typed()
-    var shown := Reading.fit(text, distance, width, rows, font, scale)
-    var words := Reading.label("\n".join(shown), distance, ink, 0.0, font, scale)
-    words.position = Vector3(at.x, at.y, 0.003)
-    _body.add_child(words)
-    return at.y - Reading.line_height(font, distance, scale) * shown.size() - Reading.em(distance) * 0.4
 
 # What a written record says: its name, and below it what it means, in a column `width` metres wide
 # whose top middle is `top`. Left-aligned text in a Label3D starts at the label's position, so the

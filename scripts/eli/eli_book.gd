@@ -133,7 +133,7 @@ func _words_key() -> String:
 
 ## Stand at the place the room keeps for it. The book is drawn the same whichever way the place
 ## faces: face out or spine out is the room's.
-func pin_to(spot: Transform3D) -> void:
+func pin_to(spot: Transform3D, _size: Vector2 = Vector2.ZERO) -> void:
     pinned = true
     _pin = spot
     if not _held:

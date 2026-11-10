@@ -86,6 +86,10 @@ static func at_arm(eye: float = eye_height()) -> float:
 static func before_board(eye: float = eye_height()) -> float:
     return reach(eye) * BOARD_OF_REACH
 
+## From the eye of a reader stood at a board to writing on it `height` metres off the floor.
+static func at_height(height: float, eye: float = eye_height()) -> float:
+    return Vector2(before_board(eye), height - eye).length()
+
 ## How far back a reader stands from a board `width` metres wide to see it whole.
 static func stand_back(width: float) -> float:
     return width / (2.0 * tan(FIELD * 0.5))

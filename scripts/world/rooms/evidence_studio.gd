@@ -1,37 +1,54 @@
 class_name EvidenceStudioRoom
 extends RoomBase
 
-# The Evidence Wall: a dim studio where what ELI holds is laid out to be checked, every word of it
-# from ELI's records and nothing pinned up for show.
+# The Evidence Wall: a dim studio with one long wall of pinned sheets, strung together thread by
+# thread, every sheet one of ELI's records and every word on it the record's own.
 #
-# Ahead, the long wall: what ELI has learned and believes about you, each a case card with how sure
-# ELI is (a bar filled to the chance it is right) and since when, grouped by what it is about; red
-# thread runs between the cards about the same thing and to the card asking which is right where two
-# disagree, and between cards that rest on the same record. To the right, the scoreboard of what
-# ELI's actions did (how often each worked, week by week, why it failed and what worked instead), a
-# board charting how often ELI's own figures proved right, and the projector throwing the questions
-# ELI is waiting on you to settle. To the left, what ELI found for you with its sources, the
-# pictures it saw, and the board of its thoughts here. Behind, the desk with the case files of what
-# ELI learned (each a lesson: what set it off, what the record showed, what to do instead, how it has
-# done since; take one up and read it), a table of sealed exhibits (the records ELI's beliefs rest
-# on, each tagged with what it supports), and a cabinet of files between racks of boxes.
+# Ahead, seven boards of sheets (portrait and landscape, as a wall of evidence is), each sheet a
+# record: what ELI believes and has learned about you (with how sure it is and since when; these
+# can be taken down and asked about), what it was told two ways and the question that settles it,
+# how often each of its actions worked, a lesson it learned, a record its beliefs rest on, a thought
+# it had, a memory it recalled, how often its own figures proved right. The nearest sheets ahead are
+# filled first, then the next kinds of evidence; a sheet with no record is blank pinned paper, and
+# the wall says once how many records are on file. Red thread runs only between sheets that are
+# about the same thing: beliefs about the same thing and their question, beliefs and the records
+# they rest on, an action and the lesson learned from it.
 #
-# Every board is sized for where it is read from (Reading): the cards for a reader stood at the wall,
-# the scoreboard and charts for one stood back to see them whole. Where ELI v3 does not send a record
-# yet the board says so, and is otherwise bare.
+# To the right, the scoreboard of what ELI's actions did (how often each worked, week by week, why
+# it failed and what worked instead), a board charting how often ELI's figures proved right, and the
+# projector throwing the questions ELI is waiting on you to settle. To the left, what ELI found for
+# you with its sources, the pictures it saw, and the board of its thoughts here. Behind, the desk
+# with the case files of what ELI learned (take one up and read it), a table of sealed exhibits
+# (the records ELI's beliefs rest on, each tagged with what it supports), and a cabinet of files
+# between racks of boxes.
+#
+# Writing is sized for where it is read from (Reading): a sheet for a reader stood at the wall,
+# higher sheets larger; the scoreboard and charts for one stood back to see them whole.
 
 const HALL := 13.6                  # the studio's wall
 const WALL := 13.3                  # where boards hang on it
-# The boards round the wall: bearing (degrees round from straight ahead, to the right) and the arc
-# of wall each is given, in degrees; a board is as wide as its arc, less the gap to the next.
-const CLAIM_BOARDS := [0.0, -26.0, 26.0, -52.0, 52.0]     # nearest straight ahead first
-const CLAIM_ARC := 26.0
-const SCORE_AT := [84.0, 26.0]
-const CHART_AT := [108.0, 20.0]
-const QUESTION_AT := [130.0, 18.0]
-const FOUND_AT := [-84.0, 20.0]
-const SEEN_AT := [-106.0, 14.0]
-const THOUGHT_AT := [-128.0, 20.0]
+# The long wall: seven boards round the front of the studio, each this big, its middle this high.
+const WALL_BOARDS := 7
+const WALL_FIRST := -78.0           # the first board's bearing, degrees round from straight ahead
+const WALL_STEP := 26.0
+const WALL_BOARD := Vector2(5.6, 3.6)
+const WALL_MIDDLE := 2.6
+const BOARD_ORDER := [3, 2, 4, 1, 5, 0, 6]      # nearest straight ahead first
+# The owner's wall: thirteen sheets to a board that size, four in ten of them landscape like a
+# photograph's print, each turned a little on its pin. The number follows a board's area.
+const SHEETS_PER_M2 := 13.0 / (5.6 * 3.6)
+const PORTRAIT := Vector2(0.52, 0.68)
+const LANDSCAPE := Vector2(0.62, 0.5)
+const LANDSCAPE_SHARE := 0.4
+const TILT := 0.14                  # radians a sheet may hang off true
+# The other boards round the wall: bearing and the arc of wall each is given, in degrees; a board is
+# as wide as its arc, less the gap to the next.
+const SCORE_AT := [104.0, 22.0]
+const CHART_AT := [126.0, 18.0]
+const QUESTION_AT := [146.0, 16.0]
+const FOUND_AT := [-104.0, 22.0]
+const SEEN_AT := [-124.0, 14.0]
+const THOUGHT_AT := [-142.0, 18.0]
 const BOARD_GAP := 0.08             # of a board's arc left bare either side of it
 # What ELI v3 hangs here at most (eli/world/shown.py: KEPT, NOTES_PER_ROOM), each on its own board.
 const FOUND_PLACES := 6
@@ -53,12 +70,16 @@ var _desk: Node3D
 var _desk_top := 0.0
 var _table: Node3D
 var _table_top := 0.0
-var _conflicts: Array = []          # the questions ELI waits on: [relation words, the question]
-var _claim_grid: Array = []         # the places for cards, nearest straight ahead first
-var _claim_place: Array = []        # the arranged beliefs' places in the grid
-var _question_place: Dictionary = {} # relation words -> its question card's place in the grid
-var _question_cards: Node3D
-var _claims_board: Node3D
+var _conflicts: Array = []          # the questions ELI waits on: [what it is about, the question, the record]
+var _slots: Array = []              # the wall's sheets: {"xf", "size", "distance"}, nearest straight ahead first
+var _papers: MultiMeshInstance3D    # every sheet's paper, and its pin, drawn at once
+var _pins: MultiMeshInstance3D
+var _sheets: Node3D                 # the writing on the sheets the room writes
+var _written := {}                  # slot -> what it was last written with
+var _on_file: Label3D
+var _filled := 0                    # how many sheets carry a record
+var _claim_place: Array = []        # the arranged beliefs' places on the wall
+var _question_place: Dictionary = {} # what a question is about -> its sheet's place
 var _book_slots: Array = []
 
 func _build() -> void:
@@ -71,7 +92,7 @@ func _build() -> void:
     hall(HALL, 5.2, boards, plaster, plaster)
     add(MeshKitClass.annulus(2.94, 3.03, 128), strip({"energy": 1.3, "wave": 0.12}), Vector3(0, 0.006, 0))
 
-    _claim_wall()
+    _wall_of_sheets()
     _scoreboard()
     _charts()
     _cork_board(FOUND_AT, "WHAT ELI FOUND", FOUND_PLACES)
@@ -105,15 +126,16 @@ func _cork() -> Material:
 
 # A heading over a board, read from the middle of the room (as far away as the wall is), no wider
 # than the board.
-func _heading(board: Node3D, words: String, top: float, width: float) -> void:
+func _heading(board: Node3D, words: String, top: float, width: float) -> Label3D:
     var distance := WALL
-    var wide: float = Reading.measurer(Reading.typed()).call(words) * Reading.pixel(distance)
+    var wide: float = Reading.measurer(Reading.typed()).call(words if not words.is_empty() else "x".repeat(24)) * Reading.pixel(distance)
     var heading := Reading.label(words, distance, Color(0.95, 0.88, 0.75), 0.0, Reading.typed(), minf(1.0, width * 0.9 / maxf(wide, 0.001)))
     heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     heading.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
     heading.outline_size = 6
     heading.position = Vector3(0, top + 0.08, 0.05)
     board.add_child(heading)
+    return heading
 
 # What a board says while it has nothing on it, from why: ELI away, this ELI not sending it yet, or
 # nothing on record.
@@ -142,48 +164,129 @@ func _say_bare(board: Node3D, why: String) -> void:
     words.text = why
     words.visible = not why.is_empty()
 
-# --- what ELI holds: the case cards --------------------------------------------------------------
+# --- the wall of sheets --------------------------------------------------------------------------
 
-func _claim_wall() -> void:
+func _wall_of_sheets() -> void:
     var cork := _cork()
-    var width := board_width(CLAIM_ARC)
-    var card := EliThing.card_size()
-    var pitch := card + Vector2(Reading.em(Reading.before_board()) * 1.5, Reading.em(Reading.before_board()) * 1.5)
-    # as many rows as are seen at once from where a card is read, the middle one at eye height
-    var view := Reading.before_board() * 2.0 * tan(Reading.FIELD * 0.5)
-    var rows := maxi(1, int(round(view / pitch.y)))
-    var cols := maxi(1, int(floor((width - pitch.x * 0.25) / pitch.x)))
-    var height := rows * pitch.y + pitch.y * 0.25
-    _claim_grid.clear()
-    for b in CLAIM_BOARDS.size():
-        var at := _board_at(CLAIM_BOARDS[b])
+    var rng := RandomNumberGenerator.new()
+    rng.seed = 44
+    var warm := Color(1.0, 0.84, 0.62)
+    var eye := Reading.eye_height()
+    var tones := []
+    _slots.clear()
+    for b in WALL_BOARDS:
+        var bearing := WALL_FIRST + WALL_STEP * float(b)
+        var at := _board_at(bearing, WALL_MIDDLE)
         var board := Node3D.new()
         board.transform = at
-        board.name = "Claims_%d" % b
+        board.name = "Wall_%d" % b
         add_child(board)
-        box(Vector3(width, height, 0.1), cork, Vector3.ZERO, board)
-        if b == 0:
-            _heading(board, "WHAT ELI HOLDS ABOUT YOU", height * 0.5, width)
-            _bare(board, Vector2(width, height))
-            _claims_board = board
-        # its places, the middle of the row nearest eye height first, then outwards
-        var places := []
+        box(Vector3(WALL_BOARD.x, WALL_BOARD.y, 0.12), cork, Vector3.ZERO, board)
+        if b == BOARD_ORDER[0]:
+            _on_file = _heading(board, "", WALL_BOARD.y * 0.5, WALL_BOARD.x)
+            _on_file.name = "OnFile"
+        # its sheets in rows across it, each a little off its place and off true, as pinned by hand
+        var count := int(round(WALL_BOARD.x * WALL_BOARD.y * SHEETS_PER_M2))
+        var rows := maxi(1, int(round(sqrt(float(count) * WALL_BOARD.y / WALL_BOARD.x))))
+        var pitch_y := WALL_BOARD.y / float(rows)
+        var in_rows := _row_counts(count, rows)
         for r in rows:
-            for c in cols:
-                places.append(Vector3((float(c) - float(cols - 1) * 0.5) * pitch.x, (float(rows - 1) * 0.5 - float(r)) * pitch.y, 0.08))
-        for place in places:
-            _claim_grid.append(at * Transform3D(Basis.IDENTITY, place))
-        var lit_from := at * Vector3(0, 2.2, 3.0)
-        spot(lit_from, at.origin, Color(1.0, 0.86, 0.66), 7.0, 9.0, 40.0)
-        glow(lit_from, Color(1.0, 0.86, 0.66), 0.8, 1.2, 0.8)
-    _question_cards = Node3D.new()
-    _question_cards.name = "Questions"
-    add_child(_question_cards)
+            var in_row: int = in_rows[r]
+            var pitch_x := WALL_BOARD.x / float(in_row)
+            for c in in_row:
+                var size := LANDSCAPE if rng.randf() < LANDSCAPE_SHARE else PORTRAIT
+                var jitter := Vector2(rng.randf_range(-0.5, 0.5) * (pitch_x - size.x), rng.randf_range(-0.5, 0.5) * (pitch_y - size.y) * 0.6)
+                var place := Vector3((float(c) - float(in_row - 1) * 0.5) * pitch_x + jitter.x,
+                                     (float(rows - 1) * 0.5 - float(r)) * pitch_y + jitter.y, 0.07 + 0.002 * float(_slots.size() % 13))
+                var xf := at * Transform3D(Basis(Vector3.BACK, rng.randf_range(-TILT, TILT)), place)
+                _slots.append({"xf": xf, "size": size, "distance": Reading.at_height(xf.origin.y, eye), "board": b, "x": absf(place.x)})
+                tones.append(rng.randf_range(0.9, 1.0))
+        if b % 2 == 0:
+            var from := at.origin * Vector3(7.2 / WALL, 0.0, 7.2 / WALL) + Vector3(0, 5.0, 0)
+            spot(from, at.origin, warm, 9.0, 12.0, 38.0)
+            glow(from, warm, 0.9, 1.2, 0.8)
+    # nearest straight ahead first, then those nearest eye height, then nearest the board's middle
+    var keyed := []
+    for i in _slots.size():
+        keyed.append([BOARD_ORDER.find(_slots[i]["board"]), absf((_slots[i]["xf"] as Transform3D).origin.y - eye), _slots[i]["x"], i])
+    keyed.sort_custom(func(a, b): return a < b)
+    var ordered := []
+    var toned := []
+    for k in keyed:
+        ordered.append(_slots[k[3]])
+        toned.append(tones[k[3]])
+    _slots = ordered
+    _papers = _batch(QuadMesh.new(), MaterialKit.light(Color.WHITE, 1.0))
+    _papers.name = "Sheets"
+    _pins = _batch(SphereMesh.new(), MaterialKit.light(Color.WHITE, 1.0))
+    _pins.name = "Pins"
+    for i in _slots.size():
+        _slots[i]["tone"] = toned[i]
+    _sheets = Node3D.new()
+    _sheets.name = "Writing"
+    add_child(_sheets)
     _threads = MeshInstance3D.new()
     _threads.name = "Threads"
     _threads.material_override = MaterialKitClass.light(Color(0.85, 0.1, 0.08), 1.4)
     _threads.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
     add_child(_threads)
+    _paper_up({})
+
+# `count` sheets over `rows` rows, as even as they go, the rows nearest the middle taking any over.
+static func _row_counts(count: int, rows: int) -> Array:
+    var out := []
+    for r in rows:
+        out.append(count / rows)
+    var by_middle := range(rows)
+    by_middle.sort_custom(func(a, b): return absf(float(a) - float(rows - 1) * 0.5) < absf(float(b) - float(rows - 1) * 0.5))
+    for i in count % rows:
+        out[by_middle[i]] += 1
+    return out
+
+# One batch of a mesh across every place on the wall, coloured place by place.
+func _batch(mesh: Mesh, look: StandardMaterial3D) -> MultiMeshInstance3D:
+    look.vertex_color_use_as_albedo = true
+    var batch := MultiMesh.new()
+    batch.transform_format = MultiMesh.TRANSFORM_3D
+    batch.use_colors = true
+    batch.mesh = mesh
+    batch.instance_count = _slots.size()
+    var node := MultiMeshInstance3D.new()
+    node.multimesh = batch
+    node.material_override = look
+    node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    add_child(node)
+    return node
+
+## Where a sheet's pin is, in the room.
+func _pin_of(slot: Dictionary) -> Vector3:
+    var e := Reading.em(float(slot["distance"]))
+    return (slot["xf"] as Transform3D) * Vector3(0, (slot["size"] as Vector2).y * 0.5 - e * 0.35, e * 0.4)
+
+# The paper of every sheet, tinted a little in the colour of the record on it, red-headed pins for the
+# sheets with a record; none drawn where one of ELI's beliefs hangs its own sheet. `held` is place ->
+# its record's colour, or null for a belief's own.
+func _paper_up(held: Dictionary) -> void:
+    var paper := EvidenceSheet.PAPER
+    for i in _slots.size():
+        var slot: Dictionary = _slots[i]
+        var xf: Transform3D = slot["xf"]
+        var size: Vector2 = slot["size"]
+        var gone := held.has(i) and held[i] == null
+        _papers.multimesh.set_instance_transform(i, xf * Transform3D(Basis.IDENTITY.scaled(Vector3(size.x, size.y, 1.0) * (0.0001 if gone else 1.0)), Vector3.ZERO))
+        var tone: Color = (paper * float(slot["tone"])).lerp(held[i], 0.12) if held.has(i) and held[i] != null else paper * float(slot["tone"])
+        tone.a = 1.0
+        _papers.multimesh.set_instance_color(i, tone)
+        var head := Reading.em(float(slot["distance"])) * 0.9
+        _pins.multimesh.set_instance_transform(i, Transform3D(Basis.IDENTITY.scaled(Vector3.ONE * (0.0001 if gone else head)), _pin_of(slot)))
+        _pins.multimesh.set_instance_color(i, Color(0.85, 0.08, 0.06) if held.has(i) else Color(0.55, 0.5, 0.42))
+
+## How many sheets the wall has, and how many carry a record now.
+func sheet_count() -> int:
+    return _slots.size()
+
+func records_on_wall() -> int:
+    return _filled
 
 ## What a belief is about, in words: ELI v3's relation, or the words of its name before the colon.
 static func about(record: Dictionary) -> String:
@@ -210,7 +313,7 @@ static func _chance(record: Dictionary) -> float:
     return float(record.get("importance", 0.5)) if record.get("importance") != null else 0.5
 
 ## The beliefs as the wall keeps them: those in dispute first, then by what they are about, the
-## surest first within each; each group with the question card about it right after it.
+## surest first within each; each group with the sheet asking which is right right after it.
 func arrange(kind: String, records: Array) -> Array:
     if kind == "book":
         return _lay_cases(records)
@@ -243,7 +346,7 @@ func arrange(kind: String, records: Array) -> Array:
         if asked.has(topic):
             _question_place[topic] = next
             next += 1
-    # questions about what ELI holds no card for still go up
+    # questions about what ELI holds no belief for still go up
     for conflict in _conflicts:
         if not _question_place.has(conflict[0]):
             _question_place[conflict[0]] = next
@@ -272,9 +375,18 @@ func pin_spot(kind: String, index: int) -> Variant:
         "book":
             return _book_slots[index] if index >= 0 and index < _book_slots.size() else null
         "claim":
-            var place: int = _claim_place[index] if index >= 0 and index < _claim_place.size() else index
-            return _claim_grid[place] if index >= 0 and place < _claim_grid.size() else null
+            var place := _belief_place(index)
+            return _slots[place]["xf"] if place >= 0 else null
     return null
+
+## How big a belief's place on the wall is: the sheet it hangs as.
+func pin_size(kind: String, index: int) -> Vector2:
+    var place := _belief_place(index) if kind == "claim" else -1
+    return _slots[place]["size"] if place >= 0 else Vector2.ZERO
+
+func _belief_place(index: int) -> int:
+    var place: int = _claim_place[index] if index >= 0 and index < _claim_place.size() else index
+    return place if index >= 0 and place < _slots.size() else -1
 
 # The `index`th of `count` places on a board, as many to a row as its width holds, `pitch` apart.
 func _place_on(board: Array, index: int, count: int, pitch: Vector2) -> Variant:
@@ -300,37 +412,91 @@ func _cork_board(board: Array, heading_text: String, count: int) -> void:
     _heading(node, heading_text, height * 0.5, width)
     spot(node.transform * Vector3(0, 2.2, 2.2), node.transform.origin, Color(1.0, 0.85, 0.65), 3.5, 6.0, 38.0)
 
-# The question cards ELI waits on you to settle, each beside the beliefs it is about, and the thread
-# between cards about the same thing, to the question about them, and between cards resting on the
-# same record. Drawn again only when what is on the wall changes.
-func _string_up(claims: Array) -> void:
-    var key := JSON.stringify([claims.map(func(c): return [c.get("id"), about(c), _sources(c)]), _conflicts, _claim_place, _question_place])
+## What goes up on the wall, place by place, from ELI's world: its beliefs (ELI's own sheets, kept
+## where arrange put them) with the questions about them, then how often its actions worked, the
+## lessons it learned, the records its beliefs rest on, its thoughts from the other rooms, the
+## memories it recalled, and how often its figures proved right. Each {"view", "keys"}, or {"belief"}
+## for a place one of ELI's beliefs hangs in.
+func _evidence(state: Dictionary, claims: Array) -> Array:
+    var ordered := arrange("claim", claims)
+    var places := {}
+    for i in ordered.size():
+        places[_claim_place[i]] = {"belief": ordered[i], "keys": ["topic:" + about(ordered[i])] + _sources(ordered[i])}
+    for conflict in _conflicts:
+        places[_question_place[conflict[0]]] = {"view": EvidenceSheet.of_conflict(conflict[2]), "keys": ["topic:" + conflict[0]]}
+    var out := []
+    for p in places.size():
+        out.append(places[p])
+    var evidence: Dictionary = state.get("evidence", {}) if typeof(state.get("evidence")) == TYPE_DICTIONARY else {}
+    var actions = evidence.get("actions", {})
+    for row in (actions.get("rows", []) if typeof(actions) == TYPE_DICTIONARY else []):
+        if typeof(row) == TYPE_DICTIONARY:
+            out.append({"view": EvidenceSheet.of_action(row), "keys": ["action:" + str(row.get("action", ""))]})
+    for record in state.get("objects", []):
+        if typeof(record) == TYPE_DICTIONARY and str(record.get("kind", "")) == "book" and str(EliBook.book_of(record).get("of", "")) == "lesson":
+            var applies := str(EliBook.book_of(record).get("applies_to", ""))
+            out.append({"view": EvidenceSheet.of_lesson(record), "keys": ["action:" + applies] if not applies.is_empty() else []})
+    for exhibit in _exhibits_of(ordered):
+        out.append({"view": EvidenceSheet.of_source(exhibit["number"], exhibit["source"], exhibit["supports"]),
+                    "keys": ["source " + str(exhibit["source"].get("id", ""))]})
+    var thoughts = state.get("thoughts", [])
+    var recalled := []
+    for thought in (thoughts if typeof(thoughts) == TYPE_ARRAY else []):
+        if typeof(thought) != TYPE_DICTIONARY or str(thought.get("room", "")) == "evidence_wall":
+            continue                                    # this room's own hang on its board
+        if str(thought.get("kind", "")) == "recall":
+            recalled.append(thought)
+        else:
+            out.append({"view": EvidenceSheet.of_thought(thought), "keys": []})
+    for thought in recalled:
+        out.append({"view": EvidenceSheet.of_thought(thought), "keys": []})
+    for row in (evidence.get("accuracy", []) if typeof(evidence.get("accuracy")) == TYPE_ARRAY else []):
+        if typeof(row) == TYPE_DICTIONARY and int(row.get("n", 0)) > 0:
+            out.append({"view": EvidenceSheet.of_accuracy(row), "keys": []})
+    return out
+
+# The wall written with what goes up on it: each sheet written again only when its record changed,
+# the thread run between sheets about the same thing, and how many records are on file.
+func _write_wall(evidence: Array, why: String) -> void:
+    _filled = mini(evidence.size(), _slots.size())
+    var held := {}
+    for i in _slots.size():
+        var entry: Dictionary = evidence[i] if i < evidence.size() else {}
+        var view = entry.get("view")
+        held[i] = null if entry.has("belief") else (view["colour"] if view != null else null)
+        if not entry.has("belief") and view == null:
+            held.erase(i)
+        var key := JSON.stringify(view) if view != null else ""
+        if str(_written.get(i, "")) == key:
+            continue
+        _written[i] = key
+        var old: Node = _sheets.get_node_or_null("Sheet_%d" % i)
+        if old != null:
+            _sheets.remove_child(old)
+            old.queue_free()
+        if view == null:
+            continue                                    # blank pinned paper, or one of ELI's beliefs
+        var sheet := Node3D.new()
+        sheet.name = "Sheet_%d" % i
+        sheet.transform = _slots[i]["xf"]
+        _sheets.add_child(sheet)
+        EvidenceSheet.draw(sheet, _slots[i]["size"], float(_slots[i]["distance"]), view, false)
+    _paper_up(held)
+    if not why.is_empty():
+        _on_file.text = why
+    else:
+        _on_file.text = "nothing on record yet" if evidence.is_empty() else ("%d record%s on file" % [evidence.size(), "" if evidence.size() == 1 else "s"])
+    # the thread: between consecutive sheets about the same thing
+    var pins_of := {}
+    for i in _filled:
+        for key_of in (evidence[i] as Dictionary).get("keys", []):
+            if not pins_of.has(key_of):
+                pins_of[key_of] = []
+            pins_of[key_of].append(_pin_of(_slots[i]))
+    var key := JSON.stringify(pins_of.keys().map(func(k): return [k, pins_of[k].size()])) + str(_filled)
     if key == _threads_key:
         return
     _threads_key = key
-    for child in _question_cards.get_children():
-        child.queue_free()
-    var card := EliThing.card_size()
-    var e := Reading.em(Reading.before_board())
-    var head := Vector3(0, card.y * 0.5 - e * 0.3, e * 0.4)     # where a card's pin is
-    var pins_of := {}                                            # topic or record -> pin heads
-    for i in claims.size():
-        var spot = pin_spot("claim", i)
-        if not spot is Transform3D:
-            continue
-        var at: Vector3 = (spot as Transform3D) * head
-        for key_of in [about(claims[i])] + _sources(claims[i]):
-            if not pins_of.has(key_of):
-                pins_of[key_of] = []
-            pins_of[key_of].append(at)
-    for conflict in _conflicts:
-        var place: int = _question_place.get(conflict[0], -1)
-        if place < 0 or place >= _claim_grid.size():
-            continue
-        _question_card(_claim_grid[place], conflict)
-        if not pins_of.has(conflict[0]):
-            pins_of[conflict[0]] = []
-        pins_of[conflict[0]].append((_claim_grid[place] as Transform3D) * head)
     var st := SurfaceTool.new()
     st.begin(Mesh.PRIMITIVE_TRIANGLES)
     _threads_drawn = 0
@@ -341,7 +507,7 @@ func _string_up(claims: Array) -> void:
             st.append_from(_thread(pins[i - 1], pins[i]), 0, Transform3D.IDENTITY)
     _threads.mesh = st.commit() if _threads_drawn > 0 else null
 
-## How many threads run between the cards now.
+## How many threads run between the sheets now.
 func threads_drawn() -> int:
     return _threads_drawn
 
@@ -363,35 +529,6 @@ static func _sources(record: Dictionary) -> Array:
             if typeof(source) == TYPE_DICTIONARY and not str(source.get("id", "")).is_empty():
                 out.append("source " + str(source["id"]))
     return out
-
-# A question card: red-edged, what the disagreement is about and the question that settles it.
-func _question_card(place: Transform3D, conflict: Array) -> void:
-    var size := EliThing.card_size()
-    var distance := Reading.before_board()
-    var e := Reading.em(distance)
-    var node := Node3D.new()
-    node.transform = place
-    _question_cards.add_child(node)
-    var paper := Color(0.98, 0.9, 0.86)
-    var edge := MeshInstance3D.new()
-    var rim := QuadMesh.new()
-    rim.size = size + Vector2(e * 0.5, e * 0.5)
-    edge.mesh = rim
-    edge.material_override = MaterialKitClass.light(Color(0.75, 0.08, 0.06), 0.9)
-    node.add_child(edge)
-    var face := MeshInstance3D.new()
-    var quad := QuadMesh.new()
-    quad.size = size
-    face.mesh = quad
-    face.material_override = MaterialKitClass.light(paper, 0.85)
-    face.position.z = 0.002
-    node.add_child(face)
-    var ink := Reading.ink(paper, Color(0.45, 0.04, 0.03))
-    var title := Reading.fit(str(conflict[0]).capitalize() + "?", distance, size.x - 2.0 * e, 1, Reading.typed(), 1.2)
-    var asked := Reading.fit(str(conflict[1]), distance, size.x - 2.0 * e, 6, Reading.typed())
-    var words := Reading.label("\n".join(title + [""] + asked), distance, ink, 0.0, Reading.typed())
-    words.position = Vector3(-size.x * 0.5 + e, size.y * 0.5 - e, 0.004)
-    node.add_child(words)
 
 # --- what ELI's actions did: the scoreboard ------------------------------------------------------
 
@@ -651,10 +788,9 @@ func _exhibit_table() -> void:
     _bare(_table, Vector2(1.4, 0.4))
     (_empty[_table] as Label3D).position = Vector3(-0.49, _table_top + 0.3, 0.0)
 
-## The exhibits: every record ELI's beliefs here rest on (ELI v3's claim "sources"), once each,
-## numbered in the order the wall's cards cite them, each sealed in a bag with a tag saying what it
-## is, when, where it came from and what it supports. As many as the table holds, the rest counted.
-func _lay_exhibits(claims: Array) -> void:
+## Every record ELI's beliefs here rest on (ELI v3's claim "sources"), once each, numbered in the
+## order the wall's beliefs cite them: {"number", "source", "supports": the beliefs' names}.
+static func _exhibits_of(claims: Array) -> Array:
     var seen := {}
     var exhibits := []
     for record in claims:
@@ -669,8 +805,14 @@ func _lay_exhibits(claims: Array) -> void:
                 continue
             if not seen.has(id):
                 seen[id] = exhibits.size()
-                exhibits.append({"source": source, "supports": []})
+                exhibits.append({"number": exhibits.size() + 1, "source": source, "supports": []})
             exhibits[seen[id]]["supports"].append(str(record.get("name", "")))
+    return exhibits
+
+## The exhibits on the table, each sealed in a bag with a tag saying what it is, when, where it came
+## from and what it supports. As many as the table holds, the rest counted.
+func _lay_exhibits(claims: Array) -> void:
+    var exhibits := _exhibits_of(claims)
     var key := JSON.stringify(exhibits)
     if key == _exhibits_key:
         return
@@ -750,7 +892,7 @@ func _files() -> void:
     var warm := Color(1.0, 0.82, 0.6)
     spot(Vector3(0, 4.4, 9.0), Vector3(0, 1.2, WALL - 0.7), warm, 6.0, 9.0, 40.0)
     glow(Vector3(0, 4.4, 9.0), warm, 0.6, 1.2, 0.8)
-    for degrees in [146.0, 214.0]:
+    for degrees in [157.0, 203.0]:
         var a := deg_to_rad(degrees)
         var on_wall := Vector3(sin(a), 0.0, -cos(a)) * (HALL - 0.15)
         prop("industrial_wall_lamp", on_wall + Vector3(0, 2.3, 0), rad_to_deg(atan2(-on_wall.x, -on_wall.z)))
@@ -758,7 +900,7 @@ func _files() -> void:
         lamp(bulb, warm, 2.6, 11.0)
         glow(bulb, warm, 0.35, 1.4, 0.9)
     # the boxes of what has been gathered, on racks either side of the cabinet
-    for degrees in [164.0, 196.0]:
+    for degrees in [168.0, 192.0]:
         var a := deg_to_rad(degrees)
         var at := Vector3(sin(a), 0.0, -cos(a)) * (WALL - 0.4)
         var facing := rad_to_deg(atan2(-at.x, -at.z))
@@ -783,7 +925,7 @@ func show_eli(eli: Dictionary) -> void:
             continue
         match str(record.get("kind", "")):
             "conflict":
-                _conflicts.append([str(record.get("name", "")).trim_suffix("?").to_lower().strip_edges(), str(record.get("meaning", ""))])
+                _conflicts.append([str(record.get("name", "")).trim_suffix("?").to_lower().strip_edges(), str(record.get("meaning", "")), record])
             "claim":
                 if str(record.get("room", "")) == "evidence_wall":
                     claims.append(record)
@@ -793,10 +935,9 @@ func show_eli(eli: Dictionary) -> void:
     var away := "" if connected else EliReadout.idle_reason(eli)
     var unsent := func(capability: String) -> String:
         return away if not away.is_empty() else ("this ELI does not send that yet" if eli.has("can") and not capability in can else "")
-    # the cards and their threads
+    # the wall of sheets and its threads
     var ordered := arrange("claim", claims)
-    _string_up(ordered if connected else [])
-    _say_bare(_claims_board, away if not away.is_empty() else ("nothing on record yet" if claims.is_empty() and _conflicts.is_empty() else ""))
+    _write_wall(_evidence(state, claims) if connected else [], away)
     # the scoreboard and the charts
     var evidence: Dictionary = state.get("evidence", {}) if typeof(state.get("evidence")) == TYPE_DICTIONARY else {}
     var why: String = unsent.call("evidence")
@@ -814,7 +955,7 @@ func show_eli(eli: Dictionary) -> void:
     # the case files and the exhibits
     var books_why: String = unsent.call("books")
     _say_bare(_desk, books_why if not books_why.is_empty() else ("nothing on record yet" if lessons == 0 else ""))
-    _lay_exhibits(claims if connected else [])
+    _lay_exhibits(ordered if connected else [])
     var sourced := claims.any(func(c): return not _sources(c).is_empty())
     _say_bare(_table, away if not away.is_empty() else ("nothing on record yet" if not sourced else ""))
     # the projector: the questions, then the thoughts that belong in this room

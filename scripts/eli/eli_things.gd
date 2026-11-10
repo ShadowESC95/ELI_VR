@@ -128,9 +128,11 @@ func _apply(objects: Array) -> void:
         _forms[id] = form
         var record := str(data.get("kind", ""))
         if pinner != null and is_instance_valid(pinner) and pinner.has_method("pin_spot"):
-            var spot = pinner.pin_spot(record, int(order.get(id, counted.get(record, 0))))
+            var place := int(order.get(id, counted.get(record, 0)))
+            var spot = pinner.pin_spot(record, place)
             if spot is Transform3D:
-                _things[id].pin_to(spot)
+                # a room may say how big the place is (a sheet of the Evidence Wall)
+                _things[id].pin_to(spot, pinner.pin_size(record, place) if pinner.has_method("pin_size") else Vector2.ZERO)
             else:
                 _things[id].unpin()     # no place for it now: not left standing in another record's
         counted[record] = int(counted.get(record, 0)) + 1

@@ -263,6 +263,8 @@ class Screens(Alive):
     def test_the_evidence_wall_shows_beliefs_disputes_exhibits_and_threads(self) -> None:
         self.check("a_belief_is_a_case_card_saying_how_sure_eli_is_and_since_when")
         self.check("the_evidence_wall_pins_up_nothing_that_is_not_elis")
+        self.check("the_evidence_wall_is_a_full_wall_of_pinned_sheets")
+        self.check("no_sheet_on_the_wall_says_anything_elis_records_do_not")
         self.check("disputes_come_first_with_their_question_and_thread_runs_between_related_cards")
         self.check("the_exhibits_are_the_records_elis_beliefs_rest_on")
 

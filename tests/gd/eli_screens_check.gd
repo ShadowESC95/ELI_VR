@@ -938,7 +938,7 @@ func _knowledge_checks() -> void:
                       "weeks": [{"from": T0, "n": 10, "right": 0.7}, {"from": T0 + 7.0 * DAY, "n": 30, "right": 0.86}]},
                      {"kind": "route", "words": "readings of what a sentence asked for", "n": 0, "right": 0.0}]}
     var lessons := [
-        _book_record("book_lesson_3", "lesson", "Open app: open the site when the app is missing", T0, [{"heading": "When", "text": "The app is not installed."}], "evidence_wall"),
+        _book_record("book_lesson_3", "lesson", "Open app: open the site when the app is missing", T0, [{"heading": "When", "text": "The app is not installed."}], "evidence_wall", {"applies_to": "OPEN_APP"}),
         _book_record("book_lesson_4", "lesson", "Web search: say what came back", T0 + DAY, [{"heading": "When", "text": "A search came back empty."}], "evidence_wall"),
     ]
     var state := {"objects": claims + [conflict] + lessons, "evidence": evidence}
@@ -956,24 +956,43 @@ func _knowledge_checks() -> void:
     var stamp: bool = _labels(pinned._things["claim_1"]._body).any(func(l): return l.name == "Stamp" and l.text == "CONTESTED")
     var unstamped: bool = not _labels(pinned._things["claim_2"]._body).any(func(l): return l.name == "Stamp")
     var fill: MeshInstance3D = pinned._things["claim_1"]._body.find_child("Sureness", false, false)
-    var share: float = (fill.mesh as BoxMesh).size.x / (EliThing.card_size().x - 2.0 * Reading.em(Reading.before_board())) / 0.6
+    var track: MeshInstance3D = pinned._things["claim_1"]._body.find_child("Track", false, false)
+    var share: float = (fill.mesh as BoxMesh).size.x / (track.mesh as BoxMesh).size.x
+    var as_sheet: bool = pinned._things["claim_1"]._pin_size == wall._slots[0]["size"]
     var cards_ok: bool = ranked_claims == ["claim_1", "claim_2", "claim_3"] and "home town: Harbour Town" in card_1 and "chance 72%" in card_1 \
         and ("since %s · learned %s" % [Reading.day(T0), Reading.day(T0 + 3.0 * DAY)]) in card_1 and "you said so twice" in card_1 \
-        and "rests on 1 record" in card_1 and stamp and unstamped and absf(share - 0.72) < 0.01 \
-        and "works as: a baker" in card_3 and "chance 40%" in card_3 and "ELI's inference" in card_3
+        and "rests on 1 record" in card_1 and stamp and unstamped and absf(share - 0.72) < 0.01 and as_sheet \
+        and "works as: a baker" in card_3 and "chance 40%" in card_3 and "since 2026-01-04" in card_3
     _check("a_belief_is_a_case_card_saying_how_sure_eli_is_and_since_when", cards_ok,
            "order %s card %s / %s stamp %s share %.2f" % [ranked_claims, card_1, card_3, stamp, share])
     # nothing on the wall but ELI's records: no sheets pinned up for show
     var shown_for_show := _meshes(wall).filter(func(m): return _shaded_with(m, "document.gdshader"))
     _check("the_evidence_wall_pins_up_nothing_that_is_not_elis", shown_for_show.is_empty(), "%d made-up sheets" % shown_for_show.size())
-    var question := " ".join(_texts_under(wall._question_cards)).replace("\n", " ")
-    var asked_after: bool = (wall.pin_spot("claim", 0) as Transform3D).origin.distance_to(wall._claim_grid[wall._question_place["home town"]].origin) < 2.0
+    var question := " ".join(_texts_under(wall._sheets.get_node("Sheet_1"))).replace("\n", " ")
+    var asked_after: bool = wall._question_place.get("home town", -1) == 1
+    # threads: home town to its question, the two beliefs and the exhibit resting on one record, open app to its lesson
     _check("disputes_come_first_with_their_question_and_thread_runs_between_related_cards",
-           wall._threads.mesh != null and wall.threads_drawn() == 2 and "Hill Village" in question and asked_after,
+           wall._threads.mesh != null and wall.threads_drawn() == 4 and "Hill Village" in question and "DISPUTED" in question and asked_after,
            "threads %d question %s next %s" % [wall.threads_drawn(), question, asked_after])
+    # the owner's wall: seven boards of thirteen sheets, each with a record while there are records, the rest blank
+    var wall_boards: Array = wall.get_children().filter(func(c): return c.name.begins_with("Wall_"))
+    var on_sheets: Array = wall._sheets.get_children().filter(func(c): return not c.is_queued_for_deletion())
+    var blank_say_nothing: bool = on_sheets.size() == 10 - 3 and on_sheets.all(func(c): return int(str(c.name).get_slice("_", 1)) < 10)
+    _check("the_evidence_wall_is_a_full_wall_of_pinned_sheets", wall_boards.size() == 7 and wall.sheet_count() == 91
+           and wall._papers.multimesh.instance_count == 91 and wall.records_on_wall() == 10 and blank_say_nothing
+           and wall._on_file.text == "10 records on file",
+           "boards %d sheets %d filled %d written %d says %s" % [wall_boards.size(), wall.sheet_count(), wall.records_on_wall(), on_sheets.size(), wall._on_file.text])
+    var allowed := _allowed_words(state)
+    var said_on_wall: Array = _texts_under(wall._sheets) + [wall._on_file.text]
+    for id in ["claim_1", "claim_2", "claim_3"]:
+        said_on_wall.append_array(_texts_under(pinned._things[id]._body))
+    var invented: Array = _invented(said_on_wall, allowed)
+    var checker_catches: bool = _invented(["lorem ipsum 72%"], allowed) == ["lorem", "ipsum"]
+    _check("no_sheet_on_the_wall_says_anything_elis_records_do_not", invented.is_empty() and checker_catches and said_on_wall.size() > 20,
+           "invented %s (checker catches %s)" % [invented, checker_catches])
     var exhibit := " ".join(_texts_under(wall._exhibits)).replace("\n", " ")
     _check("the_exhibits_are_the_records_elis_beliefs_rest_on", exhibit.begins_with("EXHIBIT 1") and "Harbour Town, drinking" in exhibit
-           and "supports: favourite tea: green tea; home town: Harbour Town" in exhibit and not "EXHIBIT 2" in exhibit, exhibit)
+           and "supports: home town: Harbour Town; favourite tea: green tea" in exhibit and not "EXHIBIT 2" in exhibit, exhibit)
     var scored := EvidenceWall.score_lines(evidence, 60)
     var board := _texts(wall._score).filter(func(t): return t != "")
     var detail := " ".join(scored.filter(func(l): return l[1] == EliReadout.PALE).map(func(l): return str(l[0]).strip_edges()))
@@ -1037,6 +1056,47 @@ func _meshes(node: Node) -> Array:
         if child is MeshInstance3D:
             out.append(child)
         out.append_array(_meshes(child))
+    return out
+
+# Every word ELI's world sent (any string anywhere in it), with the words a sheet adds of its own and
+# the months a date is written with.
+func _allowed_words(state) -> Dictionary:
+    var out := {}
+    for word in EvidenceSheet.CHROME + Array(Reading.MONTHS):
+        out[str(word).to_lower()] = true
+    _words_into(state, out)
+    return out
+
+func _words_into(value, out: Dictionary) -> void:
+    match typeof(value):
+        TYPE_STRING, TYPE_STRING_NAME:
+            for token in _tokens(str(value)):
+                out[token] = true
+        TYPE_DICTIONARY:
+            for key in value:
+                _words_into(key, out)
+                _words_into(value[key], out)
+        TYPE_ARRAY:
+            for item in value:
+                _words_into(item, out)
+
+func _tokens(text: String) -> Array:
+    var out := []
+    for raw in text.replace("_", " ").replace("·", " ").replace("→", " ").replace("\n", " ").split(" ", false):
+        var word := raw.to_lower()
+        for mark in [".", ",", ":", ";", "(", ")", "?", "!", "…", "\"", "'s", "%", "×", "↑", "↓", "=", "▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"]:
+            word = word.replace(mark, "")
+        if not word.is_empty() and not word.is_valid_float():
+            out.append(word)
+    return out
+
+# The words in `texts` that are in none of `allowed`.
+func _invented(texts: Array, allowed: Dictionary) -> Array:
+    var out := []
+    for text in texts:
+        for token in _tokens(str(text)):
+            if not allowed.has(token):
+                out.append(token)
     return out
 
 # Whether a label's writing, measured in its own font, starts and ends inside a face `width` wide.
