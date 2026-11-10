@@ -697,6 +697,19 @@ func _tile_message(width: int, height: int, tiles: Array) -> PackedByteArray:
 
 # --- ELI's books, the Evidence Wall's records, the bookcase in ELI's room ------------------------
 
+# Stands in for the link to ELI v3 serving its books whole by id (GET /v1/world/book/<id>), or failing.
+class BookLink extends Node:
+    var asked := []
+    var books := {}
+    func can(capability: String) -> bool:
+        return capability == "books"
+    func fetch(path: String, _capability: String = "pictures") -> EliResult:
+        asked.append(path)
+        var id := path.trim_prefix("/v1/world/book/")
+        if not books.has(id):
+            return EliResult.bad("unsupported", "no such book", 404)
+        return EliResult.good(JSON.stringify({"id": id, "book": {}, "sections": books[id]}).to_utf8_buffer())
+
 # Stands in for a room that keeps one place for a belief, and then none.
 class Pinner extends Node:
     var allow := true
@@ -1045,6 +1058,142 @@ func _knowledge_checks() -> void:
     _check("a_hand_holding_a_book_is_known_to_the_book_for_the_other_hand", grabber.is_in_group("world_manipulators"), "")
     for node in [loose, pinner, grabber, wall]:
         node.queue_free()
+    await _book_read_whole_check()
+    await _example_feed_checks()
+
+# A book too long for the world message comes with its length and no sections: opened, it is read
+# whole from ELI v3 by its id and laid out; one ELI v3 cannot give stays blank and is asked again.
+func _book_read_whole_check() -> void:
+    var served := BookLink.new()
+    root.add_child(served)
+    served.books["book_conversation_long"] = [{"heading": "You, 10:02", "when": T0, "text": "Where did the ferry timetable go?"},
+                                              {"heading": "ELI, 10:03", "when": T0, "text": "Pinned to the board by the door."}]
+    var was = EliBook.link
+    EliBook.link = served
+    var long = Book.new()
+    root.add_child(long)
+    var record := _book_record("book_conversation_long", "conversation", "The ferry timetable", T0, [])
+    record["book"].erase("sections")
+    record["book"]["length"] = 4000
+    long.build(record)
+    # as long as it says: a long book sent without its pages is as thick as its length makes it
+    var thick: bool = EliBook.measure({"book": {"length": 2_000_000}}).z > EliBook.measure({"book": {"length": 0}}).z
+    long.begin_grab()
+    for n in 5:
+        await process_frame
+    var read := " ".join(long._pages.map(func(p): return " ".join(p["lines"])))
+    var whole: bool = served.asked == ["/v1/world/book/book_conversation_long"] and "Where did the ferry timetable go?" in read \
+        and "Pinned to the board by the door." in read and long.page_count() >= 1
+    long.end_grab()
+    var missing = Book.new()
+    root.add_child(missing)
+    var none := _book_record("book_log_gone", "log", "A log", T0, [])
+    none["book"].erase("sections")
+    none["book"]["length"] = 300
+    missing.build(none)
+    missing.begin_grab()
+    for n in 5:
+        await process_frame
+    var blank: bool = missing.page_count() == 0 and missing._text[4].text == ""
+    missing.end_grab()
+    missing.begin_grab()                 # asked again at the next opening
+    for n in 5:
+        await process_frame
+    var again: bool = served.asked.count("/v1/world/book/book_log_gone") == 2
+    _check("a_book_sent_without_its_pages_is_read_whole_by_its_id_when_opened", thick and whole and blank and again,
+           "thick %s whole %s (%s) blank %s again %s asked %s" % [thick, whole, read.substr(0, 80), blank, again, served.asked])
+    EliBook.link = was
+    for node in [long, missing, served]:
+        node.queue_free()
+
+# ELI v3's own example of a world message (tests/fixtures, copied from ELI v3): the rooms built from it,
+# headless, show what it holds.
+func _example_feed_checks() -> void:
+    var state = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/world_feed_v2_example.json"))
+    if typeof(state) != TYPE_DICTIONARY:
+        _check("the_rooms_show_elis_example_world_message", false, "the example did not load")
+        return
+    var eli := {"connected": true, "mind": "", "mode": "idle", "can": ["books", "evidence"], "state": state}
+    var objects: Array = state["objects"]
+    var by_room := func(room: String, kind: String) -> Array:
+        return objects.filter(func(o): return o.get("room") == room and o.get("kind") == kind)
+    # the Evidence Wall: the wall of sheets fills with every record there is, the rest blank; scoreboard and charts drawn
+    var wall = EvidenceWall.new()
+    root.add_child(wall)
+    wall.build({}, Settings.new())
+    wall.show_eli(eli)
+    var on_wall = Things.new()
+    root.add_child(on_wall)
+    on_wall.pinner = wall
+    on_wall.show_room("evidence_wall")
+    on_wall.apply_world_state(state)
+    await process_frame
+    var records: int = by_room.call("evidence_wall", "claim").size() + objects.filter(func(o): return o.get("kind") == "conflict").size() \
+        + state["evidence"]["actions"]["rows"].size() + by_room.call("evidence_wall", "book").size() \
+        + state["thoughts"].filter(func(t): return t.get("room") != "evidence_wall").size() \
+        + state["evidence"]["accuracy"].filter(func(r): return int(r["n"]) > 0 and r["right"] != null).size() \
+        + wall._exhibits_of(by_room.call("evidence_wall", "claim")).size()
+    var said: Array = _texts_under(wall._sheets) + [wall._on_file.text]
+    for claim in by_room.call("evidence_wall", "claim"):
+        said.append_array(_texts_under(on_wall._things[claim["id"]]._body))
+    var invented: Array = _invented(said, _allowed_words(state))
+    var board := _texts(wall._score).filter(func(t): return t != "")
+    var bars: MultiMeshInstance3D = wall._chart.find_child("RowBars", false, false)
+    var lesson_on_desk := true
+    for b in by_room.call("evidence_wall", "book"):
+        lesson_on_desk = lesson_on_desk and on_wall._things[b["id"]].pinned and on_wall._things[b["id"]].position.y > wall._desk_top
+    _check("the_evidence_wall_shows_elis_example_world_message", wall.sheet_count() == 91 and wall.records_on_wall() == records
+           and wall._on_file.text == "%d records on file" % records and invented.is_empty() and str(board[0]).begins_with("open app")
+           and bars != null and bars.multimesh.instance_count > 2 and "replies to you" in " ".join(_texts_under(wall._chart))
+           and lesson_on_desk and wall.threads_drawn() >= 3,
+           "sheets %d records %d of %d says %s invented %s board %s bars %s desk %s threads %d" % [wall.sheet_count(), wall.records_on_wall(),
+           records, wall._on_file.text, invented, board.slice(0, 1), bars.multimesh.instance_count if bars else -1, lesson_on_desk, wall.threads_drawn()])
+    on_wall.queue_free()
+    wall.queue_free()
+    # the Memory Archive: every book shelved, the stories on their own shelves, by time
+    var archive = Archive.new()
+    root.add_child(archive)
+    archive.build({}, Settings.new())
+    archive.show_eli(eli)
+    var shelved = Things.new()
+    root.add_child(shelved)
+    shelved.pinner = archive
+    shelved.show_room("memory_archive")
+    shelved.apply_world_state(state)
+    await process_frame
+    var books: Array = by_room.call("memory_archive", "book")
+    var all_shelved: bool = not books.is_empty() and books.all(func(b): return shelved._things[b["id"]].pinned)
+    var stories_apart := true
+    var story_case: Bookcase = archive._story_cases[0]
+    for b in books.filter(func(b): return b["book"]["of"] == "story"):
+        var at: Vector3 = story_case.to_room.affine_inverse() * (shelved._things[b["id"]] as Node3D).position
+        stories_apart = stories_apart and absf(at.y - float(story_case.tops[0])) < 0.001
+    var memories: bool = by_room.call("memory_archive", "memory").all(func(m): return shelved._things[m["id"]].pinned and shelved._things[m["id"]] is EliBook)
+    var bare: Label3D = (archive._record_cases[0] as Bookcase)._empty
+    _check("the_archive_shelves_elis_example_books", all_shelved and stories_apart and memories and (bare == null or not bare.visible),
+           "shelved %s stories %s memories %s bare %s" % [all_shelved, stories_apart, memories, bare.text if bare else ""])
+    shelved.queue_free()
+    archive.queue_free()
+    # ELI's own room: its books on its bookcase, shelf by shelf in its order
+    var own = OwnRoomClass.new()
+    root.add_child(own)
+    own.build({}, Settings.new())
+    own.show_eli(eli)
+    var kept = Things.new()
+    root.add_child(kept)
+    kept.pinner = own
+    kept.show_room("own_room")
+    kept.apply_world_state(state)
+    await process_frame
+    var mine: Array = by_room.call("own_room", "book")
+    var ranked: Array = own.arrange("book", mine).map(func(b): return own.SHELF_ORDER.find(b["book"]["of"]))
+    var in_order := true
+    for i in range(1, ranked.size()):
+        in_order = in_order and int(ranked[i]) >= int(ranked[i - 1])
+    _check("elis_room_shelves_its_example_books", not mine.is_empty() and mine.all(func(b): return kept._things[b["id"]].pinned) and in_order,
+           "books %d order %s" % [mine.size(), ranked])
+    kept.queue_free()
+    own.queue_free()
 
 func _shaded_with(mesh: MeshInstance3D, shader_file: String) -> bool:
     var look := mesh.material_override as ShaderMaterial
@@ -1090,12 +1239,17 @@ func _tokens(text: String) -> Array:
             out.append(word)
     return out
 
-# The words in `texts` that are in none of `allowed`.
+# The words in `texts` that are in none of `allowed`. A word cut short with "…" where a line ran out
+# counts when an allowed word begins with it.
 func _invented(texts: Array, allowed: Dictionary) -> Array:
     var out := []
     for text in texts:
-        for token in _tokens(str(text)):
-            if not allowed.has(token):
+        for raw in str(text).replace("\n", " ").split(" ", false):
+            for token in _tokens(raw):
+                if allowed.has(token):
+                    continue
+                if raw.ends_with("…") and allowed.keys().any(func(w): return str(w).begins_with(token)):
+                    continue
                 out.append(token)
     return out
 

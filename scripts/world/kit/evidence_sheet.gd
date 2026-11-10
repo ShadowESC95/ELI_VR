@@ -111,7 +111,7 @@ static func of_thought(thought: Dictionary) -> Dictionary:
 
 ## How often one kind of ELI's figures proved right (ELI v3's evidence.accuracy row).
 static func of_accuracy(row: Dictionary) -> Dictionary:
-    var right := clampf(float(row.get("right", 0.0)), 0.0, 1.0)
+    var right := clampf(float(row["right"]) if row.get("right") != null else 0.0, 0.0, 1.0)
     var weeks: Array = row.get("weeks", []) if typeof(row.get("weeks")) == TYPE_ARRAY else []
     var last = weeks[-1].get("from") if not weeks.is_empty() and typeof(weeks[-1]) == TYPE_DICTIONARY else null
     return {"kind": "ACCURACY", "colour": EliReadout.REFLECT, "heading": str(row.get("words", row.get("kind", ""))),

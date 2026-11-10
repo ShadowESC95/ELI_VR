@@ -90,6 +90,9 @@ class Alive(unittest.TestCase):
         self.check("the_session_is_told_once_whichever_comes_first")
         self.check("closing_the_window_or_ending_the_app_tells_eli_the_session_ended")
 
+    def test_the_hello_says_how_big_a_message_the_link_takes(self) -> None:
+        self.check("the_hello_says_how_big_a_message_the_link_takes")
+
     def test_the_range_begins_with_guns_on_the_table_and_shots_score_by_their_ring(self) -> None:
         self.check("the_range_begins_with_the_guns_on_the_table_and_a_target_up")
         self.check("a_shot_scores_by_the_ring_it_hits")
@@ -273,6 +276,14 @@ class Screens(Alive):
         self.check("the_charts_show_how_often_elis_figures_proved_right_week_by_week")
         self.check("the_case_files_of_what_eli_learned_lie_on_the_desk")
         self.check("a_bare_board_says_why_from_the_data")
+
+    def test_a_book_sent_without_its_pages_is_read_whole_by_its_id(self) -> None:
+        self.check("a_book_sent_without_its_pages_is_read_whole_by_its_id_when_opened")
+
+    def test_the_rooms_show_elis_example_world_message(self) -> None:
+        self.check("the_evidence_wall_shows_elis_example_world_message")
+        self.check("the_archive_shelves_elis_example_books")
+        self.check("elis_room_shelves_its_example_books")
 
     def test_a_record_let_go_goes_back_and_one_without_a_place_lets_go_of_it(self) -> None:
         self.check("a_record_let_go_goes_back_to_its_place_and_is_not_moved_in_elis_world")

@@ -1,0 +1,800 @@
+{
+ "objects": [
+  {
+   "id": "bench",
+   "name": "Workbench",
+   "kind": "workbench",
+   "room": "workshop",
+   "x": 10.0,
+   "y": 5.0,
+   "importance": 0.9,
+   "meaning": "where things get fixed",
+   "form": {
+    "shape": "table",
+    "colour": "#f08a3c",
+    "size": 1.32,
+    "glow": 0.25,
+    "pos": [
+     -5.18,
+     0.0,
+     1.24
+    ]
+   },
+   "made_by": ""
+  },
+  {
+   "id": "memory_1",
+   "name": "I moved to Harbour Town",
+   "kind": "memory",
+   "room": "memory_archive",
+   "x": 0.0,
+   "y": 0.0,
+   "importance": 0.5,
+   "meaning": "I moved to Harbour Town last spring.",
+   "made_by": "memory",
+   "when": 1792551170.0052276,
+   "form": {
+    "shape": "orb",
+    "colour": "#9fd8ff",
+    "size": 0.35,
+    "glow": 0.8,
+    "pos": [
+     -1.73,
+     2.0,
+     -4.95
+    ]
+   }
+  },
+  {
+   "id": "goal_c768c52e97",
+   "name": "Tidy the index",
+   "kind": "goal",
+   "room": "upgrade_bay",
+   "x": 0.0,
+   "y": 0.0,
+   "importance": 0.7,
+   "meaning": "A goal ELI holds now.",
+   "made_by": "goal",
+   "form": {
+    "shape": "beacon",
+    "colour": "#4fbf73",
+    "size": 0.8,
+    "glow": 0.7,
+    "pos": [
+     -1.28,
+     0.0,
+     -4.49
+    ]
+   }
+  },
+  {
+   "id": "claim_1",
+   "name": "lives in: Harbour Town",
+   "kind": "claim",
+   "room": "evidence_wall",
+   "x": 0.0,
+   "y": 0.0,
+   "importance": 0.597,
+   "meaning": "lives in: Harbour Town (since 2026-10-21; learned 2026-10-21; contested; sure 0.60: you said so once, contradicted)",
+   "made_by": "claims",
+   "claim": {
+    "relation": "lives_in",
+    "value": "Harbour Town",
+    "chance": 0.597,
+    "sure": 0.597,
+    "since": 1792551170.0052276,
+    "until": null,
+    "learned": 1792551170.0052276,
+    "origin": "user_said",
+    "basis": "sure 0.60: you said so once, contradicted",
+    "confirmations": 1,
+    "contested": true,
+    "status": "current",
+    "sources": [
+     {
+      "id": "memory_1",
+      "kind": "memory",
+      "text": "I moved to Harbour Town last spring.",
+      "when": 1792551170.0052276,
+      "origin": "you said so"
+     }
+    ]
+   },
+   "form": {
+    "shape": "board",
+    "colour": "#f5b942",
+    "size": 0.6,
+    "glow": 0.66,
+    "pos": [
+     -3.85,
+     1.8,
+     0.79
+    ]
+   }
+  },
+  {
+   "id": "conflict_a14fe9ff68",
+   "name": "Lives in?",
+   "kind": "conflict",
+   "room": "anomaly_room",
+   "x": 0.0,
+   "y": 0.0,
+   "importance": 0.9,
+   "relation": "lives_in",
+   "meaning": "I have your lives in as Harbour Town, but something else says Upper Ridge. Which is right?",
+   "made_by": "claims",
+   "form": {
+    "shape": "crystal",
+    "colour": "#ff6a4d",
+    "size": 0.7,
+    "glow": 0.9,
+    "pos": [
+     -2.83,
+     0.73,
+     2.48
+    ]
+   }
+  },
+  {
+   "id": "thought_1",
+   "name": "act: made a lamp for the reading corner",
+   "kind": "thought",
+   "room": "core_room",
+   "x": 0.0,
+   "y": 0.0,
+   "importance": 0.6,
+   "meaning": "Made a lamp for the reading corner. Taken. Chance 60%.",
+   "lines": [
+    "made a lamp for the reading corner",
+    "taken",
+    "chance 60%",
+    "Mon 09 Nov 02:52"
+   ],
+   "made_by": "thoughts",
+   "when": 1794192770.0052276,
+   "thought": {
+    "kind": "act",
+    "chance": 0.6,
+    "decision": "taken",
+    "status": "open",
+    "outcome": ""
+   },
+   "form": {
+    "shape": "board",
+    "colour": "#8fe8a8",
+    "size": 0.6,
+    "glow": 0.66,
+    "pos": [
+     0.23,
+     1.31,
+     -3.38
+    ]
+   }
+  },
+  {
+   "id": "book_goals_goal-057b9cda9cc0",
+   "kind": "book",
+   "room": "own_room",
+   "name": "Tidy the index",
+   "meaning": "active",
+   "made_by": "eli",
+   "when": 1794279170.1298983,
+   "x": 0.0,
+   "y": 0.0,
+   "importance": 0.5,
+   "form": {
+    "shape": "board",
+    "colour": "#4fbf73",
+    "size": 1.0,
+    "glow": 0.0,
+    "pos": [
+     4.7,
+     1.9,
+     2.74
+    ]
+   },
+   "book": {
+    "of": "goals",
+    "title": "Tidy the index",
+    "spine": "Tidy the index",
+    "about": "active",
+    "from": 1794279170.1298983,
+    "to": 1794279170.1299064,
+    "status": "active",
+    "progress": 0.0,
+    "length": 35,
+    "sections": [
+     {
+      "heading": "What it is for",
+      "when": 1794279170.1298983,
+      "text": "Fewer duplicate rows."
+     }
+    ]
+   }
+  },
+  {
+   "id": "book_conversation_640d87e741e6",
+   "kind": "book",
+   "room": "memory_archive",
+   "name": "We found the kettle.",
+   "meaning": "2 turns",
+   "made_by": "memory",
+   "when": 1794019970.0052276,
+   "x": 0.0,
+   "y": 0.0,
+   "importance": 0.5,
+   "form": {
+    "shape": "board",
+    "colour": "#6b4f9a",
+    "size": 1.0,
+    "glow": 0.0,
+    "pos": [
+     -3.12,
+     0.94,
+     1.66
+    ]
+   },
+   "book": {
+    "of": "conversation",
+    "title": "We found the kettle.",
+    "spine": "We found the kettle.",
+    "about": "2 turns",
+    "from": 1794019970.0052276,
+    "to": 1794020030.0052276,
+    "length": 62,
+    "sections": [
+     {
+      "heading": "You, 02:52",
+      "when": 1794019970.0052276,
+      "text": "Where did I leave the blue kettle?"
+     },
+     {
+      "heading": "ELI, 02:53",
+      "when": 1794020030.0052276,
+      "text": "On the windowsill, you said."
+     }
+    ]
+   }
+  },
+  {
+   "id": "book_lesson_1",
+   "kind": "book",
+   "room": "evidence_wall",
+   "name": "open app: open the site instead",
+   "meaning": "active, 0 checks: helped 0, harmed 0",
+   "made_by": "lessons",
+   "when": 1794019970.0052276,
+   "x": 0.0,
+   "y": 0.0,
+   "importance": 0.5,
+   "form": {
+    "shape": "board",
+    "colour": "#c8a45a",
+    "size": 1.0,
+    "glow": 0.0,
+    "pos": [
+     3.86,
+     0.98,
+     -1.68
+    ]
+   },
+   "book": {
+    "of": "lesson",
+    "title": "open app: open the site instead",
+    "spine": "open app",
+    "about": "active, 0 checks: helped 0, harmed 0",
+    "from": 1794019970.0052276,
+    "to": 1794019970.0052276,
+    "applies_to": "OPEN_APP",
+    "record": {
+     "status": "active",
+     "checks": 0,
+     "helped": 0,
+     "harmed": 0,
+     "retired_reason": ""
+    },
+    "length": 135,
+    "sections": [
+     {
+      "heading": "When",
+      "when": 1794019970.0052276,
+      "text": "the app is not installed"
+     },
+     {
+      "heading": "What was seen",
+      "when": null,
+      "text": "Notes failed"
+     },
+     {
+      "heading": "What to do",
+      "when": null,
+      "text": "open the site instead"
+     },
+     {
+      "heading": "How it has gone",
+      "when": null,
+      "text": "active, 0 checks: helped 0, harmed 0"
+     }
+    ]
+   }
+  },
+  {
+   "id": "book_diary_2026-11-10",
+   "kind": "book",
+   "room": "own_room",
+   "name": "Tue 10 Nov 2026",
+   "meaning": "A note from the rooms",
+   "made_by": "eli",
+   "when": 1794279170.0,
+   "x": 0.0,
+   "y": 0.0,
+   "importance": 0.5,
+   "form": {
+    "shape": "board",
+    "colour": "#f5e6c8",
+    "size": 1.0,
+    "glow": 0.0,
+    "pos": [
+     1.21,
+     1.2,
+     -4.25
+    ]
+   },
+   "book": {
+    "of": "diary",
+    "title": "Tue 10 Nov 2026",
+    "spine": "Tue 10 Nov 2026",
+    "about": "A note from the rooms",
+    "from": 1794279170.0,
+    "to": 1794279170.0,
+    "length": 54,
+    "sections": [
+     {
+      "heading": "A note from the rooms",
+      "when": 1794279170.0,
+      "text": "The reading corner is warmer now."
+     }
+    ]
+   }
+  },
+  {
+   "id": "book_session_640d87e741e6",
+   "kind": "book",
+   "room": "memory_archive",
+   "name": "We found the kettle.",
+   "meaning": "2 turns",
+   "made_by": "memory",
+   "when": 1794019970.0052276,
+   "x": 0.0,
+   "y": 0.0,
+   "importance": 0.5,
+   "form": {
+    "shape": "board",
+    "colour": "#4f6b9a",
+    "size": 1.0,
+    "glow": 0.0,
+    "pos": [
+     2.64,
+     1.58,
+     -1.81
+    ]
+   },
+   "book": {
+    "of": "session",
+    "title": "We found the kettle.",
+    "spine": "We found the kettle.",
+    "about": "2 turns",
+    "from": 1794019970.0052276,
+    "to": 1794020030.0052276,
+    "length": 40,
+    "sections": [
+     {
+      "heading": "",
+      "when": 1794020030.0052276,
+      "text": "We found the kettle. It was on the sill."
+     }
+    ]
+   }
+  },
+  {
+   "id": "book_thoughts_1",
+   "kind": "book",
+   "room": "own_room",
+   "name": "made a lamp for the reading corner",
+   "meaning": "taken",
+   "made_by": "eli",
+   "when": 1794192770.0052276,
+   "x": 0.0,
+   "y": 0.0,
+   "importance": 0.6,
+   "form": {
+    "shape": "board",
+    "colour": "#8fe8a8",
+    "size": 1.0,
+    "glow": 0.0,
+    "pos": [
+     4.03,
+     2.02,
+     -1.31
+    ]
+   },
+   "book": {
+    "of": "thoughts",
+    "title": "made a lamp for the reading corner",
+    "spine": "made a lamp for the\u2026",
+    "about": "taken",
+    "from": 1794192770.0052276,
+    "to": 1794192770.0052276,
+    "length": 68,
+    "sections": [
+     {
+      "heading": "",
+      "when": 1794192770.0052276,
+      "text": "made a lamp for the reading corner\ntaken\nchance 60%\nMon 09 Nov 02:52"
+     }
+    ]
+   }
+  },
+  {
+   "id": "book_story_abc123def456",
+   "kind": "book",
+   "room": "memory_archive",
+   "name": "The Blue Kettle",
+   "meaning": "The kettle waited on the sill.",
+   "made_by": "memory",
+   "when": 1794019970.0052276,
+   "x": 0.0,
+   "y": 0.0,
+   "importance": 0.5,
+   "form": {
+    "shape": "board",
+    "colour": "#b08a3c",
+    "size": 1.0,
+    "glow": 0.0,
+    "pos": [
+     3.01,
+     1.35,
+     -1.6
+    ]
+   },
+   "book": {
+    "of": "story",
+    "title": "The Blue Kettle",
+    "spine": "The Blue Kettle",
+    "about": "The kettle waited on the sill.",
+    "from": 1794019970.0052276,
+    "to": 1794020030.0052276,
+    "by": "ELI, with small-model",
+    "fiction": true,
+    "drawn_from": [
+     "the conversation of three days ago"
+    ],
+    "length": 30,
+    "sections": [
+     {
+      "heading": "",
+      "when": 1794192770.0052276,
+      "text": "The kettle waited on the sill."
+     }
+    ]
+   }
+  },
+  {
+   "id": "book_likes_1",
+   "kind": "book",
+   "room": "own_room",
+   "name": "I am fond of the sound of rain on a roof.",
+   "meaning": "argued \u00d71, sure 80%",
+   "made_by": "eli",
+   "when": 1793847170.0052276,
+   "x": 0.0,
+   "y": 0.0,
+   "importance": 0.8,
+   "form": {
+    "shape": "board",
+    "colour": "#4f9a6b",
+    "size": 1.0,
+    "glow": 0.0,
+    "pos": [
+     -5.16,
+     0.99,
+     0.15
+    ]
+   },
+   "book": {
+    "of": "likes",
+    "title": "I am fond of the sound of rain on a roof.",
+    "spine": "rain sounds",
+    "about": "argued \u00d71, sure 80%",
+    "from": 1793847170.0052276,
+    "to": 1793847170.0052276,
+    "length": 67,
+    "sections": [
+     {
+      "heading": "held since Thu 05 Nov 2026",
+      "when": 1793847170.0052276,
+      "text": "I am fond of the sound of rain on a roof."
+     }
+    ]
+   }
+  },
+  {
+   "id": "book_log_640d87e741e6",
+   "kind": "book",
+   "room": "memory_archive",
+   "name": "Notes is not installed",
+   "meaning": "1 of 2 actions failed",
+   "made_by": "memory",
+   "when": 1794019980.0052276,
+   "x": 0.0,
+   "y": 0.0,
+   "importance": 0.5,
+   "form": {
+    "shape": "board",
+    "colour": "#9a4f4f",
+    "size": 1.0,
+    "glow": 0.0,
+    "pos": [
+     3.88,
+     1.42,
+     1.19
+    ]
+   },
+   "book": {
+    "of": "log",
+    "title": "Notes is not installed",
+    "spine": "Notes is not installed",
+    "about": "1 of 2 actions failed",
+    "from": 1794019980.0052276,
+    "to": 1794019990.0052276,
+    "length": 133,
+    "sections": [
+     {
+      "heading": "open app, 02:53",
+      "when": 1794019980.0052276,
+      "text": "Notes is not installed\nfailed: the cause is not known"
+     },
+     {
+      "heading": "open url, 02:53",
+      "when": 1794019990.0052276,
+      "text": "Opened notes.example.org\ntried instead of open app"
+     }
+    ]
+   }
+  },
+  {
+   "id": "book_period_1793577600",
+   "kind": "book",
+   "room": "memory_archive",
+   "name": "The week of 02 Nov 2026",
+   "meaning": "1 conversation, 2 actions",
+   "made_by": "memory",
+   "when": 1794019970.0052276,
+   "x": 0.0,
+   "y": 0.0,
+   "importance": 0.5,
+   "form": {
+    "shape": "board",
+    "colour": "#4f8a6b",
+    "size": 1.0,
+    "glow": 0.0,
+    "pos": [
+     0.95,
+     1.93,
+     -4.67
+    ]
+   },
+   "book": {
+    "of": "period",
+    "title": "The week of 02 Nov 2026",
+    "spine": "The week of 02 Nov 2026",
+    "about": "1 conversation, 2 actions",
+    "from": 1794019970.0052276,
+    "to": 1794019970.0052276,
+    "length": 91,
+    "sections": [
+     {
+      "heading": "Sat 07 Nov 2026",
+      "when": 1794019970.0052276,
+      "text": "02:52\u201302:53 2 turns: We found the kettle.\nopen app \u00d71 (1 failed)\nopen url \u00d71"
+     }
+    ]
+   }
+  },
+  {
+   "id": "book_period_1792972800",
+   "kind": "book",
+   "room": "memory_archive",
+   "name": "The week of 26 Oct 2026",
+   "meaning": "0 conversations, 1 action",
+   "made_by": "memory",
+   "when": 1793415170.0052276,
+   "x": 0.0,
+   "y": 0.0,
+   "importance": 0.5,
+   "form": {
+    "shape": "board",
+    "colour": "#4f8a6b",
+    "size": 1.0,
+    "glow": 0.0,
+    "pos": [
+     -2.1,
+     1.17,
+     -3.46
+    ]
+   },
+   "book": {
+    "of": "period",
+    "title": "The week of 26 Oct 2026",
+    "spine": "The week of 26 Oct 2026",
+    "about": "0 conversations, 1 action",
+    "from": 1793415170.0052276,
+    "to": 1793415170.0052276,
+    "length": 26,
+    "sections": [
+     {
+      "heading": "Sat 31 Oct 2026",
+      "when": 1793415170.0052276,
+      "text": "open app \u00d71"
+     }
+    ]
+   }
+  }
+ ],
+ "thoughts": [
+  {
+   "id": 1,
+   "kind": "act",
+   "room": "core_room",
+   "what": "made a lamp for the reading corner",
+   "why": [],
+   "chance": 0.6,
+   "decision": "taken",
+   "reason": "",
+   "status": "open",
+   "outcome": "",
+   "when": 1794192770.0052276,
+   "words": "Made a lamp for the reading corner. Taken. Chance 60%.",
+   "subject": "a lamp",
+   "ref": "act:1"
+  }
+ ],
+ "evidence": {
+  "actions": {
+   "days": 30.0,
+   "runs": 2,
+   "rows": [
+    {
+     "action": "OPEN_APP",
+     "name": "open app",
+     "n": 2,
+     "ok": 1,
+     "p": 0.44,
+     "causes": [
+      {
+       "cause": "stability",
+       "words": "the cause is not known",
+       "n": 1
+      }
+     ],
+     "worst_target": "app:notes",
+     "last": 1794019980.0052276,
+     "weeks": [
+      {
+       "from": 1791154800.0,
+       "n": 0,
+       "ok": 0
+      },
+      {
+       "from": 1791759600.0,
+       "n": 0,
+       "ok": 0
+      },
+      {
+       "from": 1792364400.0,
+       "n": 0,
+       "ok": 0
+      },
+      {
+       "from": 1792972800.0,
+       "n": 1,
+       "ok": 1
+      },
+      {
+       "from": 1793577600.0,
+       "n": 1,
+       "ok": 0
+      },
+      {
+       "from": 1794182400.0,
+       "n": 0,
+       "ok": 0
+      }
+     ],
+     "instead": []
+    }
+   ]
+  },
+  "accuracy": [
+   {
+    "kind": "answer",
+    "words": "replies to you",
+    "n": 4,
+    "right": 0.75,
+    "ece": 0.05,
+    "weeks": [
+     {
+      "from": 1786316400.0,
+      "n": 0,
+      "right": null
+     },
+     {
+      "from": 1786921200.0,
+      "n": 0,
+      "right": null
+     },
+     {
+      "from": 1787526000.0,
+      "n": 0,
+      "right": null
+     },
+     {
+      "from": 1788130800.0,
+      "n": 0,
+      "right": null
+     },
+     {
+      "from": 1788735600.0,
+      "n": 0,
+      "right": null
+     },
+     {
+      "from": 1789340400.0,
+      "n": 0,
+      "right": null
+     },
+     {
+      "from": 1789945200.0,
+      "n": 0,
+      "right": null
+     },
+     {
+      "from": 1790550000.0,
+      "n": 0,
+      "right": null
+     },
+     {
+      "from": 1791154800.0,
+      "n": 0,
+      "right": null
+     },
+     {
+      "from": 1791759600.0,
+      "n": 1,
+      "right": 0.0
+     },
+     {
+      "from": 1792364400.0,
+      "n": 1,
+      "right": 1.0
+     },
+     {
+      "from": 1792972800.0,
+      "n": 1,
+      "right": 1.0
+     },
+     {
+      "from": 1793577600.0,
+      "n": 1,
+      "right": 1.0
+     },
+     {
+      "from": 1794182400.0,
+      "n": 0,
+      "right": null
+     }
+    ]
+   }
+  ]
+ }
+}

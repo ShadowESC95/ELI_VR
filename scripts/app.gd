@@ -642,6 +642,7 @@ func _setup_eli() -> void:
     eli_link.configure(config, network_policy)
     EliPictures.link = eli_link
     EliModels.link = eli_link
+    EliBook.link = eli_link
     if not eli_link.enabled:
         return
 

@@ -499,6 +499,7 @@ func _link_checks() -> void:
         _check("closing_the_window_or_ending_the_app_tells_eli_the_session_ended", false, "no loopback port")
         return
     var told := {}
+    var hello := {}
     for how in ["window", "tree"]:
         var link = EliLinkClass.new()
         link.base_url = "%s:%d" % [EliLinkClass.LOOPBACK, server.get_local_port()]
@@ -509,6 +510,9 @@ func _link_checks() -> void:
             told[how] = "never connected"
             link.queue_free()
             continue
+        if hello.is_empty():
+            var first = JSON.parse_string(peer.get_packet().get_string_from_utf8())     # what the link says first
+            hello = first if typeof(first) == TYPE_DICTIONARY else {"not": str(first)}
         peer.send_text(JSON.stringify(state))
         peer.send_text(JSON.stringify(welcome))
         var until := Time.get_ticks_msec() + 3000
@@ -525,6 +529,10 @@ func _link_checks() -> void:
     server.stop()
     _check("closing_the_window_or_ending_the_app_tells_eli_the_session_ended",
            told.values().all(func(t): return t == ["vr_session_ended"]), str(told))
+    # the hello says how big a message the link takes, so ELI v3 sends none bigger
+    _check("the_hello_says_how_big_a_message_the_link_takes", str(hello.get("type", "")) == "hello"
+           and int(hello.get("max_message", 0)) == EliLinkClass.INBOUND_BYTES and "books" in hello.get("capabilities", [])
+           and "evidence" in hello.get("capabilities", []), str(hello))
 
 func _accept(server: TCPServer) -> WebSocketPeer:
     var peer: WebSocketPeer = null

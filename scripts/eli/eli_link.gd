@@ -24,6 +24,7 @@ const DEFAULT_ENDPOINT := "http://127.0.0.1:8081"
 const LOOPBACK := "http://127.0.0.1"
 const OLD_PLACEHOLDER := "ws://127.0.0.1:47832"
 const RETRY_SECONDS := 5.0
+const INBOUND_BYTES := 1 << 20          # the most one message from ELI may take
 const SURFACE := "eli_vr"
 const PROTOCOL_VERSIONS := [1, 2]
 const WANTS_NOTE := "models: the real things ELI brought in of its own, fetched and drawn"
@@ -97,9 +98,11 @@ func _process(delta: float) -> void:
             if not _was_open:
                 _was_open = true
                 _welcome_wait = WELCOME_SECONDS
+                # max_message: the most one message may take here, so ELI sends no more than this takes
                 _socket.send_text(JSON.stringify({
                     "type": "hello", "surface": SURFACE, "session": _session,
                     "protocol_versions": PROTOCOL_VERSIONS, "capabilities": WANTS,
+                    "max_message": _socket.inbound_buffer_size,
                 }))
             while _socket.get_available_packet_count() > 0:
                 var text := _socket.get_packet().get_string_from_utf8()
@@ -174,8 +177,9 @@ func report_body() -> EliResult:
 func _open() -> void:
     _retry = RETRY_SECONDS
     _socket = WebSocketPeer.new()
-    # ELI's world can carry many objects; the default 64 KB is not enough.
-    _socket.inbound_buffer_size = 1 << 20
+    # ELI's world can carry many objects and books; the default 64 KB is not enough. The hello tells
+    # ELI this size, and ELI sends no message larger (its books fill what the rest leaves).
+    _socket.inbound_buffer_size = INBOUND_BYTES
     if not _token.is_empty():
         _socket.handshake_headers = PackedStringArray(["Authorization: Bearer " + _token])
     var url := base_url.replace("http://", "ws://").replace("https://", "wss://") + "/v1/world/ws"

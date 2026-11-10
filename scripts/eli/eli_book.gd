@@ -13,8 +13,11 @@ extends EliThing
 # to its place. The page in view is what ELI is told the user is reading.
 #
 # Every word is ELI's record as ELI v3 sends it (a feed object of kind "book": its "book" carries
-# of, title, spine, about, from, to, shelf, by, drawn_from and sections [{heading, when, text}]);
-# the book only lays it out and cuts it into pages that fit. Its size comes from the reader: the
+# of, title, spine, about, from, to, length, shelf, by, drawn_from and sections [{heading, when, text}];
+# the shapes are ELI v3's tests/fixtures/world_feed_v2_contract.json, kept in tests/fixtures here);
+# the book only lays it out and cuts it into pages that fit. A book too long for the world message
+# comes without its sections, saying its length: it is read whole from ELI v3 (GET
+# /v1/world/book/<id>, capability "books") when it is first opened. Its size comes from the reader: the
 # page holds a narrow book's line at the size writing held in the hand is read.
 
 ## Records drawn as books.
@@ -41,6 +44,10 @@ const FLICK_BACK := 0.3
 ## Lines a held page reports to ELI, each no longer than a held sheet's line (eli/world/embodiment.py).
 const REPORT_LINES := 8
 const REPORT_WIDTH := 160
+
+const BOOK_PATH := "/v1/world/book/"
+
+static var link: Node           # the EliLink, set when the app makes it: a book read whole comes through it
 
 const LEATHER := Color(0.16, 0.1, 0.07)
 const PAPER := Color(0.95, 0.92, 0.84)
@@ -105,6 +112,8 @@ static func measure(data: Dictionary, eye: float = Reading.eye_height()) -> Vect
     var chars := 0
     for section in sections_of(data):
         chars += str(section.get("text", "")).length() + str(section.get("heading", "")).length()
+    if chars == 0:
+        chars = int(book_of(data).get("length", 0))        # sent without its sections: as long as it says
     var per_page := float(MEASURE) * _rows_for(page, eye)
     var leaves := ceilf(float(chars) / maxf(per_page, 1.0) * 0.5) + 1.0
     var spine := Reading.em(Reading.at_arm(eye)) / SPINE_FILL
@@ -123,6 +132,8 @@ func refresh(data: Dictionary, first: bool = false) -> void:
     var key := JSON.stringify([data.get("name", ""), data.get("meaning", ""), data.get("lines", []), book, data.get("when")])
     var changed := key != _content_key
     _content_key = key
+    if changed:
+        _fetched = []               # a book read whole before is read again once it has changed
     _when = data.get("when")
     super.refresh(data, first)
     if changed and not first and _text_key != _content_key:
@@ -196,11 +207,45 @@ func _shape() -> void:
         _show_spread()
 
 var _paged := false
+var _fetched: Array = []        # the sections of a book read whole from ELI v3
+var _fetching := false
+var _unread := false            # ELI v3 did not give it: asked again at the next opening, not before
 
 func _ensure_pages() -> void:
     if not _paged:
         _paged = true
         _paginate()
+        if _pages.is_empty() and unsent():
+            _read_whole()
+
+## Whether the book came without its sections and has to be read whole from ELI v3.
+func unsent() -> bool:
+    var given = book.get("sections")
+    return (typeof(given) != TYPE_ARRAY or given.is_empty()) and _fetched.is_empty() and int(book.get("length", 0)) > 0
+
+# Read the book whole from ELI v3, through the link the app made (its token and all), and lay it out
+# when it comes. Until then the pages are blank; a failure leaves them blank and is tried again at
+# the next opening.
+func _read_whole() -> void:
+    if _fetching or link == null or not is_instance_valid(link) or not link.can("books"):
+        return
+    _fetching = true
+    var asked := _content_key
+    var got = await link.fetch(BOOK_PATH + thing_id.uri_encode(), "books")
+    if not is_instance_valid(self):
+        return
+    _fetching = false
+    var answer = JSON.parse_string((got.payload as PackedByteArray).get_string_from_utf8()) if got.ok and got.payload is PackedByteArray else null
+    if typeof(answer) != TYPE_DICTIONARY or typeof(answer.get("sections")) != TYPE_ARRAY or asked != _content_key:
+        _unread = true              # not read: the next opening asks again
+        if got.ok:
+            push_warning("ELI VR: the book %s came back without its sections" % thing_id)
+        return
+    _fetched = (answer["sections"] as Array).filter(func(x): return typeof(x) == TYPE_DICTIONARY)
+    _paginate()
+    spread = clampi(spread, 0, maxi(0, spreads() - 1))
+    if opened:
+        _show_spread()
 
 func _ensure_open() -> void:
     if _open == null:
@@ -361,8 +406,8 @@ func _paginate() -> void:
     var e := Reading.em(held)
     var font := Reading.printed()
     var width := (_page.x - 2.0 * MARGIN * e) / Reading.pixel(held)
-    _pages = Reading.paginate(sections_of({"book": book, "meaning": meaning, "lines": lines}), font, Reading.DRAWN,
-                              width, _rows_for(_page, Reading.eye_height()))
+    var written := sections_of({"book": book, "meaning": meaning, "lines": lines}) if _fetched.is_empty() else _fetched
+    _pages = Reading.paginate(written, font, Reading.DRAWN, width, _rows_for(_page, Reading.eye_height()))
 
 ## How many pages the book has, and how many openings (the title page faces the first page).
 func page_count() -> int:
@@ -427,6 +472,9 @@ func turn_page(by: int) -> bool:
 
 func open_book() -> void:
     opened = true
+    if _unread:
+        _unread = false
+        _paged = false              # a book ELI v3 did not give last time is asked for again
     if _closed != null:
         _ensure_open()
         _closed.visible = false

@@ -447,13 +447,20 @@ func _evidence(state: Dictionary, claims: Array) -> Array:
         if str(thought.get("kind", "")) == "recall":
             recalled.append(thought)
         else:
-            out.append({"view": EvidenceSheet.of_thought(thought), "keys": []})
+            out.append({"view": EvidenceSheet.of_thought(thought), "keys": _about_keys(thought)})
     for thought in recalled:
-        out.append({"view": EvidenceSheet.of_thought(thought), "keys": []})
+        out.append({"view": EvidenceSheet.of_thought(thought), "keys": _about_keys(thought)})
     for row in (evidence.get("accuracy", []) if typeof(evidence.get("accuracy")) == TYPE_ARRAY else []):
-        if typeof(row) == TYPE_DICTIONARY and int(row.get("n", 0)) > 0:
+        if typeof(row) == TYPE_DICTIONARY and int(row.get("n", 0)) > 0 and row.get("right") != null:
             out.append({"view": EvidenceSheet.of_accuracy(row), "keys": []})
     return out
+
+# What a thought is about (ELI v3's "subject"), for the thread: the same thing, or an action by its name.
+static func _about_keys(thought: Dictionary) -> Array:
+    var subject := str(thought.get("subject", "")).strip_edges()
+    if subject.is_empty():
+        return []
+    return ["subject:" + subject.to_lower(), "action:" + subject.to_upper().replace(" ", "_"), "topic:" + subject.replace("_", " ").to_lower()]
 
 # The wall written with what goes up on it: each sheet written again only when its record changed,
 # the thread run between sheets about the same thing, and how many records are on file.
@@ -644,7 +651,7 @@ func _draw_charts(accuracy: Array) -> void:
     var font := Reading.typed()
     var line := Reading.line_height(font, distance)
     var ink := Reading.ink(Color(0.93, 0.93, 0.9))
-    var rows := accuracy.filter(func(r): return typeof(r) == TYPE_DICTIONARY and int(r.get("n", 0)) > 0)
+    var rows := accuracy.filter(func(r): return typeof(r) == TYPE_DICTIONARY and int(r.get("n", 0)) > 0 and r.get("right") != null)
     var pitch := line * 2.6
     rows = rows.slice(0, maxi(1, int(floor((size.y - 2.0 * e) / pitch))))
     var bars := MultiMesh.new()
@@ -665,7 +672,7 @@ func _draw_charts(accuracy: Array) -> void:
         var named := Reading.label("\n".join(said), distance, ink, 0.0, font)
         named.position = Vector3(-size.x * 0.5 + e, y, 0.003)
         node.add_child(named)
-        var right := clampf(float(row.get("right", 0.0)), 0.0, 1.0)
+        var right := clampf(float(row["right"]) if row.get("right") != null else 0.0, 0.0, 1.0)
         var bar_x := -size.x * 0.5 + e + label_w + e * 0.5
         var bar_h := line * 0.8
         placed.append([Transform3D(Basis.IDENTITY.scaled(Vector3(bar_w, bar_h, 0.004)), Vector3(bar_x + bar_w * 0.5, y - bar_h * 0.6, 0.002)), ink.lerp(Color(0.93, 0.93, 0.9), 0.8)])
@@ -683,7 +690,7 @@ func _draw_charts(accuracy: Array) -> void:
             var col := week_w / float(weeks.size())
             for w in weeks.size():
                 var week = weeks[w]
-                if typeof(week) != TYPE_DICTIONARY or int(week.get("n", 0)) <= 0:
+                if typeof(week) != TYPE_DICTIONARY or int(week.get("n", 0)) <= 0 or week.get("right") == null:
                     continue
                 var share := clampf(float(week.get("right", 0.0)), 0.0, 1.0)
                 var tall := maxf(0.002, pitch * 0.7 * share)
@@ -925,7 +932,11 @@ func show_eli(eli: Dictionary) -> void:
             continue
         match str(record.get("kind", "")):
             "conflict":
-                _conflicts.append([str(record.get("name", "")).trim_suffix("?").to_lower().strip_edges(), str(record.get("meaning", "")), record])
+                # what it is about: ELI v3's relation, or the words of its name
+                var topic := str(record.get("relation", "")).replace("_", " ").to_lower().strip_edges()
+                if topic.is_empty():
+                    topic = str(record.get("name", "")).trim_suffix("?").to_lower().strip_edges()
+                _conflicts.append([topic, str(record.get("meaning", "")), record])
             "claim":
                 if str(record.get("room", "")) == "evidence_wall":
                     claims.append(record)
@@ -951,7 +962,7 @@ func show_eli(eli: Dictionary) -> void:
             _score.show_lines(scored.slice(0, _score.rows()))
     var accuracy: Array = evidence.get("accuracy", []) if typeof(evidence.get("accuracy")) == TYPE_ARRAY else []
     _draw_charts(accuracy if why.is_empty() else [])
-    _say_bare(_chart, why if not why.is_empty() else ("nothing on record yet" if accuracy.filter(func(r): return typeof(r) == TYPE_DICTIONARY and int(r.get("n", 0)) > 0).is_empty() else ""))
+    _say_bare(_chart, why if not why.is_empty() else ("nothing on record yet" if accuracy.filter(func(r): return typeof(r) == TYPE_DICTIONARY and int(r.get("n", 0)) > 0 and r.get("right") != null).is_empty() else ""))
     # the case files and the exhibits
     var books_why: String = unsent.call("books")
     _say_bare(_desk, books_why if not books_why.is_empty() else ("nothing on record yet" if lessons == 0 else ""))
