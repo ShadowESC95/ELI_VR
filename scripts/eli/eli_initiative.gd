@@ -18,6 +18,8 @@ var _free := false
 var _busy := false
 var _quiet := 0.0
 var _last_took := 0.0
+var _clock := 0.0      # the frame clock both the pause and the act are measured on (wall time made the pace
+                       # depend on how fast frames ran: a fast machine saw a 0.3 s act as far shorter)
 
 func setup(app: Node, presence: EliPresence) -> void:
     _app = app
@@ -28,6 +30,7 @@ func apply_world_state(state: Dictionary) -> void:
     _free = bool(state.get("free", false))
 
 func _process(delta: float) -> void:
+    _clock += delta
     if _presence == null:
         return
     if _presence.mode in ["listening", "thinking", "speaking"]:
@@ -44,11 +47,11 @@ func _process(delta: float) -> void:
 func _act() -> void:
     _busy = true
     _waiting = 0                  # until ELI's world says again
-    var started := Time.get_ticks_msec()
+    var started := _clock
     _presence.set_mode("thinking")
     await _app.eli_build()
     if _presence.mode == "thinking":
         _presence.set_mode("idle")
-    _last_took = (Time.get_ticks_msec() - started) / 1000.0
+    _last_took = _clock - started
     _quiet = 0.0
     _busy = false
