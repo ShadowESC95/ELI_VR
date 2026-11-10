@@ -101,23 +101,34 @@ func _platform() -> void:
         if i % 2 == 0:
             lamp(at + Vector3(0, 2.0, 0), warm, 0.9, 6.5)
 
+# The hut: a log cabin, its walls laid in courses of round logs notched over each other at the
+# corners and running on past them, the gables filled with logs shortening to the ridge, a plank
+# roof under snow, a door between its two lit windows, a stone chimney and a footing of stone.
+const CABIN := Vector3(5.0, 2.6, 3.6)     # walls: width, height to the eaves, depth
+const RIDGE := 1.5                        # the roof's rise from the eaves to the ridge
+const LOG := 0.13                         # a log's radius
+
 func _hut() -> void:
     var timber := MaterialKitClass.surface("planks", 1.6, Color(0.42, 0.3, 0.24))
     var hut := Node3D.new()
-    hut.position = Vector3(11.5, 0.3, -17.0)
+    # stood level with the middle of the snow under it, as a cabin on a slope is: the snow drifted
+    # against its uphill wall, its stone footing showing on the downhill side down to the lowest
+    var under := _land.ground_under(Vector3(11.5, 0.0, -17.0), Vector2(CABIN.x, CABIN.z).length() * 0.5 + 0.4)
+    hut.position = Vector3(11.5, (under.x + under.y) * 0.5, -17.0)
     hut.rotation.y = deg_to_rad(-28.0)
     add_child(hut)
-    var walls := BoxMesh.new()
-    walls.size = Vector3(5.0, 2.6, 3.6)
-    add(walls, timber, Vector3(0, 1.3, 0), hut)
-    var roof := PrismMesh.new()
-    roof.size = Vector3(5.6, 1.5, 4.2)
-    add(roof, MaterialKitClass.surface("snow", 2.0, Color(0.9, 0.94, 1.0)), Vector3(0, 3.35, 0), hut)
+    _cabin(hut, timber, hut.position.y - under.x + 0.3)
     var warm := Color(1.0, 0.7, 0.36)
     var pane := BoxMesh.new()
     pane.size = Vector3(0.9, 0.7, 0.05)
+    var front := CABIN.z * 0.5 + LOG
     for x in [-1.3, 1.3]:
-        add(pane, MaterialKitClass.light(warm, 2.2), Vector3(x, 1.5, 1.81), hut)
+        add(pane, MaterialKitClass.light(warm, 2.2), Vector3(x, 1.5, front + 0.005), hut)
+        # the frame round each window and the bar across it
+        for bar in [[Vector3(1.04, 0.08, 0.08), Vector3(0, 0.39, 0)], [Vector3(1.04, 0.1, 0.12), Vector3(0, -0.4, 0.02)],
+                    [Vector3(0.08, 0.78, 0.08), Vector3(-0.49, 0, 0)], [Vector3(0.08, 0.78, 0.08), Vector3(0.49, 0, 0)],
+                    [Vector3(0.05, 0.7, 0.05), Vector3.ZERO]]:
+            box(bar[0], timber, Vector3(x, 1.5, front + 0.04) + bar[1], hut)
     glow(hut.position + Vector3(0, 1.6, 2.2).rotated(Vector3.UP, hut.rotation.y), warm, 4.0, 0.5, 0.1)
     lamp(Vector3(0, 1.5, 3.0), warm, 1.1, 8.0, hut)
     # the mast and its light
@@ -138,6 +149,76 @@ func _hut() -> void:
     prop("wooden_barrels_01", Vector3(3.6, 0.0, -0.9), 0.0, 0.55, hut)
     prop("portable_generator", Vector3(0.6, 0.0, -2.6), 180.0, 1.0, hut)
 
+# The cabin's walls, gables, roof, door, chimney and footing, in the hut's own frame (front +Z).
+func _cabin(hut: Node3D, timber: Material, footing: float) -> void:
+    var bark := MaterialKitClass.surface("bark", 0.8, Color(0.62, 0.48, 0.38))
+    var stone := MaterialKitClass.surface("rock", 1.2, Color(0.55, 0.55, 0.58), 1.0, true)
+    var snow := MaterialKitClass.surface("snow", 2.0, Color(0.9, 0.94, 1.0))
+    var course := LOG * 1.8                     # notched, each course sits lower than a whole log
+    var over := 0.3                             # how far the logs run past the corners
+    var half := Vector2(CABIN.x, CABIN.z) * 0.5
+    var logs := SurfaceTool.new()
+    logs.begin(Mesh.PRIMITIVE_TRIANGLES)
+    var made := {}
+    var lay_log := func(length: float, at: Vector3, along_x: bool) -> void:
+        var key := snappedf(length, 0.01)
+        if not made.has(key):
+            made[key] = MeshKitClass.lathe(PackedVector2Array([
+                Vector2(0.0, key * 0.5), Vector2(LOG * 0.85, key * 0.5), Vector2(LOG, key * 0.5 - 0.03),
+                Vector2(LOG, -key * 0.5 + 0.03), Vector2(LOG * 0.85, -key * 0.5), Vector2(0.0, -key * 0.5),
+            ]), 10)
+        var turn := Basis(Vector3.BACK, PI * 0.5) if along_x else Basis(Vector3.RIGHT, PI * 0.5)
+        logs.append_from(made[key], 0, Transform3D(turn, at))
+    var level := LOG
+    var k := 0
+    while level < CABIN.y:
+        # front and back walls on the even courses, the side walls half a course up on the odd
+        if k % 2 == 0:
+            for z in [-half.y, half.y]:
+                lay_log.call(CABIN.x + 2.0 * over, Vector3(0, level, z), true)
+        else:
+            for x in [-half.x, half.x]:
+                lay_log.call(CABIN.z + 2.0 * over, Vector3(x, level, 0), false)
+        level += course * 0.5
+        k += 1
+    # the gables, front and back, logs shortening up to the ridge
+    var up := 0.0
+    while up < RIDGE - course * 0.5:
+        var width := (half.x + over * 0.5) * (1.0 - up / RIDGE) * 2.0
+        for z in [-half.y, half.y]:
+            lay_log.call(width, Vector3(0, CABIN.y + up, z), true)
+        up += course
+    logs.generate_tangents()
+    var walls := MeshInstance3D.new()
+    walls.mesh = logs.commit()
+    walls.material_override = bark
+    hut.add_child(walls)
+
+    # the roof: plank panels from the eaves up to the ridge either side, snow lying on them
+    var eave := half.x + over + 0.15
+    var slope := Vector2(eave, RIDGE + 0.15)
+    var span := slope.length()
+    var pitch := atan2(slope.y, slope.x)
+    for side in [-1.0, 1.0]:
+        var panel := Node3D.new()
+        panel.position = Vector3(side * eave * 0.5, CABIN.y + RIDGE * 0.5 + 0.1, 0)
+        panel.rotation.z = -side * pitch
+        hut.add_child(panel)
+        box(Vector3(span + 0.1, 0.08, CABIN.z + 2.0 * over + 0.3), timber, Vector3.ZERO, panel)
+        box(Vector3(span, 0.16, CABIN.z + 2.0 * over + 0.2), snow, Vector3(0, 0.12, 0), panel)
+    # the door between the windows, its frame and step
+    var front := half.y + LOG
+    box(Vector3(0.9, 1.9, 0.06), timber, Vector3(0, 0.95, front + 0.03), hut)
+    for bar in [[Vector3(1.04, 0.1, 0.1), Vector3(0, 1.95, 0)], [Vector3(0.08, 2.0, 0.1), Vector3(-0.5, 1.0, 0)],
+                [Vector3(0.08, 2.0, 0.1), Vector3(0.5, 1.0, 0)], [Vector3(1.2, 0.12, 0.45), Vector3(0, 0.06, 0.2)]]:
+        box(bar[0], timber, Vector3(0, 0, front + 0.05) + bar[1], hut)
+    # the chimney at the back, stone, up through the roof
+    var stack_h := CABIN.y + RIDGE + 0.9
+    box(Vector3(0.7, stack_h, 0.7), stone, Vector3(half.x - 1.1, stack_h * 0.5, -half.y + 0.6), hut)
+    box(Vector3(0.82, 0.12, 0.82), stone, Vector3(half.x - 1.1, stack_h + 0.06, -half.y + 0.6), hut)
+    # a stone footing down into the snow, `footing` metres deep, so the logs never stand on nothing
+    box(Vector3(CABIN.x + 0.3, footing + 0.08, CABIN.z + 0.3), stone, Vector3(0, (0.08 - footing) * 0.5, 0), hut)
+
 # A fire by the platform with benches round it, and a path of lamps out to the hut.
 func _camp() -> void:
     var fire := Vector3(6.5, -0.1, 7.5)
@@ -155,6 +236,7 @@ func _camp() -> void:
     for i in 3:
         var t := float(i + 1) / 4.0
         var on_path := Vector3(9.4, -0.1, 0.0).lerp(Vector3(11.5, 0.3, -17.0), t) + Vector3(1.2, 0.0, 0.0)
+        on_path.y = _land.y_at(on_path.x, on_path.z)              # each lamp on the snow, not under it
         prop("street_lamp_02", on_path + Vector3(0, 0.39, 0), 0.0)
         glow(on_path + Vector3(0, 1.9, 0), warm, 0.8, 1.0, 0.7)
         lamp(on_path + Vector3(0, 1.85, 0), warm, 0.9, 6.0)

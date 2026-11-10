@@ -32,6 +32,9 @@ var base_y := -0.14
 var fade := 0.0
 var dunes := Vector4.ZERO      # a dune field over the land (MeshKit.dune_height): wind x, z, spacing, height
 var ground: MeshInstance3D
+var _task := -1                # the worker making the ground's mesh, while it is being made
+var _arrays := []              # what the worker made
+var _tree: SceneTree
 
 static var _blades := {}
 
@@ -57,9 +60,12 @@ static func blend(base: String, base_tile: float, base_tint: Color, over: String
 ## `flat_m` of the middle, rising into the noise over `rise_m`, the far edges lifted by `bowl_m`, and
 ## settling back to `base` over its last `edge_fade` metres where a photograph's ground takes over;
 ## `dune_field` (wind x, wind z, crest spacing m, height m) lays wind-built dunes over it.
+## `in_background` makes the ground's mesh on a worker thread, so building the room does not wait
+## for it: what stands on the land is placed at once (y_at needs no mesh), and the ground itself
+## comes in a few frames later. A room that is not in the tree yet gets it made at once.
 static func lay(room: Node3D, material: Material, seed_value: int, frequency: float, octaves: int, size_m: float,
                 cell_count: int, height_m: float, flat_m: float, rise_m: float, bowl_m: float = 0.0, base: float = -0.14,
-                edge_fade: float = 0.0, dune_field: Vector4 = Vector4.ZERO) -> LandKit:
+                edge_fade: float = 0.0, dune_field: Vector4 = Vector4.ZERO, in_background: bool = false) -> LandKit:
     var land := LandKit.new()
     land.noise = FastNoiseLite.new()
     land.noise.seed = seed_value
@@ -75,14 +81,53 @@ static func lay(room: Node3D, material: Material, seed_value: int, frequency: fl
     land.fade = edge_fade
     land.dunes = dune_field
     land.ground = MeshInstance3D.new()
-    land.ground.mesh = MeshKit.terrain(size_m, cell_count, land.noise, height_m, flat_m, rise_m, bowl_m, base, edge_fade, dune_field)
     land.ground.material_override = material
     room.add_child(land.ground)
+    if in_background and room.is_inside_tree():
+        # the worker gets a noise of its own, so nothing it reads is shared with this thread
+        var shape: FastNoiseLite = land.noise.duplicate()
+        land._tree = room.get_tree()
+        land._task = WorkerThreadPool.add_task(func():
+            land._arrays = MeshKit.terrain_arrays(size_m, cell_count, shape, height_m, flat_m, rise_m, bowl_m, base, edge_fade, dune_field))
+        land._tree.process_frame.connect(land._lay_when_made)
+    else:
+        land.ground.mesh = MeshKit.terrain(size_m, cell_count, land.noise, height_m, flat_m, rise_m, bowl_m, base, edge_fade, dune_field)
     return land
+
+## Whether the ground's mesh is still being made on a worker thread.
+func pending() -> bool:
+    return _task >= 0
+
+# Each frame while the worker is busy: once it is done, the ground gets its mesh (if the room is still
+# there) and the worker is let go of.
+func _lay_when_made() -> void:
+    if _task < 0 or not WorkerThreadPool.is_task_completed(_task):
+        return
+    WorkerThreadPool.wait_for_task_completion(_task)
+    _task = -1
+    _tree.process_frame.disconnect(_lay_when_made)
+    if is_instance_valid(ground) and not _arrays.is_empty():
+        var mesh := ArrayMesh.new()
+        mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, _arrays)
+        ground.mesh = mesh
+    _arrays = []
 
 ## The ground's height at a point: the figure the mesh was built from.
 func y_at(x: float, z: float) -> float:
     return MeshKit.land_height(x, z, size, noise, height, flat, rise, bowl, base_y, fade, dunes)
+
+## The lowest and the highest ground (x, y) under a footprint `reach` metres round `at`: a building
+## stands on the highest, so none of it is buried, with its footing going down to the lowest.
+func ground_under(at: Vector3, reach: float) -> Vector2:
+    var low := y_at(at.x, at.z)
+    var high := low
+    for ring in [0.5, 1.0]:
+        for k in 8:
+            var a := TAU * float(k) / 8.0
+            var y := y_at(at.x + cos(a) * reach * ring, at.z + sin(a) * reach * ring)
+            low = minf(low, y)
+            high = maxf(high, y)
+    return Vector2(low, high)
 
 ## How the ground tilts at a point, as a basis whose up is the ground's normal, for a thing to lean with it.
 func tilt_at(x: float, z: float) -> Basis:

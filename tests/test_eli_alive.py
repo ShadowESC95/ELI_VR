@@ -225,8 +225,17 @@ class Screens(Alive):
     def test_the_black_hole_bends_light_as_general_relativity_does(self) -> None:
         self.check("light_bends_round_the_black_hole_as_general_relativity_bends_it")
 
-    def test_the_desert_is_dunes_and_mesas_under_a_moonless_night(self) -> None:
-        self.check("the_desert_is_wind_built_dunes_with_mesas_beyond_under_a_moonless_night")
+    def test_the_desert_is_dunes_and_mesas_under_a_night_sky(self) -> None:
+        self.check("the_desert_is_wind_built_dunes_with_mesas_beyond_under_a_night_sky")
+
+    def test_the_desert_moon_shows_its_phase_and_casts_its_light(self) -> None:
+        self.check("the_desert_moon_is_in_the_sky_at_its_phase_and_casts_the_light_its_phase_and_height_give")
+
+    def test_the_desert_ground_is_made_without_pausing_the_room(self) -> None:
+        self.check("the_desert_ground_is_made_in_the_background_and_is_the_same_land")
+
+    def test_the_arctic_hut_is_a_log_cabin_with_all_it_had(self) -> None:
+        self.check("the_arctic_hut_is_a_log_cabin_and_keeps_what_stood_at_it")
 
     def test_the_rebuilt_rooms_shaders_compile(self) -> None:
         self.check("the_rebuilt_rooms_shaders_compile_and_the_mountain_has_its_birds")

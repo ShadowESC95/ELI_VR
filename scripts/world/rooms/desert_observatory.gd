@@ -6,7 +6,9 @@ extends RoomBase
 # the mesas out on the plain stand dark. The sand still gives off the day's heat, so the far ground
 # shimmers against the glow; the evening wind streams loose sand over the dunes and their ripples.
 # A dome stands open to the sky with its telescope, a dish turns, and the only lamps are the dim red
-# ones astronomers keep so their eyes stay dark. There is no moon: the night is lit by the sky.
+# ones astronomers keep so their eyes stay dark. A waxing gibbous moon stands in the south-east:
+# where it is and how much of it is lit follow from its age and the set sun, and the light it casts
+# (its way, its colour, its strength) from that phase and how high it is (moon()).
 
 # Towards the sun, set in the west 9 degrees under the horizon (the end of nautical twilight): the
 # sky overhead dark enough for the Milky Way, the twilight still a band along the horizon.
@@ -17,7 +19,19 @@ const WIND := Vector2(0.8, -0.6)
 const DUNES := Vector4(0.8, -0.6, 72.0, 9.0)
 # The night air the sky is seen through (space_sky.gdshader, include/night_air.gdshaderinc): dry
 # and clear, the twilight and the faint airglow; the ground's mirage bends the same twilight down.
-const NIGHT_AIR := {"air": 1.0, "sun_dir": SUN_BELOW, "twilight": 6.0, "airglow": 0.012}
+# The air's Rayleigh colours and thickness are handed to the shaders from here, so the moon's light
+# worked out here passes through the same air the sky is drawn with.
+const NIGHT_AIR := {"air": 1.0, "sun_dir": SUN_BELOW, "twilight": 6.0, "airglow": 0.012,
+                    "rayleigh": Vector3(0.19, 0.45, 1.0), "optical_depth": 0.28}
+# The moon: its age in days since new (a synodic month is 29.53), which sets how far round the sky
+# from the sun it stands and so its phase; how high it stands at this hour; and, as true figures,
+# the Moon's reflectance across red, green and blue (it reddens sunlight a little). FULL_MOON is the
+# exposure of a moonlit night: the light energy a full moon overhead gives in this renderer.
+const MOON_AGE := 11.0
+const MOON_HIGH := deg_to_rad(30.0)
+const SYNODIC_MONTH := 29.53
+const MOON_TINT := Color(1.0, 0.93, 0.84)
+const FULL_MOON := 2.4
 const FIELD := 760.0             # the dune field's width; the plain runs on past it to the horizon
 const PLAIN_DROP := 0.4          # the plain lies this far under the field's settled edge, out of its way
 
@@ -42,7 +56,13 @@ func _build() -> void:
     env.fog_density = 0.00022
     env.fog_aerial_perspective = 0.9
     env.fog_sky_affect = 0.0
-    # what light there is comes from the sky: the twilight in the west, faint, and no shadows
+    # the moon, and the light it casts, from its phase and height; the sky shows it and is lit by it
+    var moon_now := moon()
+    var moonlight := sun(moon_now["dir"], moon_now["colour"], moon_now["energy"])
+    moonlight.name = "Moonlight"
+    _sky.set_shader_parameter("moon_dir", moon_now["dir"])
+    _sky.set_shader_parameter("moon", Vector3(moon_now["colour"].r, moon_now["colour"].g, moon_now["colour"].b) * moon_now["share"])
+    # and the twilight in the west, faint, a wide glow that casts no shadows
     var glow_way := Vector3(SUN_BELOW.x, 0.25, SUN_BELOW.z).normalized()
     var twilight := sun(glow_way, Color(0.72, 0.62, 0.78), 0.32)
     twilight.shadow_enabled = false
@@ -58,14 +78,50 @@ func _build() -> void:
         _blowing_sand()
     probe()
 
+## The moon tonight: "dir" the way to it, "lit" the share of its face lit, "share" its light against a
+## full moon overhead (phase and air both), "colour" and "energy" the light it casts here. Its angle
+## from the sun (the elongation) follows from its age; it stands at MOON_HIGH, east of the sun
+## (waxing), on the side of the sky towards the south; its phase angle is 180° less the elongation;
+## its brightness against full is Allen's magnitude-phase law for the Moon, 0.026·i + 4·10⁻⁹·i⁴
+## magnitudes (i in degrees); and the air dims and reddens it by its air mass, as the sky shader does
+## (include/night_air.gdshaderinc: exp(−depth·air·mass·(0.35 + 0.65·rayleigh)), mass 1/(sin h + 0.035)).
+func moon() -> Dictionary:
+    var sun_way := SUN_BELOW.normalized()
+    var apart := deg_to_rad(360.0 * MOON_AGE / SYNODIC_MONTH)
+    # the azimuth at which a body MOON_HIGH up stands `apart` from the sun: two answers, the southern one
+    var level := Vector2(sun_way.x, sun_way.z)
+    var reach := (cos(apart) - sun_way.y * sin(MOON_HIGH)) / (cos(MOON_HIGH) * level.length())
+    var turn := acos(clampf(reach, -1.0, 1.0))
+    var best := Vector3.ZERO
+    for side in [1.0, -1.0]:
+        var a: float = atan2(level.y, level.x) + side * turn
+        var way := Vector3(cos(MOON_HIGH) * cos(a), sin(MOON_HIGH), cos(MOON_HIGH) * sin(a))
+        if best == Vector3.ZERO or way.z > best.z:
+            best = way
+    var phase_deg := 180.0 - rad_to_deg(sun_way.angle_to(best))
+    var lit := (1.0 + cos(deg_to_rad(phase_deg))) * 0.5
+    var against_full := pow(10.0, -0.4 * (0.026 * phase_deg + 4e-9 * pow(phase_deg, 4.0)))
+    var mass := 1.0 / (sin(MOON_HIGH) + 0.035)
+    var rayleigh: Vector3 = NIGHT_AIR["rayleigh"]
+    var depth: float = NIGHT_AIR["optical_depth"] * NIGHT_AIR["air"] * mass
+    var through := Vector3(exp(-depth * (0.35 + 0.65 * rayleigh.x)), exp(-depth * (0.35 + 0.65 * rayleigh.y)),
+                           exp(-depth * (0.35 + 0.65 * rayleigh.z)))
+    var colour := Color(MOON_TINT.r * through.x, MOON_TINT.g * through.y, MOON_TINT.b * through.z)
+    var strongest := maxf(colour.r, maxf(colour.g, colour.b))
+    return {"dir": best, "lit": lit, "share": against_full, "phase": phase_deg,
+            "colour": Color(colour.r / strongest, colour.g / strongest, colour.b / strongest),
+            "energy": FULL_MOON * against_full * strongest}
+
 func _dunes() -> void:
     # sand, rippled by the wind, the bedrock showing only where the land is steeper than a dune
     # ever stands; loose sand streaming over it, and heat shimmering off it far out
     var sand := LandKit.blend("sand", 4.0, Color(0.62, 0.58, 0.56), "rock", 2.4, Color(0.5, 0.44, 0.4),
         {"slope_from": 0.3, "slope_to": 0.62, "breakup": 0.45, "ripples": 0.6, "ripple_dir": WIND,
          "ripple_width": 0.4, "far_blend": 50.0, "drift": 5.0, "haze": 1.0,
-         "mirage": NIGHT_AIR["twilight"], "mirage_sun": NIGHT_AIR["sun_dir"]})
-    _land = LandKit.lay(self, sand, 31, 0.006, 3, FIELD, 230, 6.0, 12.0, 26.0, 0.0, -0.16, 120.0, DUNES)
+         "mirage": NIGHT_AIR["twilight"], "mirage_sun": NIGHT_AIR["sun_dir"],
+         "rayleigh": NIGHT_AIR["rayleigh"], "optical_depth": NIGHT_AIR["optical_depth"]})
+    # the dune field is the room's heaviest piece: made on a worker thread so coming in does not pause
+    _land = LandKit.lay(self, sand, 31, 0.006, 3, FIELD, 230, 6.0, 12.0, 26.0, 0.0, -0.16, 120.0, DUNES, true)
 
     # the boulders, quiver trees and dry scrub of the flat between the dunes the deck stands on
     # (scanned, assets/models), each on the ground at its height, and dry grass between them
@@ -152,15 +208,6 @@ func _platform() -> void:
         if i % 2 == 0:
             lamp(at + Vector3(0, 0.6, 0), red, 0.5, 4.5)
 
-# The height to build at round (at.x, at.z): the lowest ground under a footprint `reach` metres
-# across, so a building's plinth goes down into the sand rather than standing on a rise of it.
-func _ground_under(at: Vector3, reach: float) -> float:
-    var low := _land.y_at(at.x, at.z)
-    for k in 8:
-        var a := TAU * float(k) / 8.0
-        low = minf(low, _land.y_at(at.x + cos(a) * reach, at.z + sin(a) * reach))
-    return low
-
 func _dome() -> void:
     # painted, not bare metal: a bare dome mirrors the whole sky. Both sides drawn: through the slit
     # you see the inside, dark but for the red lamp the telescope is worked by.
@@ -171,7 +218,7 @@ func _dome() -> void:
     var slab := MaterialKitClass.surface("concrete", 2.5, Color(0.62, 0.58, 0.54))
     var base := Node3D.new()
     base.position = Vector3(-12.0, 0.0, -19.0)
-    base.position.y = _ground_under(base.position, 4.8)
+    base.position.y = _land.ground_under(base.position, 4.8).x       # its footing goes down into the sand
     add_child(base)
     # the round wall the dome turns on, its footing going down into the sand
     add(MeshKitClass.lathe(PackedVector2Array([
@@ -213,7 +260,7 @@ func _dish() -> void:
     var steel := MaterialKitClass.metal("brushed_metal", 0.6, Color(0.5, 0.52, 0.58))
     var base := Node3D.new()
     base.position = Vector3(15.0, 0.0, -21.0)
-    base.position.y = _ground_under(base.position, 1.5)
+    base.position.y = _land.ground_under(base.position, 1.5).x
     add_child(base)
     var mast := CylinderMesh.new()
     mast.top_radius = 0.3

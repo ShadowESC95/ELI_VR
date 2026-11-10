@@ -197,6 +197,18 @@ static func terrain(
     flat: float, rise: float, bowl: float = 0.0, base_y: float = 0.0, fade: float = 0.0,
     dunes: Vector4 = Vector4.ZERO
 ) -> ArrayMesh:
+    var mesh := ArrayMesh.new()
+    mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,
+        terrain_arrays(size, cells, noise, height, flat, rise, bowl, base_y, fade, dunes))
+    return mesh
+
+# The same ground as surface arrays (Mesh.ARRAY_*). Made without touching the scene or the renderer,
+# so it can be made on a worker thread (LandKit.lay(in_background)) with a noise of its own.
+static func terrain_arrays(
+    size: float, cells: int, noise: FastNoiseLite, height: float,
+    flat: float, rise: float, bowl: float = 0.0, base_y: float = 0.0, fade: float = 0.0,
+    dunes: Vector4 = Vector4.ZERO
+) -> Array:
     var step := size / float(cells)
     var half := size * 0.5
     var heights := PackedFloat32Array()
@@ -228,7 +240,7 @@ static func terrain(
             for index in [a, b, c, b, d, c]:
                 st.add_index(index)
     st.generate_tangents()
-    return st.commit()
+    return st.commit_to_arrays()
 
 # A boulder: a ball pushed in and out by noise. Each seed is a different rock.
 static func rock(seed_value: int, radius: float, lumps: float = 0.35, rings: int = 14) -> ArrayMesh:

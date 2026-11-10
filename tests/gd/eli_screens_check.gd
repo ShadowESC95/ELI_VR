@@ -17,6 +17,7 @@ const Ocean = preload("res://scripts/world/rooms/ocean_platform.gd")
 const Desert = preload("res://scripts/world/rooms/desert_observatory.gd")
 const Mountain = preload("res://scripts/world/rooms/mountain_observatory.gd")
 const Underwater = preload("res://scripts/world/rooms/underwater_lab.gd")
+const Arctic = preload("res://scripts/world/rooms/arctic_aurora.gd")
 const BlackHole = preload("res://scripts/world/kit/black_hole.gd")
 
 # Stands in for the app's settings: every value as its default.
@@ -309,7 +310,7 @@ func _run() -> void:
            "style %d, hung %s, standing %s" % [styled, hung.eye_height(), standing.eye_height()])
     await _thought_checks(wall)
     _land_checks()
-    _room_checks()
+    await _room_checks()
     quit()
 
 # ELI's thoughts hang as sheets: six rooms keep places for them, a sheet is written with its lines
@@ -886,25 +887,91 @@ func _room_checks() -> void:
     var night: ShaderMaterial = desert._sky
     var mesas := 0
     var sand := 0
-    var moonlit := false
+    var moonlight: DirectionalLight3D = null
     for child in desert.get_children():
         if child is MeshInstance3D and Vector2(child.position.x, child.position.z).length() > land.size * 0.7:
             mesas += 1
         if child is GPUParticles3D and (child as GPUParticles3D).lifetime < 1.0:
             sand += 1
-        if child is DirectionalLight3D and (child as DirectionalLight3D).shadow_enabled:
-            moonlit = true
+        if child is DirectionalLight3D and child.name == "Moonlight":
+            moonlight = child
     var ground: ShaderMaterial = land.ground.material_override
     var night_ok: bool = night.get_shader_parameter("air") > 0.0 and night.get_shader_parameter("twilight") > 0.0 \
-        and (night.get_shader_parameter("sun_dir") as Vector3).y < 0.0 and not moonlit \
+        and (night.get_shader_parameter("sun_dir") as Vector3).y < 0.0 \
         and ground.get_shader_parameter("mirage") == night.get_shader_parameter("twilight") \
-        and ground.get_shader_parameter("mirage_sun") == night.get_shader_parameter("sun_dir")
+        and ground.get_shader_parameter("mirage_sun") == night.get_shader_parameter("sun_dir") \
+        and ground.get_shader_parameter("rayleigh") == night.get_shader_parameter("rayleigh")
+    # the moon is in the sky where its age puts it from the sun, lit as its phase says, and the light
+    # it casts comes from it, as strong and as coloured as that phase and its height make it
+    var moon: Dictionary = desert.moon()
+    var sun_way: Vector3 = (night.get_shader_parameter("sun_dir") as Vector3).normalized()
+    var apart := rad_to_deg(sun_way.angle_to(moon["dir"]))
+    var full := pow(10.0, -0.4 * (0.026 * 0.0))
+    var half_lit_share := pow(10.0, -0.4 * (0.026 * 90.0 + 4e-9 * pow(90.0, 4.0)))
+    var moon_ok: bool = moonlight != null and (moon["dir"] as Vector3).y > 0.0 \
+        and absf(apart - 360.0 * desert.MOON_AGE / desert.SYNODIC_MONTH) < 0.01 \
+        and absf(float(moon["lit"]) - (1.0 + cos(deg_to_rad(180.0 - apart))) * 0.5) < 0.001 \
+        and moonlight.basis.z.dot(moon["dir"]) > 0.9999 and moonlight.shadow_enabled \
+        and absf(moonlight.light_energy - float(moon["energy"])) < 0.0001 and moonlight.light_color.is_equal_approx(moon["colour"]) \
+        and float(moon["share"]) < full and float(moon["share"]) > half_lit_share \
+        and moonlight.light_color.b < moonlight.light_color.r \
+        and (night.get_shader_parameter("moon_dir") as Vector3).is_equal_approx(moon["dir"]) \
+        and (night.get_shader_parameter("moon") as Vector3).length() > 0.0
     var wind_ok: bool = ground.get_shader_parameter("ripples") > 0.0 and ground.get_shader_parameter("drift") > 0.0 \
         and ground.get_shader_parameter("haze") > 0.0 and sand >= 1
-    _check("the_desert_is_wind_built_dunes_with_mesas_beyond_under_a_moonless_night",
+    _check("the_desert_is_wind_built_dunes_with_mesas_beyond_under_a_night_sky",
            dunes_ok and night_ok and wind_ok and mesas >= 6,
            "lee %.3f windward %.3f night %s wind %s mesas %d" % [lee, windward, night_ok, wind_ok, mesas])
+    _check("the_desert_moon_is_in_the_sky_at_its_phase_and_casts_the_light_its_phase_and_height_give",
+           moon_ok, "moon %s light %s apart %.2f" % [moon, moonlight != null, apart])
+    # the dune field is made on a worker thread: the room is built without waiting for it, and the
+    # ground comes in as the same land a few frames later
+    var waited := land.pending()
+    var frames := 0
+    while land.pending() and frames < 600:
+        await process_frame
+        frames += 1
+    var laid := false
+    if land.ground.mesh != null:
+        var made: PackedVector3Array = land.ground.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+        laid = made.size() == (land.cells + 1) * (land.cells + 1)
+        for i in range(0, made.size(), 211):
+            laid = laid and absf(land.y_at(made[i].x, made[i].z) - made[i].y) < 0.001
+    _check("the_desert_ground_is_made_in_the_background_and_is_the_same_land", waited and laid,
+           "waited %s laid %s after %d frames" % [waited, laid, frames])
     desert.queue_free()
+
+    # --- the arctic hut is a log cabin, and nothing that was at the hut is gone
+    var arctic = _built(Arctic)
+    _shaders_compile(arctic, failed)
+    var hut: Node3D = null
+    for child in arctic.get_children():
+        if child is Node3D and Vector2(child.position.x, child.position.z).is_equal_approx(Vector2(11.5, -17.0)):
+            hut = child
+    var cabin := false
+    var panes := 0
+    var props := 0
+    var boxed := _has_mesh(arctic, "PrismMesh")
+    if hut != null:
+        for child in hut.get_children():
+            if child is MeshInstance3D and (child as MeshInstance3D).mesh is ArrayMesh:
+                var bounds: AABB = (child as MeshInstance3D).mesh.get_aabb()
+                cabin = cabin or (bounds.size.x >= arctic.CABIN.x and bounds.size.z >= arctic.CABIN.z
+                                  and bounds.size.y >= arctic.CABIN.y + arctic.RIDGE * 0.7)
+            elif child is MeshInstance3D and (child as MeshInstance3D).mesh is BoxMesh:
+                var size: Vector3 = ((child as MeshInstance3D).mesh as BoxMesh).size
+                boxed = boxed or size.is_equal_approx(arctic.CABIN)
+                if size.is_equal_approx(Vector3(0.9, 0.7, 0.05)):
+                    panes += 1
+            elif child is Node3D and not child is Light3D and not child is MeshInstance3D:
+                props += 1
+    # and it stands on the snow: its floor between the lowest and the highest ground under it,
+    # neither floating over the snow nor sunk under it
+    var under: Vector2 = arctic._land.ground_under(hut.position, 3.4) if hut != null else Vector2.ZERO
+    var on_snow: bool = hut != null and hut.position.y > under.x and hut.position.y < under.y
+    _check("the_arctic_hut_is_a_log_cabin_and_keeps_what_stood_at_it", cabin and not boxed and panes == 2 and props >= 8 and on_snow,
+           "cabin %s boxed %s panes %d props %d on the snow %s" % [cabin, boxed, panes, props, on_snow])
+    arctic.queue_free()
 
     _check("the_rebuilt_rooms_shaders_compile_and_the_mountain_has_its_birds", failed.is_empty() and soars,
            "failed %s soars %s" % [failed, soars])
