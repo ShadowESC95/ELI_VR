@@ -95,7 +95,7 @@ jobs:
           - os: windows-2022
             file: win64.exe.zip
             bin: Godot_v4.7.2-stable_win64_console.exe
-          - os: macos-14
+          - os: macos-latest
             file: macos.universal.zip
             bin: Godot.app/Contents/MacOS/Godot
     runs-on: ${{ matrix.os }}
