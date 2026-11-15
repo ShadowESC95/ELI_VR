@@ -300,6 +300,23 @@ class Screens(Alive):
         self.check("a_record_let_go_goes_back_to_its_place_and_is_not_moved_in_elis_world")
         self.check("a_record_that_loses_its_place_lets_go_of_it")
 
+    def test_a_hall_of_books_costs_a_shape_each_and_nothing_at_rest(self) -> None:
+        self.check("a_shelf_of_books_is_a_shape_each_and_costs_nothing_at_rest")
+        self.check("a_books_cover_and_spine_are_written_when_the_eye_is_near_enough_to_read_them")
+
+    def test_a_world_message_that_says_the_same_changes_nothing(self) -> None:
+        self.check("a_world_message_that_says_the_same_changes_nothing")
+
+    def test_elis_world_is_read_off_the_main_thread(self) -> None:
+        self.check("elis_world_is_read_off_the_main_thread_and_taken_in_order")
+
+    def test_a_room_built_again_is_handed_its_shapes(self) -> None:
+        self.check("a_room_built_again_is_handed_the_shapes_it_made_before")
+        self.check("the_rooms_start_on_what_they_can_work_out_before_they_are_built")
+
+    def test_a_flock_is_ticked_at_its_own_rate(self) -> None:
+        self.check("a_flock_is_ticked_at_its_own_rate_and_drawn_between_ticks")
+
 
 if __name__ == "__main__":
     unittest.main()

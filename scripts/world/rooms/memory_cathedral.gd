@@ -139,8 +139,17 @@ func _books(bay: Node3D, rng: RandomNumberGenerator, index: int) -> void:
     var keeps_books: bool = index in RECORD_BAYS or index in STORY_BAYS
     const LEATHERS := [Color(0.36, 0.08, 0.06), Color(0.24, 0.12, 0.07), Color(0.42, 0.27, 0.15), Color(0.1, 0.19, 0.13),
                        Color(0.08, 0.11, 0.22), Color(0.06, 0.05, 0.05), Color(0.62, 0.52, 0.38), Color(0.3, 0.05, 0.12)]
-    var placed: Array = []          # [transform, colour, lit]
     var boards := _boards()
+    # the bay's batch is worked out once and kept for the next time the hall is built (MeshKit):
+    # thousands of books a bay, each placed by the dice. The dice are left as the working-out left
+    # them, so what is thrown after (the ladders) falls as it did the first time.
+    var key := ["bay of books", index, detail, boards, _record_rows(), memory_board(), bay_width]
+    var had = MeshKitClass.held(key)
+    if had != null:
+        rng.state = had[1]
+        _stand_books(bay, had[0])
+        return
+    var placed: Array = []          # [transform, colour, lit]
     var broad := 1.0 / clampf(detail, 0.5, 1.0)
     for k in boards.size():
         var y: float = boards[k]
@@ -179,6 +188,11 @@ func _books(bay: Node3D, rng: RandomNumberGenerator, index: int) -> void:
         batch.set_instance_transform(n, placed[n][0])
         batch.set_instance_color(n, placed[n][1])
         batch.set_instance_custom_data(n, Color(placed[n][2], rng.randf() * TAU, 0.0, 0.0))
+    MeshKitClass.hold(key, [batch, rng.state])
+    _stand_books(bay, batch)
+
+# A bay's batch of books, stood in it.
+func _stand_books(bay: Node3D, batch: MultiMesh) -> void:
     var books := MultiMeshInstance3D.new()
     books.multimesh = batch
     books.material_override = MaterialKitClass.shader("res://assets/shaders/book_spines.gdshader",
@@ -316,13 +330,28 @@ func pin_spot(kind: String, index: int) -> Variant:
 func arrange(kind: String, records: Array) -> Array:
     if kind != "book":
         return records
-    var by_time := func(a, b): return EliBook.when_of(a) < EliBook.when_of(b)
-    var told := records.filter(func(r): return not _is_story(r))
-    var stories := records.filter(func(r): return _is_story(r))
+    # the same books (told by what they say, as one number) on the same shelves stand as they stood:
+    # putting hundreds in order is not done again for every message from ELI's world
+    var said := records.hash()
+    if said == _arranged_said:
+        return _arranged
+    # each record with the time it is of, worked out once, then put in order by it
+    var told := []
+    var stories := []
+    for record in records:
+        (stories if _is_story(record) else told).append([EliBook.when_of(record), record])
+    var by_time := func(a, b): return a[0] < b[0]
     told.sort_custom(by_time)
     stories.sort_custom(by_time)
+    told = told.map(func(pair): return pair[1])
+    stories = stories.map(func(pair): return pair[1])
     _book_slots = Bookcase.shelve(_record_cases, told, _shelf_of) + Bookcase.shelve(_story_cases, stories, _shelf_of)
-    return told + stories
+    _arranged_said = said
+    _arranged = told + stories
+    return _arranged
+
+var _arranged_said := 0             # the books last put in order, as one number, and the order they were given
+var _arranged: Array = []
 
 static func _is_story(record: Dictionary) -> bool:
     return str(EliBook.book_of(record).get("of", "")) == "story"
@@ -330,7 +359,19 @@ static func _is_story(record: Dictionary) -> bool:
 # The group a book is shelved under: the shelf ELI v3 named for it, or the month it is of.
 static func _shelf_of(record: Dictionary) -> String:
     var named := str(EliBook.book_of(record).get("shelf", "")).strip_edges()
-    return named if not named.is_empty() else Reading.month(EliBook.when_of(record))
+    if not named.is_empty():
+        return named
+    # the month, kept by the day (here, as Reading.month reads the clock) it falls in: a shelf
+    # holds many books of one day
+    if _months.is_empty():
+        _zone = int(Time.get_time_zone_from_system().get("bias", 0)) * 60
+    var day := floori((EliBook.when_of(record) + _zone) / 86400.0)
+    if not _months.has(day):
+        _months[day] = Reading.month(EliBook.when_of(record))
+    return _months[day]
+
+static var _months := {}            # local day (since 1970) -> the month a book of that day is shelved under
+static var _zone := 0               # seconds this place's clock is ahead of UTC
 
 ## The shelves say what is on them: ELI's books where it keeps them, or why there are none.
 func show_eli(eli: Dictionary) -> void:

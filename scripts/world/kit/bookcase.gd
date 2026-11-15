@@ -82,15 +82,24 @@ func _box(extent: Vector3, at: Vector3, look: Material) -> MeshInstance3D:
 ## a gap, under a plate with the group's words; "" for none).
 static func shelve(cases: Array, books: Array, group_of: Callable, eye: float = Reading.eye_height()) -> Array:
     var out := []
-    var key := JSON.stringify(books.map(func(b): return [b.get("id"), group_of.call(b), EliBook.measure(b, eye)]))
+    # each book's size and group, worked out once: for where it stands, and for telling whether
+    # what is on the shelves has changed (as one number, hashed in the engine)
+    var sizes := []
+    var groups := []
+    var told := []
+    for book in books:
+        sizes.append(EliBook.measure(book, eye))
+        groups.append(str(group_of.call(book)))
+        told.append([book.get("id"), groups[-1], sizes[-1]])
+    var key := str(told.hash())
     var c := 0
     var shelf := 0
     var cursor := 0.0
     var last_group = null
     var plates := []                     # [case, shelf top, x, words]
-    for book in books:
-        var size := EliBook.measure(book, eye)
-        var group := str(group_of.call(book))
+    for n in books.size():
+        var size: Vector3 = sizes[n]
+        var group: String = groups[n]
         var placed := false
         while c < cases.size() and not placed:
             var case: Bookcase = cases[c]

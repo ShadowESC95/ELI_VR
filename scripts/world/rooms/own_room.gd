@@ -160,10 +160,19 @@ func arrange(kind: String, records: Array) -> Array:
     if kind != "book" or _case == null:
         return records
     _books = records
+    # the same books (told by what they say, as one number) on the same case stand as they stood
+    var said := [records.hash(), _case.get_instance_id()].hash()
+    if said == _arranged_said:
+        return _arranged
     var ordered := records.duplicate()
     ordered.sort_custom(_shelved_before)
     _book_slots = Bookcase.shelve([_case], ordered, func(r): return str(EliBook.book_of(r).get("shelf", "")))
+    _arranged_said = said
+    _arranged = ordered
     return ordered
+
+var _arranged_said := 0             # the books last put in order, as one number, and the order they were given
+var _arranged: Array = []
 
 static func _shelved_before(a: Dictionary, b: Dictionary) -> bool:
     var ka := _shelf_rank(a)

@@ -19,6 +19,12 @@ extends EliThing
 # comes without its sections, saying its length: it is read whole from ELI v3 (GET
 # /v1/world/book/<id>, capability "books") when it is first opened. Its size comes from the reader: the
 # page holds a narrow book's line at the size writing held in the hand is read.
+#
+# A hall may hold hundreds. A closed book is one mesh, the same one for every book of its size
+# (boards, spine and pages; its leather and its paper are the surfaces' materials, shared by colour),
+# so a shelf of them is drawn as a few batches. The writing on its cover and spine is put on when
+# the eye is near enough to read it (writing_reach()), not before: from across the hall there is
+# nothing of it to see. Standing in its place and grown in, a book is not processed at all.
 
 ## Records drawn as books.
 const KINDS := ["book", "memory"]
@@ -71,6 +77,7 @@ var _swipes := {}               # a hand drawn across a page: manipulator -> the
 var _content_key := ""
 var _when = null                # when the record is of, for a book with no span of its own
 var _placed := false            # stood in its place once: from then on it is carried back there
+var _written := false           # its cover and spine carry their writing
 
 ## A record is a book here: a memory, or a book ELI v3 sent.
 static func is_book(data: Dictionary) -> bool:
@@ -129,15 +136,19 @@ static func _rows_for(page: Vector2, eye: float) -> int:
 
 func refresh(data: Dictionary, first: bool = false) -> void:
     book = data.get("book", {}) if typeof(data.get("book")) == TYPE_DICTIONARY else {}
-    var key := JSON.stringify([data.get("name", ""), data.get("meaning", ""), data.get("lines", []), book, data.get("when")])
+    # what it says, as one number (hashed in the engine): told apart from what it said before
+    # without writing every page out again each time ELI's world sends word
+    var key := str([data.get("name", ""), data.get("meaning", ""), data.get("lines", []), book, data.get("when")].hash())
     var changed := key != _content_key
     _content_key = key
     if changed:
         _fetched = []               # a book read whole before is read again once it has changed
     _when = data.get("when")
     super.refresh(data, first)
+    _name_tag.text = ""             # a book's name is on its cover: the tag over a thing is never shown, so never drawn
     if changed and not first and _text_key != _content_key:
         _shape()                    # the same book says something new (an unpinned one is not reshaped above)
+    set_process(true)               # it may have somewhere new to stand
 
 func _words_key() -> String:
     return _content_key
@@ -153,6 +164,7 @@ func pin_to(spot: Transform3D, _size: Vector2 = Vector2.ZERO) -> void:
         if not _placed:
             position = spot.origin      # already on its shelf when you come in, not flown there
     _placed = true
+    set_process(true)
 
 ## Let go of the place it had: it stands where ELI's world says.
 func unpin() -> void:
@@ -161,6 +173,7 @@ func unpin() -> void:
     pinned = false
     _pin = Transform3D.IDENTITY
     basis = Basis.IDENTITY
+    set_process(true)
 
 func title() -> String:
     var named := str(book.get("title", "")).strip_edges()
@@ -194,6 +207,12 @@ func _shape() -> void:
     _closed = _closed_book()
     _body.add_child(_closed)
     _closed.visible = not opened
+    _written = false
+    # with no eye in the scene it is written at once; with one, when the eye is near enough to
+    # read it (EliThings looks its books over as the eye moves, and it is written when it is taken)
+    if not is_inside_tree() or get_viewport().get_camera_3d() == null:
+        write()
+    set_process(true)
     # the pages are cut and the open book drawn only when it is opened: a shelf of books costs its
     # covers and spines, not every page of every book
     _open = null
@@ -286,23 +305,79 @@ func _block(parent: Node3D, extent: Vector3, at: Vector3, look: Material) -> Mes
 func cover_colour() -> Color:
     return MANILA if is_folder() else LEATHER.lerp(colour, 0.22)
 
-# The closed book, standing on its foot: the cover faces +z, the spine is on its -x side.
+# The closed book's shape, standing on its foot with its cover facing +z and its spine on its -x
+# side: one mesh of two surfaces, the boards and spine (0) and the pages between them (1), and for a
+# case file its tab. Made once for each size of book and kept: nearly every book is the same size
+# (a spine no thinner than its title), so a hall of them shares one mesh and is drawn in batches.
+static var _shapes := {}
+
+static func closed_shape(size: Vector3, board: float, folder: bool) -> ArrayMesh:
+    var key := [size, board, folder]
+    if _shapes.has(key):
+        return _shapes[key]
+    var w := size.x
+    var h := size.y
+    var t := size.z
+    var cover := SurfaceTool.new()
+    cover.begin(Mesh.PRIMITIVE_TRIANGLES)
+    var parts := [[Vector3(w, h, board), Vector3(0, h * 0.5, t * 0.5 - board * 0.5)],
+                  [Vector3(w, h, board), Vector3(0, h * 0.5, -t * 0.5 + board * 0.5)],
+                  [Vector3(board, h, t), Vector3(-w * 0.5 + board * 0.5, h * 0.5, 0)]]
+    if folder:
+        parts.append([Vector3(w * 0.4, board * 8.0, board), Vector3(w * 0.22, h + board * 4.0, t * 0.5 - board * 0.5)])
+    var box := BoxMesh.new()
+    for part in parts:
+        box.size = part[0]
+        cover.append_from(box, 0, Transform3D(Basis.IDENTITY, part[1]))
+    var paper := SurfaceTool.new()
+    paper.begin(Mesh.PRIMITIVE_TRIANGLES)
+    box.size = Vector3(w - board * 1.5, h - board * 2.0, t - board * 2.0)
+    paper.append_from(box, 0, Transform3D(Basis.IDENTITY, Vector3(board * 0.25, h * 0.5, 0)))
+    var mesh := cover.commit()
+    paper.commit(mesh)
+    _shapes[key] = mesh
+    return mesh
+
+# The closed book: its shape in its own leather and paper. Its writing is put on by write().
 func _closed_book() -> Node3D:
     var shut := Node3D.new()
+    var board := _page.x * BOARD_OF_PAGE
+    var block := MeshInstance3D.new()
+    block.name = "Book"
+    block.mesh = closed_shape(_size, board, is_folder())
+    block.set_surface_override_material(0, _material_of(cover_colour(), 0.55 if not is_folder() else 0.9))
+    block.set_surface_override_material(1, _material_of(PAPER, 0.95, 0.12))
+    block.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    shut.add_child(block)
+    return shut
+
+## How far from the eye a closed book's writing is drawn: Reading.label's own range for writing read
+## at arm's length. Beyond it the cover and spine are bare, as they would look anyway.
+static func reading_range() -> float:
+    return Reading.at_arm() * Reading.READ_FADE
+
+## How near the eye comes before a closed book is written: the range its writing is drawn at and an
+## arm's reach more, so the writing is there before it could be seen.
+static func writing_reach() -> float:
+    return reading_range() + Reading.at_arm()
+
+func is_written() -> bool:
+    return _written
+
+## Put the writing on the closed book: the cover's title, what it is (for a memory, what ELI
+## remembers) and when, each cut to the cover it has; the spine's title read top to bottom; a case
+## file's name on its tab. Once: a book already written is left as it is.
+func write() -> void:
+    if _written or _closed == null:
+        return
+    _written = true
+    var shut := _closed
     var w := _size.x
     var h := _size.y
     var t := _size.z
     var board := _page.x * BOARD_OF_PAGE
-    var cover := _material_of(cover_colour(), 0.55 if not is_folder() else 0.9)
-    var paper := _material_of(PAPER, 0.95, 0.12)
-    _block(shut, Vector3(w, h, board), Vector3(0, h * 0.5, t * 0.5 - board * 0.5), cover)
-    _block(shut, Vector3(w, h, board), Vector3(0, h * 0.5, -t * 0.5 + board * 0.5), cover)
-    _block(shut, Vector3(board, h, t), Vector3(-w * 0.5 + board * 0.5, h * 0.5, 0), cover)
-    _block(shut, Vector3(w - board * 1.5, h - board * 2.0, t - board * 2.0), Vector3(board * 0.25, h * 0.5, 0), paper)
     var at_arm := Reading.at_arm()
     var ink := Reading.ink(cover_colour(), GILT if not is_folder() else Color(0.12, 0.09, 0.06))
-    # the cover: its title, what it is (for a memory, what ELI remembers), and when, each cut to the
-    # cover it has
     var face_w := w - board * 4.0
     var printed := Reading.printed()
     var y := h - board * 3.0
@@ -317,7 +392,7 @@ func _closed_book() -> Node3D:
                          Vector2(-face_w * 0.5, y - board), t)
     if not when_span().is_empty():
         _cover_lines(shut, [when_span()], 0.85, Reading.ink(cover_colour(), ink.lerp(cover_colour(), 0.15)), Vector2(-face_w * 0.5, foot), t)
-    # the spine: its title read top to bottom, and its year at the foot
+    # the spine: its title read top to bottom
     var spine := Reading.label(_fit_spine(spine_title(), h * 0.8, t * SPINE_FILL), at_arm, ink, 0.0, Reading.printed(),
                                _spine_scale(t))
     spine.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -326,19 +401,16 @@ func _closed_book() -> Node3D:
     spine.position = Vector3(-w * 0.5 - 0.0015, h * 0.55, 0)
     shut.add_child(spine)
     if is_folder():
-        var tab := _block(shut, Vector3(w * 0.4, board * 8.0, board), Vector3(w * 0.22, h + board * 4.0, t * 0.5 - board * 0.5), cover)
         var named := Reading.label(spine_title(), at_arm, ink, w * 0.38, Reading.typed(), 0.7)
         named.position = Vector3(w * 0.04, h + board * 7.0, t * 0.5 + 0.0015)
         shut.add_child(named)
-        tab.name = "Tab"
-    return shut
 
 # Lines of a cover's writing from `at` (their top left) down; where the next begin.
 func _cover_lines(parent: Node3D, shown: Array, scale: float, ink: Color, at: Vector2, thickness: float) -> float:
     var at_arm := Reading.at_arm()
     var words := Reading.label("\n".join(shown), at_arm, ink, 0.0, Reading.printed(), scale)
     words.position = Vector3(at.x, at.y, thickness * 0.5 + 0.0015)
-    words.name = "Cover%d" % parent.get_child_count()         # each its own name: a shared one is not kept
+    words.name = "Cover%d" % (parent.get_child_count() - 1)   # each its own name: a shared one is not kept
     parent.add_child(words)
     return at.y - Reading.line_height(Reading.printed(), at_arm, scale) * shown.size()
 
@@ -468,6 +540,7 @@ func turn_page(by: int) -> bool:
         _leaf.visible = true
         _leaf.rotation.y = 0.0 if by > 0 else -PI
     _show_spread()
+    set_process(true)
     return true
 
 func open_book() -> void:
@@ -493,6 +566,8 @@ func close_book() -> void:
 # --- in the hand ---------------------------------------------------------------------------------
 
 func begin_grab() -> void:
+    set_process(true)
+    write()                         # in the hand, its cover is read when it is shut again
     super.begin_grab()
     open_book()
 
@@ -503,6 +578,7 @@ func hold(origin: Vector3, direction: Vector3, stick: Vector2, _delta: float) ->
     if not opened:
         open_book()
     _held = true
+    set_process(true)
     var camera := get_viewport().get_camera_3d() if is_inside_tree() else null
     var eye := camera.global_position if camera != null else origin - direction.normalized() * Reading.in_hand()
     var toward := (eye - origin)
@@ -559,6 +635,28 @@ func end_grab() -> void:
     _flicked = false
     _swipes.clear()
     super.end_grab()
+    set_process(true)
+
+# Whatever sets it moving, growing, leaving or lit again has it processed again.
+func leave() -> void:
+    super.leave()
+    set_process(true)
+
+func drive(to: Vector3, now: bool = false) -> void:
+    super.drive(to, now)
+    set_process(true)
+
+func vanish() -> void:
+    super.vanish()
+    set_process(true)
+
+func show_piece() -> void:
+    super.show_piece()
+    set_process(true)
+
+func flash(seconds: float) -> void:
+    super.flash(seconds)
+    set_process(true)
 
 ## The record as ELI is told of it while the user holds it: the book, and the page they are reading.
 func record() -> Dictionary:
@@ -583,6 +681,11 @@ func record() -> Dictionary:
 func eye_height() -> float:
     return _size.y * 0.5
 
+## Standing where it belongs, grown in, not held, lit or turning a page: nothing about it changes.
+func at_rest() -> bool:
+    return not _held and not _leaving and not _gone and _turning == 0.0 and _grown >= 1.0 and _flash_left <= 0.0 \
+        and position.is_equal_approx(_target) and (not pinned or basis.is_equal_approx(_pin.basis))
+
 func _process(delta: float) -> void:
     if _turning != 0.0:
         var way := signf(_turning)
@@ -592,9 +695,10 @@ func _process(delta: float) -> void:
             _leaf.rotation.y = -PI * (done if way > 0.0 else 1.0 - done)     # lifting towards the reader
             if _turning == 0.0:
                 _leaf.visible = false
-    # at rest in its place and grown in: nothing to move, so nothing is written to it frame by frame
-    if not _held and not _leaving and _grown >= 1.0 and _flash_left <= 0.0 and position.is_equal_approx(_target) \
-            and (not pinned or basis.is_equal_approx(_pin.basis)):
+    # at rest in its place and grown in: nothing to move, so it is not processed again until
+    # something moves it (taken, sent elsewhere, lit, leaving: each of those turns this back on)
+    if at_rest():
+        set_process(false)
         return
     if not _held and pinned:
         basis = basis.slerp(_pin.basis, clampf(delta * 6.0, 0.0, 1.0)).orthonormalized()

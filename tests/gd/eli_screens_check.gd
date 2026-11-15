@@ -23,6 +23,16 @@ const Book = preload("res://scripts/eli/eli_book.gd")
 const OwnRoomClass = preload("res://scripts/world/rooms/own_room.gd")
 const Factory = preload("res://scripts/world/room_factory.gd")
 const Manipulator = preload("res://scripts/xr/world_manipulator.gd")
+const Link = preload("res://scripts/eli/eli_link.gd")
+
+# Stands in for a room that keeps books in an order of its own, counting how often it is asked.
+class OrderingRoom extends Node3D:
+    var asked := 0
+    func arrange(_kind: String, records: Array) -> Array:
+        asked += 1
+        return records
+    func pin_spot(kind: String, index: int) -> Variant:
+        return Transform3D(Basis.IDENTITY, Vector3(0.05 * index, 1.4, -30.0)) if kind == "book" else null
 
 # Stands in for the app's settings: every value as its default.
 class Settings extends RefCounted:
@@ -318,6 +328,7 @@ func _run() -> void:
     _land_checks()
     await _room_checks()
     await _knowledge_checks()
+    await _speed_checks()
     quit()
 
 # ELI's thoughts hang as sheets: six rooms keep places for them, a sheet is written with its lines
@@ -1649,3 +1660,139 @@ func _room_checks() -> void:
 
     _check("the_rebuilt_rooms_shaders_compile_and_the_mountain_has_its_birds", failed.is_empty() and soars,
            "failed %s soars %s" % [failed, soars])
+
+# What keeps the headset's frames: a hall of books costs a shape each and nothing at rest, their
+# writing waits until it can be read, a world message that says the same changes nothing, ELI's
+# world is read off the main thread, a room built again gets its shapes back, and a flock is
+# ticked at its own rate however fast the display runs.
+func _speed_checks() -> void:
+    # an eye in the middle of the room, the shelf thirty metres off: too far to read a spine
+    var eye := Camera3D.new()
+    root.add_child(eye)
+    eye.position = Vector3(0, Reading.STANDING_EYE, 0)
+    eye.current = true
+    var room := OrderingRoom.new()
+    root.add_child(room)
+    var shelf = Things.new()
+    root.add_child(shelf)
+    shelf.pinner = room
+    shelf.show_room("memory_archive")
+    var records := []
+    for i in 12:
+        records.append(_book_record("book_speed_%d" % i, "conversation", "A talk about lamp %d" % i, T0 + DAY * i,
+                                    [{"heading": "You", "text": "Where is lamp %d?" % i}]))
+    shelf.apply_world_state({"objects": records})
+    # with an eye in the room the books are brought in a frame's share at a time
+    var brought := 0
+    while shelf.coming() > 0 and brought < 600:
+        await process_frame
+        brought += 1
+    await process_frame
+    var books: Array = records.map(func(r): return shelf._things.get(r["id"]))
+    if books.any(func(b): return b == null):
+        for name in ["a_shelf_of_books_is_a_shape_each_and_costs_nothing_at_rest", "a_world_message_that_says_the_same_changes_nothing",
+                     "a_books_cover_and_spine_are_written_when_the_eye_is_near_enough_to_read_them"]:
+            _check(name, false, "the books never came")
+        return
+    var one_shape: bool = books.all(func(b): return _meshes(b._closed).size() == 1 and (_meshes(b._closed)[0] as MeshInstance3D).mesh == (_meshes(books[0]._closed)[0] as MeshInstance3D).mesh)
+    var bare: bool = books.all(func(b): return _labels(b._closed).is_empty() and not b.is_written())
+    # grown in and standing in their places, they are not processed
+    for b in books:
+        for _i in 12:
+            b._process(0.1)
+    var asleep: bool = books.all(func(b): return b.at_rest() and not b.is_processing())
+    # the same message again: no book is gone over or woken; one book changed: that one alone is
+    # drawn again, and the room is still asked where each stands
+    var before: int = room.asked
+    var closed_was: Array = books.map(func(b): return b._closed)
+    shelf.apply_world_state({"objects": records.duplicate(true)})
+    var untouched: bool = room.asked == before + 1 and books.all(func(b): return not b.is_processing()) \
+        and range(books.size()).all(func(i): return books[i]._closed == closed_was[i])
+    var changed: Array = records.duplicate(true)
+    changed[3]["book"]["about"] = "now about a kettle"
+    shelf.apply_world_state({"objects": changed})
+    var only_that: bool = books[3]._closed != closed_was[3] and books[3].is_processing() \
+        and range(books.size()).all(func(i): return i == 3 or (books[i]._closed == closed_was[i] and not books[i].is_processing()))
+    _check("a_shelf_of_books_is_a_shape_each_and_costs_nothing_at_rest", one_shape and asleep,
+           "one shape %s asleep %s" % [one_shape, asleep])
+    _check("a_world_message_that_says_the_same_changes_nothing", untouched and only_that,
+           "untouched %s only the changed one %s" % [untouched, only_that])
+    # walk up to the shelf: the books within reading distance are written, cover and spine
+    eye.position = Vector3(0.3, Reading.STANDING_EYE, -30.0 + Reading.at_arm())
+    var frames := 0
+    while frames < 120 and not books.all(func(b): return b.is_written()):
+        await process_frame
+        frames += 1
+    var written: bool = books.all(func(b): return b.is_written() and _labels(b._closed).size() >= 2)
+    var titled: bool = "A talk about lamp 5" in " ".join(_texts_under(books[5]._closed)).replace("\n", " ")
+    _check("a_books_cover_and_spine_are_written_when_the_eye_is_near_enough_to_read_them", bare and written and titled,
+           "bare at a distance %s written near %s after %d frames, titled %s" % [bare, written, frames, titled])
+    shelf.queue_free()
+    room.queue_free()
+    eye.queue_free()
+
+    # ELI's world is read on a worker thread: handing the link a message does not read it there and
+    # then, and messages are taken in the order they came
+    var link = Link.new()
+    root.add_child(link)
+    var heard := []
+    link.world_state_received.connect(func(state): heard.append(int(state.get("n", -1))))
+    var threaded: bool = link.has_method("_read")
+    if threaded:
+        var big := []
+        for i in 4000:
+            big.append({"id": "o%d" % i, "name": "a record", "meaning": "the lamp by the window"})
+        link._read(JSON.stringify({"type": "eli_world_state", "n": 1, "objects": big}).to_utf8_buffer())
+        link._read(JSON.stringify({"type": "eli_world_state", "n": 2}).to_utf8_buffer())
+        var at_once: int = heard.size()
+        var waited := 0
+        while heard.size() < 2 and waited < 600:
+            await process_frame
+            link._take_read()
+            waited += 1
+        _check("elis_world_is_read_off_the_main_thread_and_taken_in_order", at_once == 0 and heard == [1, 2],
+               "heard at once %d, then %s" % [at_once, heard])
+    else:
+        _check("elis_world_is_read_off_the_main_thread_and_taken_in_order", false, "the link reads its messages where they arrive")
+    link.queue_free()
+
+    # a room built again is handed the shapes its last build made: the sea and the gulls' bird
+    var sea_of := func(ocean) -> Mesh:
+        var biggest: Mesh = null
+        for m in _meshes(ocean):
+            var mesh: Mesh = (m as MeshInstance3D).mesh
+            if mesh is ArrayMesh and (biggest == null or mesh.get_faces().size() > biggest.get_faces().size()):
+                biggest = mesh
+        return biggest
+    var first = _built(Ocean)
+    var second = _built(Ocean)
+    var same_sea: bool = sea_of.call(first) != null and sea_of.call(first) == sea_of.call(second)
+    var same_bird: bool = _flock_of(first).multimesh.mesh == _flock_of(second).multimesh.mesh
+    _check("a_room_built_again_is_handed_the_shapes_it_made_before", same_sea and same_bird, "sea %s bird %s" % [same_sea, same_bird])
+    # the gulls are ticked at their own rate: a ninetieth of a second moves none of them on, only
+    # where each is drawn; three of them make one tick
+    var gulls = _flock_of(second)
+    var was: Vector3 = gulls.positions()[0]
+    var drawn_was: Vector3 = gulls.drawn(0).origin if gulls.has_method("drawn") else was
+    gulls._process(1.0 / 90.0)
+    var held: bool = gulls.positions()[0] == was
+    var drawn_on: bool = gulls.has_method("drawn") and not gulls.drawn(0).origin.is_equal_approx(drawn_was)
+    gulls._process(1.0 / 90.0)
+    gulls._process(1.0 / 90.0 + 0.0001)
+    var ticked: bool = gulls.positions()[0] != was
+    _check("a_flock_is_ticked_at_its_own_rate_and_drawn_between_ticks", held and drawn_on and ticked,
+           "held %s drawn on %s ticked %s" % [held, drawn_on, ticked])
+    first.queue_free()
+    second.queue_free()
+
+    # what a room can work out ahead is started in the background when ELI VR starts: the black
+    # hole's table of rays is being made before the Anomaly Room is ever built, and is the same table
+    var ahead := false
+    var same_table := false
+    if (Factory as Script).get_script_method_list().any(func(m): return m["name"] == "warm"):
+        BlackHole._tables.clear()
+        (Factory as Script).call("warm")
+        ahead = BlackHole._making.size() == 1
+        var lens: ImageTexture = BlackHole.table(Anomaly.DECK_AWAY, Anomaly.LENS_REACH)
+        same_table = BlackHole._making.is_empty() and lens.get_image().get_data() == BlackHole.traced(Anomaly.DECK_AWAY, Anomaly.LENS_REACH).get_data()
+    _check("the_rooms_start_on_what_they_can_work_out_before_they_are_built", ahead and same_table, "ahead %s same table %s" % [ahead, same_table])
