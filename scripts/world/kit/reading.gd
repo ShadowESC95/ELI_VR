@@ -160,17 +160,26 @@ static func line_height(font: Font, distance: float, scale: float = 1.0) -> floa
 static func measurer(font: Font) -> Callable:
     return func(s: String) -> float: return font.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, DRAWN).x
 
-## A text as the lines it takes in a column `width` metres wide read from `distance`, no more than
-## `rows` of them: the last cut short with "…" when there is more.
-static func fit(text: String, distance: float, width: float, rows: int, font: Font = null, scale: float = 1.0) -> Array:
+## A text as every line it takes in a column `width` metres wide read from `distance`: all of it,
+## however many lines that is (a sheet that takes a record whole asks how tall that makes it).
+static func wrapped(text: String, distance: float, width: float, font: Font = null, scale: float = 1.0) -> Array:
     font = font if font != null else printed()
     var room := width / (pixel(distance) * scale)
     var measure := measurer(font)
     var lines := []
     for paragraph in text.split("\n", false):
         lines.append_array(wrap_lines(paragraph, room, measure))
+    return lines
+
+## A text as the lines it takes in a column `width` metres wide read from `distance`, no more than
+## `rows` of them: the last cut short with "…" when there is more.
+static func fit(text: String, distance: float, width: float, rows: int, font: Font = null, scale: float = 1.0) -> Array:
+    font = font if font != null else printed()
+    var lines := wrapped(text, distance, width, font, scale)
     if lines.size() <= rows:
         return lines
+    var room := width / (pixel(distance) * scale)
+    var measure := measurer(font)
     lines = lines.slice(0, maxi(rows, 1))
     var last: String = lines[-1]
     while not last.is_empty() and float(measure.call(last + "…")) > room:

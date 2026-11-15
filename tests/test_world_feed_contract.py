@@ -18,7 +18,8 @@ READ = {
                     "when": {"number|null", "number"}, "importance": {"number"}, "form": {"form"}, "book": {"book"}},
     "book": {"of": {"str"}, "title": {"str"}, "spine": {"str"}, "about": {"str"}, "from": {"number|null"},
              "to": {"number|null"}, "length": {"int"}, "?shelf": {"str"}, "?by": {"str"}, "?fiction": {"bool"},
-             "?drawn_from": {"array<str>"}, "?sections": {"array<section>"}, "?applies_to": {"str"}},
+             "?drawn_from": {"array<str>"}, "?sections": {"array<section>"}, "?applies_to": {"str"},
+             "?change": {"str"}},         # EvidenceSheet.of_lesson: what a lesson says to do, whole
     "section": {"heading": {"str"}, "text": {"str"}},
     # EliThing's belief sheet, EvidenceSheet.of_claim, the wall's arrange() and its exhibits
     "claim_object": {"id": {"str"}, "name": {"str"}, "kind": {"str"}, "room": {"str"}, "importance": {"number"},
@@ -37,15 +38,17 @@ READ = {
                 "decision": {"str"}, "reason": {"str"}, "status": {"str"}, "outcome": {"str"}, "when": {"number"},
                 "subject": {"str"}},
     # the scoreboard (EvidenceStudioRoom.score_lines, _weeks) and EvidenceSheet.of_action
-    "evidence": {"?actions": {"actions"}, "?accuracy": {"array<accuracy>"}},
+    "evidence": {"?actions": {"actions"}, "?accuracy": {"array<accuracy>"}, "?wall": {"array<wall_entry>"}},
+    # what goes up on the wall of sheets and in what order (EvidenceStudioRoom._as_sent, _once)
+    "wall_entry": {"ref": {"str"}, "kind": {"str"}, "also": {"array<str>"}},
     "actions": {"rows": {"array<action>"}},
-    "action": {"action": {"str"}, "name": {"str"}, "n": {"int"}, "ok": {"int"}, "causes": {"array<cause>"},
+    "action": {"id": {"str"}, "action": {"str"}, "name": {"str"}, "n": {"int"}, "ok": {"int"}, "causes": {"array<cause>"},
                "last": {"number"}, "weeks": {"array<action_week>"}, "instead": {"array<instead>"}},
     "cause": {"words": {"str"}, "n": {"int"}},
     "action_week": {"n": {"int"}, "ok": {"int"}},
     "instead": {"name": {"str"}, "n": {"int"}},
     # the charts (EvidenceStudioRoom._draw_charts) and EvidenceSheet.of_accuracy
-    "accuracy": {"kind": {"str"}, "words": {"str"}, "n": {"int"}, "right": {"number|null"}, "ece": {"number|null"},
+    "accuracy": {"id": {"str"}, "kind": {"str"}, "words": {"str"}, "n": {"int"}, "right": {"number|null"}, "ece": {"number|null"},
                  "weeks": {"array<accuracy_week>"}},
     "accuracy_week": {"from": {"number"}, "n": {"int"}, "right": {"number|null"}},
     "form": {"shape": {"str"}, "colour": {"str"}, "pos": {"array<number>"}},

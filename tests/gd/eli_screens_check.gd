@@ -971,7 +971,7 @@ func _knowledge_checks() -> void:
     var fill: MeshInstance3D = pinned._things["claim_1"]._body.find_child("Sureness", false, false)
     var track: MeshInstance3D = pinned._things["claim_1"]._body.find_child("Track", false, false)
     var share: float = (fill.mesh as BoxMesh).size.x / (track.mesh as BoxMesh).size.x
-    var as_sheet: bool = pinned._things["claim_1"]._pin_size == wall._slots[0]["size"]
+    var as_sheet: bool = pinned._things["claim_1"]._pin_size == wall._slots[wall._claim_slot["claim_1"]]["now"]
     var cards_ok: bool = ranked_claims == ["claim_1", "claim_2", "claim_3"] and "home town: Harbour Town" in card_1 and "chance 72%" in card_1 \
         and ("since %s · learned %s" % [Reading.day(T0), Reading.day(T0 + 3.0 * DAY)]) in card_1 and "you said so twice" in card_1 \
         and "rests on 1 record" in card_1 and stamp and unstamped and absf(share - 0.72) < 0.01 and as_sheet \
@@ -981,8 +981,10 @@ func _knowledge_checks() -> void:
     # nothing on the wall but ELI's records: no sheets pinned up for show
     var shown_for_show := _meshes(wall).filter(func(m): return _shaded_with(m, "document.gdshader"))
     _check("the_evidence_wall_pins_up_nothing_that_is_not_elis", shown_for_show.is_empty(), "%d made-up sheets" % shown_for_show.size())
-    var question := " ".join(_texts_under(wall._sheets.get_node("Sheet_1"))).replace("\n", " ")
-    var asked_after: bool = wall._question_place.get("home town", -1) == 1
+    # the question is the next record after the belief it is about (each goes to the nearest sheet that takes it whole)
+    var question_at: int = wall._placed.keys().filter(func(i): return wall._placed[i].get("id") == "conflict_1")[0]
+    var question := " ".join(_texts_under(wall._sheets.get_node("Sheet_%d" % question_at))).replace("\n", " ")
+    var asked_after: bool = wall._evidence(state, claims).map(func(e): return e["id"]).slice(0, 2) == ["claim_1", "conflict_1"]
     # threads: home town to its question, the two beliefs and the exhibit resting on one record, open app to its lesson
     _check("disputes_come_first_with_their_question_and_thread_runs_between_related_cards",
            wall._threads.mesh != null and wall.threads_drawn() == 4 and "Hill Village" in question and "DISPUTED" in question and asked_after,
@@ -990,7 +992,7 @@ func _knowledge_checks() -> void:
     # the owner's wall: seven boards of thirteen sheets, each with a record while there are records, the rest blank
     var wall_boards: Array = wall.get_children().filter(func(c): return c.name.begins_with("Wall_"))
     var on_sheets: Array = wall._sheets.get_children().filter(func(c): return not c.is_queued_for_deletion())
-    var blank_say_nothing: bool = on_sheets.size() == 10 - 3 and on_sheets.all(func(c): return int(str(c.name).get_slice("_", 1)) < 10)
+    var blank_say_nothing: bool = on_sheets.size() == 10 - 3 and on_sheets.all(func(c): return wall._placed.has(int(str(c.name).get_slice("_", 1))))
     _check("the_evidence_wall_is_a_full_wall_of_pinned_sheets", wall_boards.size() == 7 and wall.sheet_count() == 91
            and wall._papers.multimesh.instance_count == 91 and wall.records_on_wall() == 10 and blank_say_nothing
            and wall._on_file.text == "10 records on file",
@@ -1059,6 +1061,7 @@ func _knowledge_checks() -> void:
     for node in [loose, pinner, grabber, wall]:
         node.queue_free()
     await _book_read_whole_check()
+    await _whole_and_once_checks()
     await _example_feed_checks()
 
 # A book too long for the world message comes with its length and no sections: opened, it is read
@@ -1106,6 +1109,103 @@ func _book_read_whole_check() -> void:
     for node in [long, missing, served]:
         node.queue_free()
 
+# The wall's sheets take their records whole, and a record is pinned up once. Invented records, shaped
+# like a real wall's: long beliefs, a lesson with a long change, the same thought in turn after turn.
+func _whole_and_once_checks() -> void:
+    var long_fact := "Prefers every reply to begin with the conclusion and to leave the reasoning for afterwards, with the commands written out one to a line so each can be run as it stands and checked before the next."
+    var long_change := "before opening an app by its name, look the name up among the installed apps and open the site when it is not there"
+    var belief := func(id: String, relation: String, value: String, chance: float, also: Array = []) -> Dictionary:
+        return {"id": id, "name": (relation + ": " + value).substr(0, 48), "kind": "claim", "room": "evidence_wall", "importance": chance, "meaning": "",
+                "claim": {"relation": relation, "value": value, "chance": chance, "since": T0, "learned": T0, "basis": "you mentioned it once",
+                          "contested": false, "status": "current", "sources": [], "also": also},
+                "form": {"shape": "board", "colour": "#d9e4f2", "pos": [0.0, 1.0, 2.0]}}
+    var claims := [belief.call("claim_1", "preference.session", long_fact, 0.7),
+                   belief.call("claim_2", "identity.fact", "Keeps bees and grows pears on the south wall.", 0.6,
+                               [{"id": "claim_3", "relation": "identity.fact", "value": "Keeps bees.", "learned": T0}]),
+                   # one ELI folded into claim_2 and one that reads the same as claim_2, both still arriving
+                   belief.call("claim_3", "identity.fact", "Keeps bees.", 0.5),
+                   belief.call("claim_4", "identity.fact", "keeps bees and grows pears on the south wall", 0.4)]
+    var lesson := _book_record("book_lesson_7", "lesson", "open app: before opening an app by its name, look the…", T0,
+                               [{"heading": "When", "text": "OPEN_APP failed with: the app is not installed."},
+                                {"heading": "Why", "text": "A fault that shows up whatever the app, so what the action needs is not there."}],
+                               "evidence_wall", {"applies_to": "OPEN_APP", "spine": "open app", "change": long_change})
+    var rows := [{"id": "action_OPEN_APP", "action": "OPEN_APP", "name": "open app", "n": 12, "ok": 3, "p": 0.3,
+                  "causes": [{"cause": "dependency", "words": "something it needs was not there", "n": 9}], "last": T0, "weeks": [], "instead": []}]
+    var thoughts := []
+    for i in 4:
+        thoughts.append({"id": 40 + i, "kind": "route", "room": "core_room", "what": "read as chat", "why": [], "chance": 0.9, "decision": "taken",
+                         "reason": "", "status": "open", "outcome": "", "when": T0 + float(i), "words": "", "subject": "sentence %d" % i, "ref": "route:r%d" % i})
+    var evidence := {"actions": {"days": 30, "runs": 12, "rows": rows}, "accuracy": []}
+    var state := {"objects": claims + [lesson], "evidence": evidence, "thoughts": thoughts}
+    var eli := {"connected": true, "mind": "", "mode": "idle", "can": ["books", "evidence"], "state": state}
+    var wall = EvidenceWall.new()
+    root.add_child(wall)
+    wall.build({}, Settings.new())
+    wall.show_eli(eli)
+    var pinned = Things.new()
+    root.add_child(pinned)
+    pinned.pinner = wall
+    pinned.show_room("evidence_wall")
+    pinned.apply_world_state(state)
+    await process_frame
+    # (1) every word of every record that is up is on its sheet, and no line was cut short
+    var one := func(text: String) -> String: return " ".join(text.replace("\n", " ").split(" ", false))
+    var said := {}
+    for i in wall._placed:
+        var entry: Dictionary = wall._placed[i]
+        var node: Node = pinned._things[entry["id"]]._body if entry.has("belief") else wall._sheets.get_node("Sheet_%d" % i)
+        said[entry["id"]] = one.call(" ".join(_texts_under(node)))
+    var whole: bool = one.call("preference.session: " + long_fact) in said.get("claim_1", "") \
+        and one.call("open app: " + long_change) in said.get("book_lesson_7", "") \
+        and "OPEN_APP failed with: the app is not installed." in said.get("book_lesson_7", "") \
+        and "what the action needs is not there." in said.get("book_lesson_7", "") \
+        and "failed: something it needs was not there" in said.get("action_OPEN_APP", "")
+    var cut: Array = said.values().filter(func(t): return "…" in t)
+    # (2) at the size it is read at where it hangs, on a sheet inside its own share of the board
+    var sized := true
+    var grown := 0
+    for i in wall._placed:
+        var slot: Dictionary = wall._slots[i]
+        var now: Vector2 = slot["now"]
+        var view: Dictionary = wall._placed[i]["view"] if wall._placed[i].has("view") else EvidenceSheet.of_claim(wall._placed[i]["belief"])
+        var c := cos(absf(float(slot["tilt"])))
+        var sn := sin(absf(float(slot["tilt"])))
+        sized = sized and EvidenceSheet.fits(view, now, float(slot["distance"])) and now.x >= slot["size"].x - 0.0001 and now.y >= slot["size"].y - 0.0001 \
+            and now.x * c + now.y * sn <= slot["cell"].x + 0.001 and now.x * sn + now.y * c <= slot["cell"].y + 0.001
+        grown += 1 if now != slot["size"] else 0
+    var read_size := true
+    for label in _labels(wall._sheets):
+        var sheet_at := int(str(label.get_parent().name).get_slice("_", 1))
+        if label.name in ["Heading", "Details"]:
+            var scale := 1.1 if label.name == "Heading" else 1.0
+            read_size = read_size and absf(label.pixel_size - Reading.pixel(float(wall._slots[sheet_at]["distance"])) * scale) < 0.000001
+    _check("a_sheet_takes_its_record_whole_at_the_size_it_is_read_at", whole and cut.is_empty() and sized and grown > 0 and read_size,
+           "whole %s cut %s sized %s grown %d read size %s said %s" % [whole, cut, sized, grown, read_size, said])
+    # (3) a record is up once: one folded into another by ELI, one that reads the same, a thought had turn after turn
+    var up: Array = wall._placed.values().map(func(e): return e["id"])
+    var once: bool = up.has("claim_2") and not up.has("claim_3") and not up.has("claim_4") \
+        and up.filter(func(id): return str(id).begins_with("thought_")).size() == 1 \
+        and not pinned._things["claim_3"].pinned and not pinned._things["claim_4"].pinned and pinned._things["claim_2"].pinned \
+        and wall._on_file.text == "%d records on file" % up.size() and up.size() == 5
+    _check("a_record_that_arrives_twice_is_pinned_up_once", once, "up %s says %s" % [up, wall._on_file.text])
+    # (4) ELI's order is the wall's, nearest sheets first, and what ELI left off the wall stays off it
+    state["evidence"]["wall"] = [{"ref": "book_lesson_7", "kind": "lesson", "also": []}, {"ref": "claim_2", "kind": "claim", "also": ["claim_3", "thought_40"]},
+                                 {"ref": "action_OPEN_APP", "kind": "action", "also": []}, {"ref": "book_lesson_7", "kind": "lesson", "also": []},
+                                 {"ref": "book_lesson_gone", "kind": "lesson", "also": []}, {"ref": "claim_3", "kind": "claim", "also": []}]
+    wall.show_eli(eli)
+    pinned.apply_world_state(state)
+    await process_frame
+    var order: Array = wall._evidence(state, claims).map(func(e): return e["id"])
+    var places: Array = wall._placed.keys()
+    places.sort()
+    var by_place: Array = places.map(func(i): return wall._placed[i]["id"])
+    var threaded: bool = wall.threads_drawn() == 1          # the lesson to the action it is about
+    _check("the_wall_hangs_what_eli_says_goes_up_in_elis_order", order == ["book_lesson_7", "claim_2", "action_OPEN_APP"] and by_place.size() == 3
+           and by_place.has("book_lesson_7") and wall.records_on_wall() == 3 and not pinned._things["claim_1"].pinned and threaded,
+           "order %s places %s threads %d" % [order, by_place, wall.threads_drawn()])
+    pinned.queue_free()
+    wall.queue_free()
+
 # ELI v3's own example of a world message (tests/fixtures, copied from ELI v3): the rooms built from it,
 # headless, show what it holds.
 func _example_feed_checks() -> void:
@@ -1128,11 +1228,13 @@ func _example_feed_checks() -> void:
     on_wall.show_room("evidence_wall")
     on_wall.apply_world_state(state)
     await process_frame
-    var records: int = by_room.call("evidence_wall", "claim").size() + objects.filter(func(o): return o.get("kind") == "conflict").size() \
-        + state["evidence"]["actions"]["rows"].size() + by_room.call("evidence_wall", "book").size() \
-        + state["thoughts"].filter(func(t): return t.get("room") != "evidence_wall").size() \
-        + state["evidence"]["accuracy"].filter(func(r): return int(r["n"]) > 0 and r["right"] != null).size() \
-        + wall._exhibits_of(by_room.call("evidence_wall", "claim")).size()
+    # every record ELI's example says goes up (its evidence "wall"), each of a kind the wall knows, in ELI's order
+    var sent: Array = state["evidence"]["wall"]
+    var records: int = sent.size()
+    var hung: Array = wall._placed.keys()
+    hung.sort()
+    var as_sent: bool = hung.map(func(i): return wall._placed[i]["id"]) == sent.map(func(e): return e["ref"]) \
+        and sent.map(func(e): return e["kind"]).has("claim") and sent.map(func(e): return e["kind"]).has("action")
     var said: Array = _texts_under(wall._sheets) + [wall._on_file.text]
     for claim in by_room.call("evidence_wall", "claim"):
         said.append_array(_texts_under(on_wall._things[claim["id"]]._body))
@@ -1142,7 +1244,7 @@ func _example_feed_checks() -> void:
     var lesson_on_desk := true
     for b in by_room.call("evidence_wall", "book"):
         lesson_on_desk = lesson_on_desk and on_wall._things[b["id"]].pinned and on_wall._things[b["id"]].position.y > wall._desk_top
-    _check("the_evidence_wall_shows_elis_example_world_message", wall.sheet_count() == 91 and wall.records_on_wall() == records
+    _check("the_evidence_wall_shows_elis_example_world_message", wall.sheet_count() == 91 and wall.records_on_wall() == records and as_sent
            and wall._on_file.text == "%d records on file" % records and invented.is_empty() and str(board[0]).begins_with("open app")
            and bars != null and bars.multimesh.instance_count > 2 and "replies to you" in " ".join(_texts_under(wall._chart))
            and lesson_on_desk and wall.threads_drawn() >= 3,

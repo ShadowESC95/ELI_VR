@@ -8,6 +8,10 @@ extends RefCounted
 # it), its date, and what else the record says, each at the size it is read at from where the sheet
 # hangs. The words are the record's; the sheet adds only the few words of its own in CHROME.
 #
+# A sheet takes its record whole: no line is cut short. laid() says how tall a sheet a record needs
+# at the size it is read at, size_for() gives the sheet that takes it within the room its place on
+# the board has, and draw() writes every line of it.
+#
 # view(): {"kind": the strip's word, "colour": the kind's colour, "heading", "figure", "fill" (0..1, or
 # -1 for no bar), "date", "details": [lines], "stamp": a word stamped across it ("" for none),
 # "keys": what it is related to, for the threads between sheets}.
@@ -80,8 +84,12 @@ static func of_lesson(record: Dictionary) -> Dictionary:
     for section in book.get("sections", []):
         if typeof(section) == TYPE_DICTIONARY and not str(section.get("text", "")).is_empty():
             details.append(str(section["text"]))
+    # what the lesson says to do, whole (ELI v3's "change"); a cover's title is cut to its cover
+    var heading := str(book.get("title", record.get("name", "")))
+    if not str(book.get("change", "")).is_empty():
+        heading = ": ".join([str(book.get("spine", "")), str(book["change"])].filter(func(t): return not t.is_empty()))
     return {"kind": "LESSON", "colour": _colour(record.get("form", {}), EliReadout.GOOD),
-            "heading": str(book.get("title", record.get("name", ""))), "figure": str(book.get("about", "")), "fill": -1.0,
+            "heading": heading, "figure": str(book.get("about", "")), "fill": -1.0,
             "date": Reading.span(book.get("from"), book.get("to")), "details": details, "stamp": ""}
 
 ## A record ELI's beliefs rest on (a claim's source), numbered as the exhibits are, with what it supports.
@@ -127,11 +135,108 @@ static func _colour(form, fallback: Color) -> Color:
         return Color(str(form["colour"]))
     return fallback
 
-# --- drawn ---------------------------------------------------------------------------------------
+# --- laid out and drawn ----------------------------------------------------------------------------
+
+# A sheet's own measures, in ems of its writing: the strip's height, the margin at each side, the
+# writing's top under the strip and the foot left clear, the bar's height and the room it takes.
+const STRIP := 0.7
+const SIDE := 0.8
+const TOP := 1.0
+const FOOT := 0.8
+const BAR := 0.5
+const BAR_ROOM := 0.8
+const GAP := 0.2
+const KIND_SCALE := 0.8
+const HEADING_SCALE := 1.1
+
+## A record's view laid out on a sheet `width` metres across for writing read from `distance`: every
+## line of it, none cut, and how tall a sheet that needs. {"heading", "figure", "date", "details":
+## lines, "needs": metres}.
+static func laid(view: Dictionary, width: float, distance: float) -> Dictionary:
+    var e := Reading.em(distance)
+    var font := Reading.typed()
+    var column := maxf(width - e * SIDE * 2.0, e)
+    var line := Reading.line_height(font, distance)
+    var heading := Reading.wrapped(str(view.get("heading", "")), distance, column, font, HEADING_SCALE)
+    var figure := Reading.wrapped(str(view.get("figure", "")), distance, column, font)
+    var date := Reading.wrapped(str(view.get("date", "")), distance, column, font)
+    var details := []
+    for detail in view.get("details", []):
+        details.append_array(Reading.wrapped(str(detail), distance, column, font))
+    var needs := e * TOP + line * KIND_SCALE + line * HEADING_SCALE * heading.size() + line * (figure.size() + date.size()) + e * FOOT
+    if float(view.get("fill", -1.0)) >= 0.0:
+        needs += e * BAR_ROOM
+    if not details.is_empty():
+        needs += e * GAP + line * details.size()
+    return {"heading": heading, "figure": figure, "date": date, "details": details, "needs": needs}
+
+## Whether a sheet `size` takes the whole of `view` at the size it is read at from `distance`.
+static func fits(view: Dictionary, size: Vector2, distance: float) -> bool:
+    return float(laid(view, size.x, distance)["needs"]) <= size.y + 0.0005
+
+## The sheet that takes `view` whole where it hangs: `base` (the sheet its place was pinned with) when
+## that holds it, else wide enough for its longest word, as tall as its writing makes it, and then
+## wider a letter at a time, for as far
+## as its place on the board has room (`cell`, the board's share for this sheet, which the sheet turned
+## `tilt` radians on its pin must stay inside). When no sheet there takes it whole, the largest that
+## the place has room for (fits() then says it does not).
+static func size_for(view: Dictionary, base: Vector2, cell: Vector2, tilt: float, distance: float) -> Vector2:
+    var e := Reading.em(distance)
+    var c := cos(absf(tilt))
+    var s := sin(absf(tilt))
+    var best := base
+    # wide enough that no word of it is broken across lines, when its place has that room
+    var width := maxf(base.x, _widest_word(view, distance) + e * SIDE * 2.0)
+    if (cell.y - width * s) / c < base.y or (s > 0.0001 and (cell.x - width * c) / s < base.y):
+        width = base.x
+    while true:
+        # the tallest a sheet this wide may be and still lie, turned, inside its place
+        var most := (cell.y - width * s) / c
+        if s > 0.0001:
+            most = minf(most, (cell.x - width * c) / s)
+        if most < base.y:
+            break
+        var needs := float(laid(view, width, distance)["needs"])
+        if needs <= most:
+            return Vector2(width, maxf(base.y, needs))
+        best = Vector2(width, most)
+        width += e * Reading.MONO_ADVANCE
+    return best
+
+# The widest single word of a view as it is written, in metres.
+static func _widest_word(view: Dictionary, distance: float) -> float:
+    var measure := Reading.measurer(Reading.typed())
+    var widest := 0.0
+    var texts := [[str(view.get("heading", "")), HEADING_SCALE], [str(view.get("figure", "")), 1.0], [str(view.get("date", "")), 1.0]]
+    for detail in view.get("details", []):
+        texts.append([str(detail), 1.0])
+    for text in texts:
+        for word in str(text[0]).replace("\n", " ").split(" ", false):
+            widest = maxf(widest, float(measure.call(word)) * Reading.pixel(distance) * float(text[1]))
+    return widest
 
 ## Write `view` on a sheet `size` metres across, facing +z from `parent`'s origin, for writing read
 ## from `distance`; `paper` false leaves the paper to the wall (it draws every sheet's paper at once).
+## Every line of the record is written. A sheet too small for it (no place on the board had room for
+## the whole of it) leaves out what else the record says from the end, a whole entry at a time, and
+## then writes smaller until the heading, the figure and the date are all there: never part of a line.
 static func draw(parent: Node3D, size: Vector2, distance: float, view: Dictionary, paper: bool = true) -> void:
+    view = view.duplicate()
+    var said := laid(view, size.x, distance)
+    while float(said["needs"]) > size.y + 0.0005 and not (view.get("details", []) as Array).is_empty():
+        view["details"] = (view["details"] as Array).slice(0, -1)
+        said = laid(view, size.x, distance)
+    var low := 0.0
+    if float(said["needs"]) > size.y + 0.0005:
+        var high := 1.0
+        for i in 12:
+            var mid := (low + high) * 0.5
+            if float(laid(view, size.x, distance * mid)["needs"]) <= size.y:
+                low = mid
+            else:
+                high = mid
+        distance *= maxf(low, 0.05)
+        said = laid(view, size.x, distance)
     var e := Reading.em(distance)
     var font := Reading.typed()
     if paper:
@@ -145,29 +250,24 @@ static func draw(parent: Node3D, size: Vector2, distance: float, view: Dictionar
     var colour: Color = view.get("colour", Color.WHITE)
     var strip := MeshInstance3D.new()
     var band := BoxMesh.new()
-    band.size = Vector3(size.x, e * 0.7, 0.004)
+    band.size = Vector3(size.x, e * STRIP, 0.004)
     strip.mesh = band
     strip.material_override = MaterialKit.light(colour, 0.9)
-    strip.position = Vector3(0, size.y * 0.5 - e * 0.35, 0.002)
+    strip.position = Vector3(0, size.y * 0.5 - e * STRIP * 0.5, 0.002)
     strip.name = "Strip"
     parent.add_child(strip)
     var ink := Reading.ink(PAPER)
     var soft := Reading.ink(PAPER, ink.lerp(PAPER, 0.25))
-    var left := -size.x * 0.5 + e * 0.8
-    var width := size.x - e * 1.6
-    var line := Reading.line_height(font, distance)
-    var y := size.y * 0.5 - e * 1.0
-    var rows := int(floor((size.y - e * 1.8) / line))
+    var left := -size.x * 0.5 + e * SIDE
+    var width := size.x - e * SIDE * 2.0
+    var y := size.y * 0.5 - e * TOP
     # the kind, then the heading, the figure (with its bar) and the date, then what else it says
-    y = _text(parent, [str(view.get("kind", ""))], distance, Vector2(left, y), Reading.ink(PAPER, colour.darkened(0.5)), 0.8, "Kind")
-    rows -= 1
-    var heading := Reading.fit(str(view.get("heading", "")), distance, width, clampi(rows - 3, 1, 3), font, 1.1)
-    y = _text(parent, heading, distance, Vector2(left, y), ink, 1.1, "Heading")
-    rows -= int(ceil(heading.size() * 1.1))
+    y = _text(parent, [str(view.get("kind", ""))], distance, Vector2(left, y), Reading.ink(PAPER, colour.darkened(0.5)), KIND_SCALE, "Kind")
+    y = _text(parent, said["heading"], distance, Vector2(left, y), ink, HEADING_SCALE, "Heading")
     var fill := float(view.get("fill", -1.0))
-    if fill >= 0.0 and rows > 0:
+    if fill >= 0.0:
         var bar_w := width * 0.45
-        var bar_h := e * 0.5
+        var bar_h := e * BAR
         for part in [["Track", bar_w, ink.lerp(PAPER, 0.75)], ["Sureness", maxf(0.001, bar_w * clampf(fill, 0.0, 1.0)), ink]]:
             var bar := MeshInstance3D.new()
             var box := BoxMesh.new()
@@ -178,15 +278,10 @@ static func draw(parent: Node3D, size: Vector2, distance: float, view: Dictionar
             bar.visibility_range_end = distance * Reading.READ_FADE
             bar.name = part[0]
             parent.add_child(bar)
-        y -= bar_h * 1.6
-    for part in [["Figure", str(view.get("figure", "")), 1], ["Date", str(view.get("date", "")), 2]]:
-        if rows > 0 and not str(part[1]).is_empty():
-            var shown := Reading.fit(part[1], distance, width, mini(int(part[2]), rows), font)
-            y = _text(parent, shown, distance, Vector2(left, y), ink, 1.0, part[0])
-            rows -= shown.size()
-    var details := "\n".join(view.get("details", []))
-    if rows > 0 and not details.strip_edges().is_empty():
-        _text(parent, Reading.fit(details, distance, width, rows, font), distance, Vector2(left, y - e * 0.2), soft, 1.0, "Details")
+        y -= e * BAR_ROOM
+    y = _text(parent, said["figure"], distance, Vector2(left, y), ink, 1.0, "Figure")
+    y = _text(parent, said["date"], distance, Vector2(left, y), ink, 1.0, "Date")
+    _text(parent, said["details"], distance, Vector2(left, y - e * GAP), soft, 1.0, "Details")
     if not str(view.get("stamp", "")).is_empty():
         var stamp := Reading.label(str(view["stamp"]), distance, Color(0.72, 0.05, 0.04), 0.0, font, 1.2)
         stamp.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

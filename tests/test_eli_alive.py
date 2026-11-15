@@ -280,6 +280,11 @@ class Screens(Alive):
     def test_a_book_sent_without_its_pages_is_read_whole_by_its_id(self) -> None:
         self.check("a_book_sent_without_its_pages_is_read_whole_by_its_id_when_opened")
 
+    def test_a_sheet_of_the_evidence_wall_takes_its_record_whole_and_a_record_is_up_once(self) -> None:
+        self.check("a_sheet_takes_its_record_whole_at_the_size_it_is_read_at")
+        self.check("a_record_that_arrives_twice_is_pinned_up_once")
+        self.check("the_wall_hangs_what_eli_says_goes_up_in_elis_order")
+
     def test_the_rooms_show_elis_example_world_message(self) -> None:
         self.check("the_evidence_wall_shows_elis_example_world_message")
         self.check("the_archive_shelves_elis_example_books")

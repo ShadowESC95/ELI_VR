@@ -8,9 +8,12 @@ extends RoomBase
 # record: what ELI believes and has learned about you (with how sure it is and since when; these
 # can be taken down and asked about), what it was told two ways and the question that settles it,
 # how often each of its actions worked, a lesson it learned, a record its beliefs rest on, a thought
-# it had, a memory it recalled, how often its own figures proved right. The nearest sheets ahead are
-# filled first, then the next kinds of evidence; a sheet with no record is blank pinned paper, and
-# the wall says once how many records are on file. Red thread runs only between sheets that are
+# it had, a memory it recalled, how often its own figures proved right. ELI says which records go up
+# and in what order, what matters most first (ELI v3's evidence "wall"); the nearest sheets ahead
+# are filled first. A record is pinned up once, however many times it arrives, and whole: it goes
+# to the nearest free place whose sheet takes all of it at the size it is read at there, the sheet
+# as tall (and, when it must be, as wide) as its writing makes it within its share of the board.
+# A sheet with no record is blank pinned paper, and the wall says once how many records are on file. Red thread runs only between sheets that are
 # about the same thing: beliefs about the same thing and their question, beliefs and the records
 # they rest on, an action and the lesson learned from it.
 #
@@ -76,10 +79,12 @@ var _papers: MultiMeshInstance3D    # every sheet's paper, and its pin, drawn at
 var _pins: MultiMeshInstance3D
 var _sheets: Node3D                 # the writing on the sheets the room writes
 var _written := {}                  # slot -> what it was last written with
+var _planned_key := ""              # what the wall was last laid out for
+var _placed := {}                   # slot -> the entry pinned there now
+var _claim_slot := {}               # a belief's id -> its sheet's place
 var _on_file: Label3D
 var _filled := 0                    # how many sheets carry a record
-var _claim_place: Array = []        # the arranged beliefs' places on the wall
-var _question_place: Dictionary = {} # what a question is about -> its sheet's place
+var _claim_place: Array = []        # the arranged beliefs' places on the wall (-1 for one with none)
 var _book_slots: Array = []
 
 func _build() -> void:
@@ -198,8 +203,11 @@ func _wall_of_sheets() -> void:
                 var jitter := Vector2(rng.randf_range(-0.5, 0.5) * (pitch_x - size.x), rng.randf_range(-0.5, 0.5) * (pitch_y - size.y) * 0.6)
                 var place := Vector3((float(c) - float(in_row - 1) * 0.5) * pitch_x + jitter.x,
                                      (float(rows - 1) * 0.5 - float(r)) * pitch_y + jitter.y, 0.07 + 0.002 * float(_slots.size() % 13))
-                var xf := at * Transform3D(Basis(Vector3.BACK, rng.randf_range(-TILT, TILT)), place)
-                _slots.append({"xf": xf, "size": size, "distance": Reading.at_height(xf.origin.y, eye), "board": b, "x": absf(place.x)})
+                var tilt := rng.randf_range(-TILT, TILT)
+                var xf := at * Transform3D(Basis(Vector3.BACK, tilt), place)
+                # its share of the board: its row and column's, less how far off its place it was pinned
+                _slots.append({"xf": xf, "size": size, "now": size, "distance": Reading.at_height(xf.origin.y, eye), "board": b, "x": absf(place.x),
+                               "cell": Vector2(pitch_x - 2.0 * absf(jitter.x), pitch_y - 2.0 * absf(jitter.y)), "tilt": tilt})
                 tones.append(rng.randf_range(0.9, 1.0))
         if b % 2 == 0:
             var from := at.origin * Vector3(7.2 / WALL, 0.0, 7.2 / WALL) + Vector3(0, 5.0, 0)
@@ -261,7 +269,7 @@ func _batch(mesh: Mesh, look: StandardMaterial3D) -> MultiMeshInstance3D:
 ## Where a sheet's pin is, in the room.
 func _pin_of(slot: Dictionary) -> Vector3:
     var e := Reading.em(float(slot["distance"]))
-    return (slot["xf"] as Transform3D) * Vector3(0, (slot["size"] as Vector2).y * 0.5 - e * 0.35, e * 0.4)
+    return (slot["xf"] as Transform3D) * Vector3(0, (slot["now"] as Vector2).y * 0.5 - e * 0.35, e * 0.4)
 
 # The paper of every sheet, tinted a little in the colour of the record on it, red-headed pins for the
 # sheets with a record; none drawn where one of ELI's beliefs hangs its own sheet. `held` is place ->
@@ -271,7 +279,7 @@ func _paper_up(held: Dictionary) -> void:
     for i in _slots.size():
         var slot: Dictionary = _slots[i]
         var xf: Transform3D = slot["xf"]
-        var size: Vector2 = slot["size"]
+        var size: Vector2 = slot["now"]
         var gone := held.has(i) and held[i] == null
         _papers.multimesh.set_instance_transform(i, xf * Transform3D(Basis.IDENTITY.scaled(Vector3(size.x, size.y, 1.0) * (0.0001 if gone else 1.0)), Vector3.ZERO))
         var tone: Color = (paper * float(slot["tone"])).lerp(held[i], 0.12) if held.has(i) and held[i] != null else paper * float(slot["tone"])
@@ -312,13 +320,26 @@ static func _chance(record: Dictionary) -> float:
         return float(claim["chance"])
     return float(record.get("importance", 0.5)) if record.get("importance") != null else 0.5
 
-## The beliefs as the wall keeps them: those in dispute first, then by what they are about, the
-## surest first within each; each group with the sheet asking which is right right after it.
+## The beliefs in the order of their places on the wall (as the wall was last laid out, _lay), those
+## with no place there last.
 func arrange(kind: String, records: Array) -> Array:
     if kind == "book":
         return _lay_cases(records)
     if kind != "claim":
         return records
+    if not records.is_empty() and not records.any(func(r): return _claim_slot.has(str(r.get("id", "")))):
+        _lay(_once(_by_kind({}, records)))              # asked before the wall was shown ELI: the beliefs alone
+    var ordered := records.duplicate()
+    var place := func(r) -> int: return int(_claim_slot.get(str(r.get("id", "")), _slots.size()))
+    ordered.sort_custom(func(a, b): return place.call(a) < place.call(b))
+    _claim_place.clear()
+    for record in ordered:
+        _claim_place.append(int(_claim_slot.get(str(record.get("id", "")), -1)))
+    return ordered
+
+# The beliefs as an ELI that sends no order has them kept: those in dispute first, then by what they
+# are about, the surest first within each; each group with the sheet asking which is right after it.
+func _beliefs_and_questions(records: Array) -> Array:
     var groups := {}
     var disputed := {}
     for record in records:
@@ -329,29 +350,35 @@ func arrange(kind: String, records: Array) -> Array:
         disputed[topic] = bool(disputed.get(topic, false)) or _disputed(record)
     var asked := {}
     for conflict in _conflicts:
-        asked[conflict[0]] = true
+        asked[conflict[0]] = conflict
     var topics := groups.keys()
     topics.sort_custom(_topic_before.bind(disputed, asked))
-    var ordered := []
-    _claim_place.clear()
-    _question_place.clear()
-    var next := 0
+    var out := []
     for topic in topics:
         var group: Array = groups[topic]
         group.sort_custom(func(a, b): return _chance(a) > _chance(b))
         for record in group:
-            ordered.append(record)
-            _claim_place.append(next)
-            next += 1
+            out.append(_belief_entry(record))
         if asked.has(topic):
-            _question_place[topic] = next
-            next += 1
+            out.append(_question_entry(asked[topic]))
     # questions about what ELI holds no belief for still go up
     for conflict in _conflicts:
-        if not _question_place.has(conflict[0]):
-            _question_place[conflict[0]] = next
-            next += 1
-    return ordered
+        if not groups.has(conflict[0]):
+            out.append(_question_entry(conflict))
+    return out
+
+func _belief_entry(record: Dictionary) -> Dictionary:
+    # the other wordings ELI folded into this belief (its claim's "also") are not sheets of their own
+    var claim = record.get("claim", {})
+    var also = claim.get("also", []) if typeof(claim) == TYPE_DICTIONARY else []
+    var folded := []
+    for other in (also if typeof(also) == TYPE_ARRAY else []):
+        if typeof(other) == TYPE_DICTIONARY and not str(other.get("id", "")).is_empty():
+            folded.append(str(other["id"]))
+    return {"id": str(record.get("id", "")), "belief": record, "keys": ["topic:" + about(record)] + _sources(record), "also": folded}
+
+func _question_entry(conflict: Array) -> Dictionary:
+    return {"id": str((conflict[2] as Dictionary).get("id", "")), "view": EvidenceSheet.of_conflict(conflict[2]), "keys": ["topic:" + conflict[0]]}
 
 # Beliefs in dispute (or asked about) before the rest, then by what they are about.
 static func _topic_before(a, b, disputed: Dictionary, asked: Dictionary) -> bool:
@@ -376,17 +403,18 @@ func pin_spot(kind: String, index: int) -> Variant:
             return _book_slots[index] if index >= 0 and index < _book_slots.size() else null
         "claim":
             var place := _belief_place(index)
-            return _slots[place]["xf"] if place >= 0 else null
+            return _slots[place]["xf"] if place >= 0 else null       # a belief the wall has no sheet for has no place
     return null
 
 ## How big a belief's place on the wall is: the sheet it hangs as.
 func pin_size(kind: String, index: int) -> Vector2:
     var place := _belief_place(index) if kind == "claim" else -1
-    return _slots[place]["size"] if place >= 0 else Vector2.ZERO
+    return _slots[place]["now"] if place >= 0 else Vector2.ZERO
 
 func _belief_place(index: int) -> int:
-    var place: int = _claim_place[index] if index >= 0 and index < _claim_place.size() else index
-    return place if index >= 0 and place < _slots.size() else -1
+    # before any belief was arranged, the beliefs' places are the wall's sheets in order
+    var place: int = index if _claim_place.is_empty() else (_claim_place[index] if index >= 0 and index < _claim_place.size() else -1)
+    return place if place >= 0 and place < _slots.size() else -1
 
 # The `index`th of `count` places on a board, as many to a row as its width holds, `pitch` apart.
 func _place_on(board: Array, index: int, count: int, pitch: Vector2) -> Variant:
@@ -412,48 +440,189 @@ func _cork_board(board: Array, heading_text: String, count: int) -> void:
     _heading(node, heading_text, height * 0.5, width)
     spot(node.transform * Vector3(0, 2.2, 2.2), node.transform.origin, Color(1.0, 0.85, 0.65), 3.5, 6.0, 38.0)
 
-## What goes up on the wall, place by place, from ELI's world: its beliefs (ELI's own sheets, kept
-## where arrange put them) with the questions about them, then how often its actions worked, the
-## lessons it learned, the records its beliefs rest on, its thoughts from the other rooms, the
-## memories it recalled, and how often its figures proved right. Each {"view", "keys"}, or {"belief"}
-## for a place one of ELI's beliefs hangs in.
+## What goes up on the wall, in order, from ELI's world: as ELI says (its evidence "wall": one entry
+## for one fact, what matters most first), or for an ELI that sends no order, kind by kind (_by_kind).
+## Each {"id", "view", "keys"}, or {"id", "belief", "keys"} for one of ELI's beliefs, which hangs its
+## own sheet; "also" the ids of the records ELI folded into it.
 func _evidence(state: Dictionary, claims: Array) -> Array:
-    var ordered := arrange("claim", claims)
-    var places := {}
-    for i in ordered.size():
-        places[_claim_place[i]] = {"belief": ordered[i], "keys": ["topic:" + about(ordered[i])] + _sources(ordered[i])}
+    var evidence: Dictionary = state.get("evidence", {}) if typeof(state.get("evidence")) == TYPE_DICTIONARY else {}
+    if typeof(evidence.get("wall")) == TYPE_ARRAY:
+        return _once(_as_sent(state, evidence["wall"], claims))
+    return _once(_by_kind(state, claims))
+
+# The wall as ELI ordered it: each entry's record found in the message by its id. An entry whose
+# record did not come (a book the message had no room for) is not pinned up.
+func _as_sent(state: Dictionary, wall: Array, claims: Array) -> Array:
+    var evidence: Dictionary = state["evidence"]
+    var objects := {}
+    for record in state.get("objects", []):
+        if typeof(record) == TYPE_DICTIONARY:
+            objects[str(record.get("id", ""))] = record
+    var rows := {}
+    var actions = evidence.get("actions", {})
+    for row in (actions.get("rows", []) if typeof(actions) == TYPE_DICTIONARY else []):
+        if typeof(row) == TYPE_DICTIONARY:
+            rows[str(row.get("id", "action_" + str(row.get("action", ""))))] = row
+    for row in (evidence.get("accuracy", []) if typeof(evidence.get("accuracy")) == TYPE_ARRAY else []):
+        if typeof(row) == TYPE_DICTIONARY:
+            rows[str(row.get("id", "accuracy_" + str(row.get("kind", ""))))] = row
+    var thoughts := {}
+    for thought in (state.get("thoughts", []) if typeof(state.get("thoughts")) == TYPE_ARRAY else []):
+        if typeof(thought) == TYPE_DICTIONARY:
+            thoughts["thought_%d" % int(thought.get("id", 0))] = thought
+    var conflicts := {}
     for conflict in _conflicts:
-        places[_question_place[conflict[0]]] = {"view": EvidenceSheet.of_conflict(conflict[2]), "keys": ["topic:" + conflict[0]]}
+        conflicts[str((conflict[2] as Dictionary).get("id", ""))] = conflict
+    var believed := []                      # the beliefs in ELI's order, for the exhibits' numbers
+    for sent in wall:
+        if typeof(sent) == TYPE_DICTIONARY and str(sent.get("kind", "")) == "claim" and objects.has(str(sent.get("ref", ""))):
+            believed.append(objects[str(sent["ref"])])
+    var exhibits := {}
+    for exhibit in _exhibits_of(believed if not believed.is_empty() else claims):
+        exhibits[str(exhibit["source"].get("id", ""))] = exhibit
     var out := []
-    for p in places.size():
-        out.append(places[p])
+    for sent in wall:
+        if typeof(sent) != TYPE_DICTIONARY:
+            continue
+        var ref := str(sent.get("ref", ""))
+        var entry := {}
+        match str(sent.get("kind", "")):
+            "claim":
+                if objects.has(ref) and str(objects[ref].get("room", "")) == "evidence_wall":
+                    entry = _belief_entry(objects[ref])
+            "conflict":
+                if conflicts.has(ref):
+                    entry = _question_entry(conflicts[ref])
+            "action":
+                if rows.has(ref):
+                    entry = _action_entry(rows[ref])
+            "lesson":
+                if objects.has(ref):
+                    entry = _lesson_entry(objects[ref])
+            "accuracy":
+                if rows.has(ref):
+                    entry = {"view": EvidenceSheet.of_accuracy(rows[ref]), "keys": []}
+            "source":
+                if exhibits.has(ref):
+                    entry = _exhibit_entry(exhibits[ref])
+            "thought":
+                if thoughts.has(ref):
+                    entry = {"view": EvidenceSheet.of_thought(thoughts[ref]), "keys": _about_keys(thoughts[ref])}
+        if entry.is_empty():
+            continue
+        entry["id"] = ref
+        entry["also"] = entry.get("also", []) + (sent.get("also", []) if typeof(sent.get("also")) == TYPE_ARRAY else [])
+        out.append(entry)
+    return out
+
+func _action_entry(row: Dictionary) -> Dictionary:
+    return {"id": "action_" + str(row.get("action", "")), "view": EvidenceSheet.of_action(row), "keys": ["action:" + str(row.get("action", ""))]}
+
+func _lesson_entry(record: Dictionary) -> Dictionary:
+    var applies := str(EliBook.book_of(record).get("applies_to", ""))
+    return {"id": str(record.get("id", "")), "view": EvidenceSheet.of_lesson(record), "keys": ["action:" + applies] if not applies.is_empty() else []}
+
+func _exhibit_entry(exhibit: Dictionary) -> Dictionary:
+    return {"id": str(exhibit["source"].get("id", "")), "view": EvidenceSheet.of_source(exhibit["number"], exhibit["source"], exhibit["supports"]),
+            "keys": ["source " + str(exhibit["source"].get("id", ""))]}
+
+# The wall for an ELI that sends no order of its own: its beliefs with the questions about them, then
+# how often its actions worked, the lessons it learned, the records its beliefs rest on, its thoughts
+# from the other rooms, the memories it recalled, and how often its figures proved right.
+func _by_kind(state: Dictionary, claims: Array) -> Array:
+    var out := _beliefs_and_questions(claims)
     var evidence: Dictionary = state.get("evidence", {}) if typeof(state.get("evidence")) == TYPE_DICTIONARY else {}
     var actions = evidence.get("actions", {})
     for row in (actions.get("rows", []) if typeof(actions) == TYPE_DICTIONARY else []):
         if typeof(row) == TYPE_DICTIONARY:
-            out.append({"view": EvidenceSheet.of_action(row), "keys": ["action:" + str(row.get("action", ""))]})
+            out.append(_action_entry(row))
     for record in state.get("objects", []):
         if typeof(record) == TYPE_DICTIONARY and str(record.get("kind", "")) == "book" and str(EliBook.book_of(record).get("of", "")) == "lesson":
-            var applies := str(EliBook.book_of(record).get("applies_to", ""))
-            out.append({"view": EvidenceSheet.of_lesson(record), "keys": ["action:" + applies] if not applies.is_empty() else []})
-    for exhibit in _exhibits_of(ordered):
-        out.append({"view": EvidenceSheet.of_source(exhibit["number"], exhibit["source"], exhibit["supports"]),
-                    "keys": ["source " + str(exhibit["source"].get("id", ""))]})
+            out.append(_lesson_entry(record))
+    var believed := out.filter(func(e): return e.has("belief")).map(func(e): return e["belief"])
+    for exhibit in _exhibits_of(believed):
+        out.append(_exhibit_entry(exhibit))
     var thoughts = state.get("thoughts", [])
     var recalled := []
     for thought in (thoughts if typeof(thoughts) == TYPE_ARRAY else []):
         if typeof(thought) != TYPE_DICTIONARY or str(thought.get("room", "")) == "evidence_wall":
             continue                                    # this room's own hang on its board
+        var entry := {"id": "thought_%d" % int(thought.get("id", 0)), "view": EvidenceSheet.of_thought(thought), "keys": _about_keys(thought)}
         if str(thought.get("kind", "")) == "recall":
-            recalled.append(thought)
+            recalled.append(entry)
         else:
-            out.append({"view": EvidenceSheet.of_thought(thought), "keys": _about_keys(thought)})
-    for thought in recalled:
-        out.append({"view": EvidenceSheet.of_thought(thought), "keys": _about_keys(thought)})
+            out.append(entry)
+    out.append_array(recalled)
     for row in (evidence.get("accuracy", []) if typeof(evidence.get("accuracy")) == TYPE_ARRAY else []):
         if typeof(row) == TYPE_DICTIONARY and int(row.get("n", 0)) > 0 and row.get("right") != null:
-            out.append({"view": EvidenceSheet.of_accuracy(row), "keys": []})
+            out.append({"id": "accuracy_" + str(row.get("kind", "")), "view": EvidenceSheet.of_accuracy(row), "keys": []})
     return out
+
+## What a sheet would say first, as a reader takes it in: its kind and its heading, without case,
+## spacing or marks. Two records that read the same are one sheet.
+static func reads_as(entry: Dictionary) -> String:
+    var view: Dictionary = entry["view"] if entry.has("view") else EvidenceSheet.of_claim(entry["belief"])
+    var said := ""
+    for c in (str(view.get("kind", "")) + " " + str(view.get("heading", ""))).to_lower():
+        if (c >= "a" and c <= "z") or (c >= "0" and c <= "9") or c.unicode_at(0) > 127:
+            said += c
+    return said
+
+## Each record once: the first of those with the same id, of those that read the same, and none
+## that ELI already folded into another on the wall ("also").
+static func _once(entries: Array) -> Array:
+    var folded := {}
+    for entry in entries:
+        for id in entry.get("also", []):
+            folded[str(id)] = true
+    var seen := {}
+    var out := []
+    for entry in entries:
+        var id := str(entry.get("id", ""))
+        var said := reads_as(entry)
+        if (not id.is_empty() and (seen.has("id " + id) or folded.has(id))) or seen.has("said " + said):
+            continue
+        seen["id " + id] = true
+        seen["said " + said] = true
+        out.append(entry)
+    return out
+
+# Each record's place on the wall, in order: the nearest free sheet that takes the whole of it at the
+# size it is read at there (EvidenceSheet.size_for: as tall and as wide as its writing needs, within
+# its share of the board); a record no free sheet takes whole goes to the nearest, at the most room
+# that has. Worked out again only when what goes up changes.
+func _lay(entries: Array) -> void:
+    var key := JSON.stringify(entries.map(func(e): return [e.get("id", ""), e.get("view", e.get("belief"))]))
+    if key == _planned_key:
+        return
+    _planned_key = key
+    _placed.clear()
+    _claim_slot.clear()
+    for slot in _slots:
+        slot["now"] = slot["size"]
+    var free := range(_slots.size())
+    for entry in entries:
+        if free.is_empty():
+            break
+        var view: Dictionary = entry["view"] if entry.has("view") else EvidenceSheet.of_claim(entry["belief"])
+        var chosen := -1
+        var size := Vector2.ZERO
+        for i in free:
+            var slot: Dictionary = _slots[i]
+            var takes := EvidenceSheet.size_for(view, slot["size"], slot["cell"], float(slot["tilt"]), float(slot["distance"]))
+            if EvidenceSheet.fits(view, takes, float(slot["distance"])):
+                chosen = i
+                size = takes
+                break
+        if chosen < 0:
+            chosen = free[0]
+            var slot: Dictionary = _slots[chosen]
+            size = EvidenceSheet.size_for(view, slot["size"], slot["cell"], float(slot["tilt"]), float(slot["distance"]))
+        free.erase(chosen)
+        _slots[chosen]["now"] = size
+        _placed[chosen] = entry
+        if entry.has("belief"):
+            _claim_slot[str(entry.get("id", ""))] = chosen
 
 # What a thought is about (ELI v3's "subject"), for the thread: the same thing, or an action by its name.
 static func _about_keys(thought: Dictionary) -> Array:
@@ -462,18 +631,21 @@ static func _about_keys(thought: Dictionary) -> Array:
         return []
     return ["subject:" + subject.to_lower(), "action:" + subject.to_upper().replace(" ", "_"), "topic:" + subject.replace("_", " ").to_lower()]
 
-# The wall written with what goes up on it: each sheet written again only when its record changed,
-# the thread run between sheets about the same thing, and how many records are on file.
+# The wall written with what goes up on it (as _lay placed it): each sheet written again only when its
+# record or its size changed, the thread run between sheets about the same thing, and how many
+# records are on file.
 func _write_wall(evidence: Array, why: String) -> void:
-    _filled = mini(evidence.size(), _slots.size())
+    _lay(evidence)
+    _filled = _placed.size()
     var held := {}
     for i in _slots.size():
-        var entry: Dictionary = evidence[i] if i < evidence.size() else {}
+        var entry: Dictionary = _placed.get(i, {})
         var view = entry.get("view")
-        held[i] = null if entry.has("belief") else (view["colour"] if view != null else null)
-        if not entry.has("belief") and view == null:
-            held.erase(i)
-        var key := JSON.stringify(view) if view != null else ""
+        if entry.has("belief"):
+            held[i] = null
+        elif view != null:
+            held[i] = view["colour"]
+        var key := JSON.stringify([view, _slots[i]["now"]]) if view != null else ""
         if str(_written.get(i, "")) == key:
             continue
         _written[i] = key
@@ -487,20 +659,22 @@ func _write_wall(evidence: Array, why: String) -> void:
         sheet.name = "Sheet_%d" % i
         sheet.transform = _slots[i]["xf"]
         _sheets.add_child(sheet)
-        EvidenceSheet.draw(sheet, _slots[i]["size"], float(_slots[i]["distance"]), view, false)
+        EvidenceSheet.draw(sheet, _slots[i]["now"], float(_slots[i]["distance"]), view, false)
     _paper_up(held)
     if not why.is_empty():
         _on_file.text = why
     else:
-        _on_file.text = "nothing on record yet" if evidence.is_empty() else ("%d record%s on file" % [evidence.size(), "" if evidence.size() == 1 else "s"])
-    # the thread: between consecutive sheets about the same thing
+        _on_file.text = "nothing on record yet" if _filled == 0 else ("%d record%s on file" % [_filled, "" if _filled == 1 else "s"])
+    # the thread: between sheets about the same thing, in the order they hang
     var pins_of := {}
-    for i in _filled:
-        for key_of in (evidence[i] as Dictionary).get("keys", []):
+    var hung := _placed.keys()
+    hung.sort()
+    for i in hung:
+        for key_of in (_placed[i] as Dictionary).get("keys", []):
             if not pins_of.has(key_of):
                 pins_of[key_of] = []
             pins_of[key_of].append(_pin_of(_slots[i]))
-    var key := JSON.stringify(pins_of.keys().map(func(k): return [k, pins_of[k].size()])) + str(_filled)
+    var key := JSON.stringify(pins_of)
     if key == _threads_key:
         return
     _threads_key = key
@@ -947,8 +1121,8 @@ func show_eli(eli: Dictionary) -> void:
     var unsent := func(capability: String) -> String:
         return away if not away.is_empty() else ("this ELI does not send that yet" if eli.has("can") and not capability in can else "")
     # the wall of sheets and its threads
-    var ordered := arrange("claim", claims)
     _write_wall(_evidence(state, claims) if connected else [], away)
+    var ordered := arrange("claim", claims).filter(func(c): return _claim_slot.has(str(c.get("id", ""))))
     # the scoreboard and the charts
     var evidence: Dictionary = state.get("evidence", {}) if typeof(state.get("evidence")) == TYPE_DICTIONARY else {}
     var why: String = unsent.call("evidence")
@@ -967,7 +1141,7 @@ func show_eli(eli: Dictionary) -> void:
     var books_why: String = unsent.call("books")
     _say_bare(_desk, books_why if not books_why.is_empty() else ("nothing on record yet" if lessons == 0 else ""))
     _lay_exhibits(ordered if connected else [])
-    var sourced := claims.any(func(c): return not _sources(c).is_empty())
+    var sourced := ordered.any(func(c): return not _sources(c).is_empty())
     _say_bare(_table, away if not away.is_empty() else ("nothing on record yet" if not sourced else ""))
     # the projector: the questions, then the thoughts that belong in this room
     if not connected:
