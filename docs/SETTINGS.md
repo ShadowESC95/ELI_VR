@@ -21,7 +21,7 @@ Change one from a terminal with `python3 tools/eli_vr.py set <key> <value>`, or 
 | `xr.snap_turn_degrees` | `30` | Snap turn angle |
 | `xr.turn_cooldown_seconds` | `0.3` | Delay before a held stick turns again |
 
-`xr.controller_calibration` holds the hand offsets the calibration gesture works out (B / Y held on both controllers, or RECALIBRATE POINTER on the wrist menu). Leave it to the gesture.
+`xr.controller_calibration` holds what the pointer recalibration finds, per controller (`aim.left`, `aim.right`: the direction each hand points along in its controller's own aim frame; `[0, 0, -1]` is the runtime's own ray), and the trim made by hand on the CALIBRATE panel (`frame.offset_m`, `frame.yaw_deg`: a fixed shift and turn of the controllers' space). Leave it to the gesture and the panel. The older `offset_*_m`, `yaw_deg`, `target_forward_m` and `target_down_m` are taken out of the settings file when ELI VR starts: they held a guess at where the hands were.
 
 ## Graphics
 

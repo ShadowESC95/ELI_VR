@@ -2,11 +2,8 @@ class_name XRWorldManipulator
 extends Node
 
 var controller: XRController3D
-var aim_tracking: XRController3D
-var fallback_tracking: XRController3D
-var aim_pose: Node3D
-var fallback_pose: Node3D
-var pointer_origin: Node3D
+## The calibrated aim pose (XRControllerCalibration's aim root): the same ray the pointer draws.
+var pose: Node3D
 var grabbed: Node3D
 var grab_distance: float = 2.0
 var grip_before: bool = false
@@ -25,20 +22,9 @@ static var _holding := {}
 static func is_holding(hand: XRController3D) -> bool:
     return hand != null and bool(_holding.get(hand.get_instance_id(), false))
 
-func setup(
-    p_controller: XRController3D,
-    p_aim_tracking: XRController3D,
-    p_fallback_tracking: XRController3D,
-    p_aim_pose: Node3D,
-    p_fallback_pose: Node3D,
-    p_pointer_origin: Node3D
-) -> void:
+func setup(p_controller: XRController3D, p_pose: Node3D) -> void:
     controller = p_controller
-    aim_tracking = p_aim_tracking
-    fallback_tracking = p_fallback_tracking
-    aim_pose = p_aim_pose
-    fallback_pose = p_fallback_pose
-    pointer_origin = p_pointer_origin
+    pose = p_pose
     add_to_group("world_manipulators")     # a book held in one hand turns its pages for the other
 
 func _physics_process(delta: float) -> void:
@@ -56,9 +42,8 @@ func _physics_process(delta: float) -> void:
         _release()
 
     if grabbed and grip_now:
-        var pose: Node3D = _pose_node()
-        if pose:
-            var origin: Vector3 = pointer_origin.global_position if pointer_origin else pose.global_position
+        if _has_pose():
+            var origin: Vector3 = pose.global_position
             var direction: Vector3 = -pose.global_transform.basis.z.normalized()
             var stick: Vector2 = controller.get_vector2("primary")
             if grabbed.has_method("hold"):
@@ -88,11 +73,10 @@ func _physics_process(delta: float) -> void:
     _holding[controller.get_instance_id()] = grabbed != null and grip_now
 
 func _try_begin_grab() -> void:
-    var pose: Node3D = _pose_node()
-    if pose == null:
+    if not _has_pose():
         return
 
-    var origin: Vector3 = pointer_origin.global_position if pointer_origin else pose.global_position
+    var origin: Vector3 = pose.global_position
     var direction: Vector3 = -pose.global_transform.basis.z.normalized()
     var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
         origin,
@@ -139,9 +123,5 @@ func _release() -> void:
         controller.trigger_haptic_pulse("haptic", 0.0, 0.22, 0.035, 0.0)
     grabbed = null
 
-func _pose_node() -> Node3D:
-    if aim_tracking and aim_tracking.get_has_tracking_data():
-        return aim_pose
-    if fallback_tracking and fallback_tracking.get_has_tracking_data():
-        return fallback_pose
-    return null
+func _has_pose() -> bool:
+    return pose != null and pose.visible

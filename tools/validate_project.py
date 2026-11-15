@@ -86,9 +86,17 @@ for token in [
         print("APP WIRING MISSING", token); bad = True
 
 pointer = (ROOT / "scripts/xr/xr_pointer.gd").read_text(errors="ignore")
-for token in ["GRIP_FALLBACK", "get_has_tracking_data()", "PointerBeam", "query.collision_mask = 2"]:
+for token in ["PointerBeam", "query.collision_mask = 2", "pose.global_transform"]:
     if token not in pointer:
         print("POINTER INVARIANT MISSING", token); bad = True
+if "pointer_socket" in pointer or "pointer_socket" in app:
+    print("POINTER INVARIANT: the ray leaves the aim pose, not a socket on the hand"); bad = True
+
+# which pose a hand and its ray stand on is decided in one place, the calibration manager
+poses = (ROOT / "scripts/xr/controller_calibration.gd").read_text(errors="ignore")
+for token in ["AIM_FROM_GRIP", "get_has_tracking_data", "PLACED_FROM_HEAD", "aim_direction_to"]:
+    if token not in poses:
+        print("POSE INVARIANT MISSING", token); bad = True
 
 manip = (ROOT / "scripts/xr/world_manipulator.gd").read_text(errors="ignore")
 if "query.collision_mask = 4" not in manip:

@@ -12,29 +12,35 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def run_godot_checks(case: type[unittest.TestCase], checks: tuple[str, ...]) -> dict:
+    """Runs tests/gd/<check> headless, in folders of the test's own, and gives each check's line by name."""
+    godot = os.environ.get("GODOT_BIN") or shutil.which("godot") or shutil.which("godot4")
+    if not godot:
+        raise unittest.SkipTest("Godot is not installed here")
+    env = {k: v for k, v in os.environ.items() if k not in ("DISPLAY", "WAYLAND_DISPLAY")}
+    # the desktop link's key goes in a folder of the test's own, never the session's
+    sandbox = tempfile.mkdtemp(prefix="eli-vr-test-")
+    case.addClassCleanup(shutil.rmtree, sandbox, True)
+    env.update(XDG_RUNTIME_DIR=sandbox, XDG_DATA_HOME=sandbox, HOME=sandbox, LOCALAPPDATA=sandbox, APPDATA=sandbox,
+               ELI_VR_TEST_SANDBOX=sandbox)
+    out = ""
+    for check in checks:
+        out += subprocess.run([godot, "--headless", "--xr-mode", "off", "--path", str(ROOT),
+                               "--script", str(ROOT / "tests" / "gd" / check)],
+                              env=env, capture_output=True, text=True, timeout=300).stdout
+    lines = {}
+    for line in out.splitlines():
+        if line.startswith(("PASS ", "FAIL ")):
+            lines[line.split(" ", 1)[1].split(":", 1)[0]] = line
+    return lines
+
+
 class Alive(unittest.TestCase):
     lines: dict = {}
 
     @classmethod
     def setUpClass(cls) -> None:
-        godot = os.environ.get("GODOT_BIN") or shutil.which("godot") or shutil.which("godot4")
-        if not godot:
-            raise unittest.SkipTest("Godot is not installed here")
-        env = {k: v for k, v in os.environ.items() if k not in ("DISPLAY", "WAYLAND_DISPLAY")}
-        # the desktop link's key goes in a folder of the test's own, never the session's
-        sandbox = tempfile.mkdtemp(prefix="eli-vr-test-")
-        cls.addClassCleanup(shutil.rmtree, sandbox, True)
-        env.update(XDG_RUNTIME_DIR=sandbox, XDG_DATA_HOME=sandbox, HOME=sandbox, LOCALAPPDATA=sandbox, APPDATA=sandbox,
-                   ELI_VR_TEST_SANDBOX=sandbox)
-        out = ""
-        for check in ("eli_alive_check.gd", "eli_screens_check.gd"):
-            out += subprocess.run([godot, "--headless", "--xr-mode", "off", "--path", str(ROOT),
-                                   "--script", str(ROOT / "tests" / "gd" / check)],
-                                  env=env, capture_output=True, text=True, timeout=300).stdout
-        for line in out.splitlines():
-            if line.startswith(("PASS ", "FAIL ")):
-                name = line.split(" ", 1)[1].split(":", 1)[0]
-                cls.lines[name] = line
+        cls.lines.update(run_godot_checks(cls, ("eli_alive_check.gd", "eli_screens_check.gd")))
 
     def check(self, name: str) -> None:
         line = self.lines.get(name, f"FAIL {name}: the check never ran")

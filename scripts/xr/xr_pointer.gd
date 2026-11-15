@@ -1,12 +1,11 @@
 class_name XRPointer
 extends Node3D
 
+# The ray is the calibrated aim pose itself (XRControllerCalibration's aim root): it leaves where the
+# runtime says the controller's ray leaves and goes along its -Z, so it points where the controller
+# points. The pose is shown only while the runtime tracks the controller.
 var controller: XRController3D
-var aim_tracking: XRController3D
-var fallback_tracking: XRController3D
-var aim_pose: Node3D
-var fallback_pose: Node3D
-var origin_marker: Node3D
+var pose: Node3D
 var current
 var trigger_before: bool = false
 
@@ -14,25 +13,13 @@ var beam: MeshInstance3D
 var beam_material: StandardMaterial3D
 var reticle: MeshInstance3D
 var reticle_material: StandardMaterial3D
-var status_logged: String = ""
 
 const RAY_LENGTH := 20.0
 const RAY_RADIUS := 0.0018
 
-func setup(
-    p_controller: XRController3D,
-    p_aim_tracking: XRController3D,
-    p_fallback_tracking: XRController3D,
-    p_aim_pose: Node3D,
-    p_fallback_pose: Node3D,
-    p_origin_marker: Node3D = null
-) -> void:
+func setup(p_controller: XRController3D, p_pose: Node3D) -> void:
     controller = p_controller
-    aim_tracking = p_aim_tracking
-    fallback_tracking = p_fallback_tracking
-    aim_pose = p_aim_pose
-    fallback_pose = p_fallback_pose
-    origin_marker = p_origin_marker
+    pose = p_pose
     _build_visuals()
 
 func _build_visuals() -> void:
@@ -74,18 +61,14 @@ func _physics_process(_delta: float) -> void:
         _set_current(null)
         return
 
-    var pose_node: Node3D = _select_pose_node()
-    if pose_node == null:
+    if pose == null or not pose.visible:
         _hide_visuals()
         _set_current(null)
-        _log_status_once("NO_POSITIONAL_POSE")
         _update_trigger_latch()
         return
 
-    _log_status_once("AIM" if pose_node == aim_pose else "GRIP_FALLBACK")
-
-    var origin: Vector3 = origin_marker.global_position if origin_marker else pose_node.global_position
-    global_transform = Transform3D(pose_node.global_transform.basis, origin)
+    global_transform = pose.global_transform.orthonormalized()
+    var origin: Vector3 = global_position
     beam.visible = true
 
     var direction: Vector3 = -global_transform.basis.z.normalized()
@@ -171,23 +154,6 @@ func _use_desktop(origin: Vector3, direction: Vector3, pressed: bool) -> void:
         screen.point_uv(uv, "", false, steps)
     _side_before = side
 
-func _select_pose_node() -> Node3D:
-    if (
-        aim_tracking != null
-        and aim_tracking.get_is_active()
-        and aim_tracking.get_has_tracking_data()
-    ):
-        return aim_pose
-
-    if (
-        fallback_tracking != null
-        and fallback_tracking.get_is_active()
-        and fallback_tracking.get_has_tracking_data()
-    ):
-        return fallback_pose
-
-    return null
-
 func _set_beam_length(length_m: float) -> void:
     var mesh := beam.mesh as CylinderMesh
     if mesh:
@@ -217,12 +183,6 @@ func _update_trigger_latch() -> void:
 # presses nothing and clicks nothing until let go.
 func _trigger_down() -> bool:
     return controller.is_button_pressed("trigger_click") and not XRCalibrationWidget.takes_triggers()
-
-func _log_status_once(status: String) -> void:
-    if status == status_logged:
-        return
-    status_logged = status
-    print("ELI VR XR POINTER [", controller.tracker, "]: ", status)
 
 func _set_current(target) -> void:
     if current == target:

@@ -4,16 +4,43 @@ extends Node3D
 var controller: XRController3D
 var side: String = "left"
 var accent: Color = Color("#63ddff")
-var pointer_socket: Marker3D
 var palm: MeshInstance3D
 var finger_roots: Array[Node3D] = []
 var finger_segments: Array[Array] = []
+
+# The hand is built flat in its own frame: fingers along -Z, the back of the hand +Y, the thumb on
+# +X for a left hand and -X for a right one. It stands on the runtime's grip pose, whose axes OpenXR
+# fixes for every controller: +X through the palm (out of a left palm, into a right one), -Z along the
+# tube the closed fingers make, from the little finger to the thumb, and its origin in the middle of
+# that tube. on_grip() is the hand's frame in the grip pose's, from those definitions alone.
+const FINGER_ROOT_Z: float = -0.056
+const FINGER_SEGMENT_LENGTHS: Array[float] = [0.050, 0.043]
 
 func setup(p_controller: XRController3D, p_side: String, p_accent: Color) -> void:
     controller = p_controller
     side = p_side
     accent = p_accent
+    transform = on_grip(side)
     _build_hand()
+
+static func thumb_side(p_side: String) -> float:
+    return 1.0 if p_side == "left" else -1.0
+
+## The hand's own frame in the grip pose's frame.
+static func on_grip(p_side: String) -> Transform3D:
+    var thumb: float = thumb_side(p_side)
+    # the thumb's side lies along the tube towards the thumb (-Z of the grip); the back of the hand
+    # faces away from the palm (-X of a left grip, +X of a right one); the fingers leave along -Y
+    var frame: Basis = Basis(Vector3(0.0, 0.0, -thumb), Vector3(-thumb, 0.0, 0.0), Vector3(0.0, 1.0, 0.0))
+    return Transform3D(frame, -(frame * tube_centre()))
+
+## The middle of the tube the closed fingers make, in the hand's frame: under the knuckles, by the
+## radius of the circle the fingers' length wraps half of.
+static func tube_centre() -> Vector3:
+    var length: float = 0.0
+    for part in FINGER_SEGMENT_LENGTHS:
+        length += part
+    return Vector3(0.0, -length / PI, FINGER_ROOT_Z)
 
 func set_accent(p_accent: Color) -> void:
     accent = p_accent
@@ -48,21 +75,23 @@ func _build_hand() -> void:
     add_child(cuff)
 
     # Four articulated fingers. Each is built from two capsule segments.
-    var xs: Array[float] = [-0.031, -0.010, 0.012, 0.032]
+    # the index is the finger next to the thumb
+    var thumb_sign: float = thumb_side(side)
+    var xs: Array[float] = [0.031, 0.010, -0.012, -0.032]
     for i in range(4):
         var root := Node3D.new()
-        root.position = Vector3(xs[i], 0.0, -0.056)
+        root.position = Vector3(xs[i] * thumb_sign, 0.0, FINGER_ROOT_Z)
         add_child(root)
         finger_roots.append(root)
 
         var segs: Array = []
-        var seg1 := _capsule(0.0105, 0.050)
+        var seg1 := _capsule(0.0105, FINGER_SEGMENT_LENGTHS[0])
         seg1.position = Vector3(0.0, 0.0, -0.024)
         seg1.rotation_degrees.x = 90.0
         root.add_child(seg1)
         segs.append(seg1)
 
-        var seg2 := _capsule(0.0092, 0.043)
+        var seg2 := _capsule(0.0092, FINGER_SEGMENT_LENGTHS[1])
         seg2.position = Vector3(0.0, -0.001, -0.061)
         seg2.rotation_degrees.x = 90.0
         root.add_child(seg2)
@@ -71,7 +100,6 @@ func _build_hand() -> void:
 
     # Thumb, mirrored per hand.
     var thumb_root := Node3D.new()
-    var thumb_sign: float = -1.0 if side == "left" else 1.0
     thumb_root.position = Vector3(0.046 * thumb_sign, -0.002, -0.012)
     thumb_root.rotation_degrees = Vector3(22.0, 0.0, -32.0 * thumb_sign)
     add_child(thumb_root)
@@ -94,14 +122,6 @@ func _build_hand() -> void:
         trim.mesh = trim_mesh
         trim.position = Vector3(x, 0.037, -0.032)
         add_child(trim)
-
-    # Pointer originates from the index fingertip rather than the controller
-    # origin. Aim orientation still comes from OpenXR's aim pose.
-    pointer_socket = Marker3D.new()
-    pointer_socket.name = "IndexPointerSocket"
-    var index_x: float = -0.031
-    pointer_socket.position = Vector3(index_x, 0.004, -0.112)
-    add_child(pointer_socket)
 
     _apply_materials()
 

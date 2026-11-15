@@ -4,8 +4,8 @@ extends Node3D
 # Built-in Godot classes only (docs/XR-CALIBRATION-0.3.5-ISOLATION-FIX.md): the manager is called by
 # name, never typed, so this panel compiles on its own.
 #
-# The pointer is recalibrated at any time, with the existing guided calibration of the manager
-# (calibrate_hands, which keeps and saves the result as it always has):
+# The pointer is recalibrated at any time: the controllers are pointed at the mark on this panel and
+# the manager (calibrate_hands) brings each one's ray onto it and keeps that, per controller:
 # - the chord: CHORD_ACTION held on both controllers for CHORD_HOLD_SECONDS. B/Y is bound on both hands
 #   in the Touch, Index and generic profiles (openxr_action_map.tres: Touch Y and B, Index B and B,
 #   generic secondary and secondary), no other action is bound to its input, and its only other use is
@@ -14,7 +14,7 @@ extends Node3D
 #   stick clicks boost, right-click the desktop and reset the trim, the grips and triggers grab and fire:
 #   none of those is free for a chord;
 # - RECALIBRATE POINTER on the wrist menu arms it, for controllers without B/Y as well: then both
-#   triggers held for the same time take the pose, and the triggers are this panel's, not the pointer's,
+#   triggers held for the same time take it, and the triggers are this panel's, not the pointer's,
 #   the desktop's or a game's, until both are let go (takes_triggers); while the wrist menu is open they
 #   are the pointer's again, so the menu's own buttons (STOP RECALIBRATING among them) can be pressed.
 # The hold shows as a bar filling, and the result is said and felt before the panel goes again.
@@ -65,6 +65,10 @@ const TRIM_REPEAT_SECONDS: float = 0.14
 const STICK_THRESHOLD: float = 0.72
 const BAR_WIDTH: float = 1.24
 const BAR_HEIGHT: float = 0.026
+## The panel's own size, and where on it the mark stands that the controllers are pointed at.
+const PANEL_SIZE: Vector2 = Vector2(1.68, 1.16)
+const MARK_AT: Vector3 = Vector3(0.0, -0.29, -0.006)
+const MARK_RADIUS: float = 0.034
 ## The percent written beside the bar moves in these steps, so its text is not rebuilt every frame.
 const PERCENT_STEP: int = 10
 
@@ -87,6 +91,8 @@ func setup(
     position = Vector3(0.0, -0.02, -1.20)
     _build()
     _refresh()
+    if manager.has_method(&"set_aim_target"):
+        manager.call(&"set_aim_target", self, MARK_AT, PANEL_SIZE * 0.5)
     manager.connect(&"calibrated", Callable(self, "_on_calibrated"))
     manager.connect(&"calibration_reset", Callable(self, "_on_reset"))
 
@@ -96,9 +102,11 @@ func _exit_tree() -> void:
 func _build() -> void:
     var shell: MeshInstance3D = MeshInstance3D.new()
     var shell_mesh: BoxMesh = BoxMesh.new()
-    shell_mesh.size = Vector3(1.68, 1.16, 0.045)
+    shell_mesh.size = Vector3(PANEL_SIZE.x, PANEL_SIZE.y, 0.045)
     shell.mesh = shell_mesh
-    shell.position.z = 0.05
+    # behind what is written and drawn on it: the panel hangs in front of the camera, which looks along
+    # -Z, so what is nearer the eyes has the greater z (at +0.05 the shell hid the rail and the bar)
+    shell.position.z = -0.05
 
     var shell_mat: StandardMaterial3D = StandardMaterial3D.new()
     shell_mat.albedo_color = Color(0.012, 0.019, 0.027, 0.97)
@@ -147,7 +155,7 @@ func _build() -> void:
         + "Right stick X: YAW LEFT / RIGHT\n"
         + "Both thumbstick clicks: RESET CALIBRATION\n"
         + "F6: close/open panel    F7: calibrate\n"
-        + "RECENTER VIEW remains separate from hand calibration."
+        + "The trim moves and turns both hands; the ring is for the pointer."
     )
     help_label.font_size = 18
     help_label.pixel_size = 0.00105
@@ -163,6 +171,25 @@ func _build() -> void:
     status_label.position = Vector3(0.0, -0.405, -0.005)
     status_label.no_depth_test = true
     add_child(status_label)
+
+    # the mark: a ring with a dot at its middle
+    var ring: MeshInstance3D = MeshInstance3D.new()
+    var ring_mesh: TorusMesh = TorusMesh.new()
+    ring_mesh.inner_radius = MARK_RADIUS * 0.82
+    ring_mesh.outer_radius = MARK_RADIUS
+    ring.mesh = ring_mesh
+    ring.rotation_degrees.x = 90.0
+    ring.position = MARK_AT
+    ring.material_override = rail_mat
+    add_child(ring)
+    var dot: MeshInstance3D = MeshInstance3D.new()
+    var dot_mesh: SphereMesh = SphereMesh.new()
+    dot_mesh.radius = MARK_RADIUS * 0.2
+    dot_mesh.height = MARK_RADIUS * 0.4
+    dot.mesh = dot_mesh
+    dot.position = MARK_AT
+    dot.material_override = rail_mat
+    add_child(dot)
 
     progress_track = _bar(Color(accent.r, accent.g, accent.b, 0.18), 0.4)
     progress_track.position = Vector3(0.0, -0.475, -0.004)
@@ -285,7 +312,8 @@ func _recalibrate() -> void:
         _update_status("POINTER RECALIBRATED")
         _closing_in = 0.0 if trim_open else CONFIRM_SECONDS
     else:
-        _update_status("WAITING FOR BOTH CONTROLLERS TO TRACK")
+        var off_mark: bool = str(manager.get(&"problem")) == "off_mark"
+        _update_status("POINT THE CONTROLLERS AT THE MARK" if off_mark else "WAITING FOR BOTH CONTROLLERS TO TRACK")
         if _mode == "chord":
             _closing_in = CONFIRM_SECONDS       # then the chord's prompt goes; an open panel stays
     _refresh()
@@ -343,14 +371,14 @@ func _refresh() -> void:
     if trim_open:
         title_label.text = "ELI // XR CALIBRATION"
         instructions_label.text = (
-            "POINTER-INDEPENDENT CALIBRATION\n"
-            + "Hold both controllers together naturally in front of your chest.\n"
+            "RECALIBRATE THE POINTER\n"
+            + "Point the controllers at the ring below, as you would point at anything.\n"
             + "Hold B/Y (the upper face button) on BOTH controllers for %s." % hold_text
         )
     elif _mode == "armed":
         title_label.text = "ELI // RECALIBRATE POINTER"
         instructions_label.text = (
-            "Hold both controllers together naturally in front of your chest,\n"
+            "Point the controllers at the ring below, as you would point at anything,\n"
             + "then hold BOTH TRIGGERS (or B/Y on both) for %s.\n" % hold_text
             + "STOP RECALIBRATING on the wrist menu stops it."
         )
@@ -358,7 +386,7 @@ func _refresh() -> void:
         title_label.text = "ELI // RECALIBRATE POINTER"
         instructions_label.text = (
             "Keep holding B/Y on both controllers,\n"
-            + "with both controllers together in front of your chest."
+            + "with the controllers pointed at the ring below."
         )
 
 func _show_progress(fraction: float) -> void:

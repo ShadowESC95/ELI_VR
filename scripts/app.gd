@@ -275,51 +275,23 @@ func _setup_view_rigs() -> void:
 
         var left_ptr = XRPointerClass.new()
         left_ptr.name = "LeftPointer"
-        left_ptr.setup(
-            left_hand,
-            left_aim,
-            left_hand,
-            controller_calibration.left_aim_root,
-            controller_calibration.left_grip_root,
-            left_hand_visual.pointer_socket
-        )
+        left_ptr.setup(left_hand, controller_calibration.left_aim_root)
         xr_origin.add_child(left_ptr)
 
         var right_ptr = XRPointerClass.new()
         right_ptr.name = "RightPointer"
-        right_ptr.setup(
-            right_hand,
-            right_aim,
-            right_hand,
-            controller_calibration.right_aim_root,
-            controller_calibration.right_grip_root,
-            right_hand_visual.pointer_socket
-        )
+        right_ptr.setup(right_hand, controller_calibration.right_aim_root)
         xr_origin.add_child(right_ptr)
 
         if bool(config.get_value("world.object_manipulation", true)):
             var left_grabber = XRWorldManipulatorClass.new()
             left_grabber.name = "LeftWorldManipulator"
-            left_grabber.setup(
-                left_hand,
-                left_aim,
-                left_hand,
-                controller_calibration.left_aim_root,
-                controller_calibration.left_grip_root,
-                left_hand_visual.pointer_socket
-            )
+            left_grabber.setup(left_hand, controller_calibration.left_aim_root)
             add_child(left_grabber)
 
             var right_grabber = XRWorldManipulatorClass.new()
             right_grabber.name = "RightWorldManipulator"
-            right_grabber.setup(
-                right_hand,
-                right_aim,
-                right_hand,
-                controller_calibration.right_aim_root,
-                controller_calibration.right_grip_root,
-                right_hand_visual.pointer_socket
-            )
+            right_grabber.setup(right_hand, controller_calibration.right_aim_root)
             add_child(right_grabber)
 
         if bool(config.get_value("ui.wrist_menu", true)):

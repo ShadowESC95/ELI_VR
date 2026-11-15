@@ -153,7 +153,8 @@ func _process(_delta: float) -> void:
 
     # Follow the left wrist but always face the user's head for legibility.
     var pose_root: Node3D = left_pose if left_pose != null else left_hand
-    global_position = pose_root.to_global(Vector3(0.0, 0.075, 0.105))
+    # over the back of the hand towards the wrist, in the hand's own frame on the grip pose
+    global_position = pose_root.to_global(FrontierHand.on_grip("left") * Vector3(0.0, 0.075, 0.105))
     if global_position.distance_to(camera.global_position) > TRACKED_NEAR:
         look_at(camera.global_position, Vector3.UP)
 

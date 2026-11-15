@@ -22,12 +22,14 @@
     "fly_speed": 5.0,
     "boost_multiplier": 2.4,
     "controller_calibration": {
-      "offset_x_m": 0.0,
-      "offset_y_m": 0.0,
-      "offset_z_m": 0.0,
-      "yaw_deg": 0.0,
-      "target_forward_m": 0.42,
-      "target_down_m": 0.3
+      "frame": {
+        "offset_m": [0.0, 0.0, 0.0],
+        "yaw_deg": 0.0
+      },
+      "aim": {
+        "left": [0.0, 0.0, -1.0],
+        "right": [0.0, 0.0, -1.0]
+      }
     },
     "universal_flight": true
   },

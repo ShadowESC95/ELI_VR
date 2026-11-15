@@ -79,7 +79,7 @@ With `auto`, ELI VR uses a headset when an OpenXR runtime is active and falls ba
 | Left stick | Move |
 | Right stick | Snap turn |
 | B / Y | Show or hide the spatial console |
-| Hold B / Y on both controllers | Recalibrate the pointer: hold the controllers together in front of your chest; a bar fills for a second, then the controllers pulse and it says so |
+| Hold B / Y on both controllers | Recalibrate the pointer: point the controllers at the ring on the panel; a bar fills for a second, then each pointer is brought onto the ring, the controllers pulse and it says so |
 | Menu (left) | Wrist menu: places, RECALIBRATE POINTER (then hold both triggers), CALIBRATE (trim by hand), EXIT, and each HUD readout or all of them |
 | Hold A / X | Talk to ELI (with the ELI link on) |
 

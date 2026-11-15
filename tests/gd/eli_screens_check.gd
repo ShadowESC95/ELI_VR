@@ -1056,7 +1056,7 @@ func _knowledge_checks() -> void:
     _check("a_record_that_loses_its_place_lets_go_of_it", was and not loose._things["claim_3"].pinned, "pinned before %s" % was)
     var grabber = Manipulator.new()
     root.add_child(grabber)
-    grabber.setup(null, null, null, null, null, null)
+    grabber.setup(null, null)
     _check("a_hand_holding_a_book_is_known_to_the_book_for_the_other_hand", grabber.is_in_group("world_manipulators"), "")
     for node in [loose, pinner, grabber, wall]:
         node.queue_free()
