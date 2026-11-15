@@ -49,6 +49,15 @@ var _retry := 0.0
 var _was_open := false
 var _welcome_wait := 0.0
 var _agreed_told := false               # `agreed` was emitted for this connection
+# Messages being read on worker threads, oldest first: [task, {"bytes", "msg"}]. ELI's world can be
+# a megabyte of records and books, and reading that much JSON takes several frames: done here it
+# would stop the headset each time ELI's world sends word. They are taken in the order they came.
+var _reading: Array = []
+# The world message before the one now shown, held until the next comes: by then nothing shows it
+# any more, and it is let go of on a worker thread (taking a megabyte of records apart is most of
+# a frame). The tasks doing that, until they are done.
+var _shown = null
+var _letting_go: Array = []
 
 func configure(config, policy) -> void:
     var asked = config.get_value("eli_bridge.enabled", "auto")
@@ -105,12 +114,11 @@ func _process(delta: float) -> void:
                     "max_message": _socket.inbound_buffer_size,
                 }))
             while _socket.get_available_packet_count() > 0:
-                var text := _socket.get_packet().get_string_from_utf8()
-                if text.is_empty():
+                var packet := _socket.get_packet()
+                if packet.is_empty():
                     continue                # not a message: nothing to parse
-                var msg = JSON.parse_string(text)
-                if typeof(msg) == TYPE_DICTIONARY:
-                    _take(msg)
+                _read(packet)
+            _take_read()
             if protocol == 0 and _welcome_wait > 0.0:
                 _welcome_wait -= delta
                 if _welcome_wait <= 0.0 and connected:
@@ -130,7 +138,38 @@ func _process(delta: float) -> void:
             protocol = 0
             capabilities = []
             _agreed_told = false
+            _drop_reading()             # what was still being read is of a link that is gone
             _set_connected(false)
+
+# A message as it came off the socket, handed to a worker thread to be read.
+func _read(packet: PackedByteArray) -> void:
+    var held := {"bytes": packet, "msg": null}
+    var task := WorkerThreadPool.add_task(func(): held["msg"] = JSON.parse_string((held["bytes"] as PackedByteArray).get_string_from_utf8()))
+    _reading.append([task, held])
+
+# The messages that have been read, in the order they came: one still being read holds back those after it.
+func _take_read() -> void:
+    while not _reading.is_empty() and WorkerThreadPool.is_task_completed(_reading[0][0]):
+        var read: Array = _reading.pop_front()
+        WorkerThreadPool.wait_for_task_completion(read[0])
+        var msg = (read[1] as Dictionary)["msg"]
+        if typeof(msg) == TYPE_DICTIONARY:
+            _take(msg)
+
+func _drop_reading() -> void:
+    for read in _reading:
+        WorkerThreadPool.wait_for_task_completion(read[0])
+    _reading.clear()
+
+# Lets go of a world message nothing shows any more, on a worker thread: this was the last hold
+# on it but for the records still standing in the room, which keep their own.
+func _let_go(last: Array) -> void:
+    for task in _letting_go.duplicate():
+        if WorkerThreadPool.is_task_completed(task):
+            WorkerThreadPool.wait_for_task_completion(task)
+            _letting_go.erase(task)
+    if typeof(last[0]) == TYPE_DICTIONARY:
+        _letting_go.append(WorkerThreadPool.add_task(func(): last[0] = null))
 
 func _take(msg: Dictionary) -> void:
     match str(msg.get("type", "")):
@@ -142,6 +181,9 @@ func _take(msg: Dictionary) -> void:
         "eli_world_state":
             _set_connected(true)
             world_state_received.emit(msg)
+            var last := [_shown]        # the only hold on the one before, once _shown is the new one
+            _shown = msg
+            _let_go(last)
 
 func _agree(version: int, has: Array, from: String) -> void:
     protocol = version
@@ -222,6 +264,10 @@ func _notification(what: int) -> void:
 
 func _exit_tree() -> void:
     end_session("ELI VR closed")
+    _drop_reading()
+    for task in _letting_go:
+        WorkerThreadPool.wait_for_task_completion(task)
+    _letting_go.clear()
 
 func send_event(event_type: String, summary: String, payload: Dictionary = {}) -> void:
     if _socket == null or _socket.get_ready_state() != WebSocketPeer.STATE_OPEN:
