@@ -10,11 +10,19 @@ extends MultiMeshInstance3D
 # It flaps in bouts and glides between them, flapping when it climbs or has slowed; the wing beat
 # itself is in the vertex shader (bird.gdshader), each bird at its own phase and pace. Nothing is
 # allocated per frame: positions and velocities live in packed arrays and the batch is written in place.
+# The flock is moved on in ticks of TICK seconds, however fast the display runs; between ticks each
+# bird is drawn on along its way, so a headset's ninety frames a second pay for thirty ticks.
 
 const MeshKitClass = preload("res://scripts/world/kit/mesh_kit.gd")
 const MaterialKitClass = preload("res://scripts/world/kit/material_kit.gd")
 const GRAVITY := 9.81
 const MAX_PATH_SLOPE := 0.36            # tan 20°: the steepest a bird climbs or sinks in level flight
+## The flock's own tick: the step a long frame was always cut into. A bird turns at most `turn`
+## m/s², so over one tick its path bends away from a straight line by under a centimetre (½·a·t²
+## at the gull's 6 m/s² is 3 mm): drawn straight on between ticks, nothing shows.
+const TICK := 1.0 / 30.0
+## The most of a long frame (a room being built) that is caught up, in seconds.
+const CATCH_UP := 0.25
 
 # What each kind of bird is (true figures for the bird, not tuning): its span tip to tip (m); its
 # shape (MeshKit.bird: body rings [t, half width, half height] as shares of its length; the wing's
@@ -99,6 +107,11 @@ var _flapping := PackedByteArray()     # whether this bout is one of flapping
 var _size := PackedFloat32Array()
 var _phase := PackedFloat32Array()
 var _clock := 0.0
+var _owed := 0.0               # time not yet ticked
+# The batch as the renderer takes it, kept and written in place: for each bird its transform (twelve
+# numbers, each row of its basis followed by that part of where it is) and its own data (four).
+var _batch := PackedFloat32Array()
+const PER_BIRD := 16
 var _rng := RandomNumberGenerator.new()
 
 ## `count` birds (or fish) of `kind_name` (a key of KINDS) going round `centre` between `inner` and
@@ -161,13 +174,18 @@ func setup(kind_name: String, centre: Vector3, inner: float, outer: float, count
     _place()
 
 func _process(delta: float) -> void:
-    # a long frame (a room being built) is taken in short steps, and a very long one is not caught up
-    var left := minf(delta, 0.25)
-    while left > 0.0:
-        var dt := minf(left, 1.0 / 30.0)
-        step(dt)
-        left -= dt
-    _place()
+    # whole ticks of the time gone by (a very long frame is not caught up), then each bird drawn
+    # as far along its way as the time left over
+    _owed = minf(_owed + delta, CATCH_UP)
+    var ticked := false
+    while _owed >= TICK:
+        step(TICK)
+        _owed -= TICK
+        ticked = true
+    if ticked:
+        _place()
+    else:
+        _carry()
 
 ## Moves every bird on by `dt` seconds.
 func step(dt: float) -> void:
@@ -176,6 +194,8 @@ func step(dt: float) -> void:
     var span: float = kind["span"]
     var near := span * 25.0               # how far a bird heeds the others
     var clear := span * 4.0               # how close it lets one come
+    var near2 := near * near
+    var clear2 := clear * clear
     var cruise: float = kind["cruise"]
     var slowest: float = kind["slowest"]
     var fastest: float = kind["fastest"]
@@ -193,11 +213,11 @@ func step(dt: float) -> void:
                 continue
             var d := _pos[j] - p
             var d2 := d.length_squared()
-            if d2 < near * near:
+            if d2 < near2:
                 heading += _vel[j]
                 middle += _pos[j]
                 seen += 1
-                if d2 < clear * clear:
+                if d2 < clear2:
                     apart -= d / maxf(d2, 0.01) * clear
         var want := apart * 2.0
         if seen > 0:
@@ -271,10 +291,45 @@ func pose(i: int) -> Transform3D:
     up = back.cross(right)
     return Transform3D(Basis(right, up, back).scaled(Vector3.ONE * _size[i]), _pos[i])
 
+## Where a bird is drawn now: as it is turned, as far along its way as the time since its last tick.
+func drawn(i: int) -> Transform3D:
+    var at := pose(i)
+    at.origin += _vel[i] * _owed
+    return at
+
+# The whole batch written: after a tick each bird is turned afresh.
 func _place() -> void:
+    _batch.resize(_pos.size() * PER_BIRD)
     for i in _pos.size():
-        multimesh.set_instance_transform(i, pose(i))
-        multimesh.set_instance_custom_data(i, Color(_phase[i], _flap[i], 1.2 - _size[i] * 0.2, 0.0))
+        var at := drawn(i)
+        var n := i * PER_BIRD
+        _batch[n] = at.basis.x.x
+        _batch[n + 1] = at.basis.y.x
+        _batch[n + 2] = at.basis.z.x
+        _batch[n + 3] = at.origin.x
+        _batch[n + 4] = at.basis.x.y
+        _batch[n + 5] = at.basis.y.y
+        _batch[n + 6] = at.basis.z.y
+        _batch[n + 7] = at.origin.y
+        _batch[n + 8] = at.basis.x.z
+        _batch[n + 9] = at.basis.y.z
+        _batch[n + 10] = at.basis.z.z
+        _batch[n + 11] = at.origin.z
+        _batch[n + 12] = _phase[i]
+        _batch[n + 13] = _flap[i]
+        _batch[n + 14] = 1.2 - _size[i] * 0.2
+        _batch[n + 15] = 0.0
+    multimesh.buffer = _batch
+
+# Between ticks only where each bird is changes: it is carried on along its way, turned as it was.
+func _carry() -> void:
+    for i in _pos.size():
+        var at := _pos[i] + _vel[i] * _owed
+        var n := i * PER_BIRD
+        _batch[n + 3] = at.x
+        _batch[n + 7] = at.y
+        _batch[n + 11] = at.z
+    multimesh.buffer = _batch
 
 func positions() -> PackedVector3Array:
     return _pos

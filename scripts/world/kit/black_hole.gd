@@ -27,6 +27,7 @@ const SWEEP := 3.0 * PI                   # far enough round to cross the disc's
 const SUBSTEPS := 4                       # integration steps per column (velocity Verlet)
 
 static var _tables := {}                  # Vector2(distance, reach) -> ImageTexture, made once a run
+static var _making := {}                  # Vector2(distance, reach) -> [worker task, {"image"}], while one is being made
 
 ## The impact parameter (in M) of a ray leaving an eye `distance` M from the hole at `angle`
 ## radians from the hole's middle: 1/b² = (du/dφ)² + u² − 2u³ at the eye.
@@ -87,6 +88,29 @@ static func table(distance: float, reach: float) -> ImageTexture:
     var key := Vector2(distance, reach)
     if _tables.has(key):
         return _tables[key]
+    var image: Image
+    if _making.has(key):
+        # started in the background (warm): taken as soon as it is done, waited for if it is not yet
+        WorkerThreadPool.wait_for_task_completion(_making[key][0])
+        image = (_making[key][1] as Dictionary)["image"]
+        _making.erase(key)
+    else:
+        image = traced(distance, reach)
+    var texture := ImageTexture.create_from_image(image)
+    _tables[key] = texture
+    return texture
+
+## Starts the lens for an eye `distance` M from the hole being worked out on a worker thread, so the
+## room that shows it does not wait for it when it is first built. table() takes it from there.
+static func warm(distance: float, reach: float) -> void:
+    var key := Vector2(distance, reach)
+    if _tables.has(key) or _making.has(key):
+        return
+    var held := {"image": null}
+    _making[key] = [WorkerThreadPool.add_task(func(): held["image"] = traced(distance, reach)), held]
+
+## The lens's rays followed and kept as an image (see table()). Touches nothing shared: safe on a worker thread.
+static func traced(distance: float, reach: float) -> Image:
     var edge := asin(clampf(reach / distance, 0.0, 1.0))
     var image := Image.create(COLUMNS, ROWS, false, Image.FORMAT_RGH)
     var columns := PackedFloat32Array()
@@ -97,6 +121,4 @@ static func table(distance: float, reach: float) -> ImageTexture:
         var bent := trace(distance, angle, columns)
         for column in COLUMNS:
             image.set_pixel(column, row, Color(columns[column], maxf(bent, 0.0), 0.0, 1.0))
-    var texture := ImageTexture.create_from_image(image)
-    _tables[key] = texture
-    return texture
+    return image

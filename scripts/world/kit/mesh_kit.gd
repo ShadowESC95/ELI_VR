@@ -4,6 +4,81 @@ extends RefCounted
 # The shapes rooms are put together from. Each comes back with normals,
 # tangents and UVs measured in metres, so a tiling material sits right on any
 # of them without stretching.
+#
+# A room's shapes are worked out once. Making them is most of what building a room costs (a sea of
+# forty thousand triangles, the land, a flock's bird), and a room is built again every time you
+# come back to it: so each room keeps the shapes its last build asked for (RoomBase.build says
+# which room is being built) and is handed them again when it asks for the same. A shape a room no
+# longer asks for is let go when its build ends, so what is kept never grows past what the rooms
+# as they now are use. Shapes are shared, never changed: a room gives them a material of its own
+# (material_override), not one set on the mesh.
+
+static var _rooms := {}        # room -> {what a shape was made from: the shape}, as its last build left it
+static var _building := ""     # the room being built now, "" between builds
+static var _asked := {}        # the shapes this build has asked for so far
+
+## A room starts building: the shapes it asks for from here to built() are its own to keep.
+static func build_of(room: String) -> void:
+    _building = room
+    _asked = {}
+
+## The room is built: it keeps what this build asked for, and lets go of what it did not.
+static func built() -> void:
+    if not _building.is_empty():
+        _rooms[_building] = _asked
+    _building = ""
+    _asked = {}
+
+## The room being built now ("" when none is): for a shape that is finished after the build (land
+## made on a worker thread) to be kept for it with keep().
+static func building() -> String:
+    return _building
+
+## The shape made from `key` the last time `room` was built (the one being built, by default), or null.
+static func kept(key: Array, room: String = "") -> ArrayMesh:
+    return held(key, room) as ArrayMesh
+
+## Keeps `shape`, made from `key`, for `room` (the one being built, by default); gives it back.
+static func keep(key: Array, shape: ArrayMesh, room: String = "") -> ArrayMesh:
+    hold(key, shape, room)
+    return shape
+
+## Anything else a room works out once and is handed again the next time it is built (a batch of
+## instances, say), kept as its shapes are: what was held for `key`, or null.
+static func held(key: Array, room: String = "") -> Variant:
+    if room.is_empty():
+        room = _building
+    if room.is_empty():
+        return null
+    var thing = (_rooms.get(room, {}) as Dictionary).get(key)
+    if thing == null and room == _building:
+        thing = _asked.get(key)
+    if thing != null and room == _building:
+        _asked[key] = thing
+    return thing
+
+static func hold(key: Array, thing: Variant, room: String = "") -> void:
+    if room.is_empty():
+        room = _building
+    if room.is_empty():
+        return
+    if room == _building:
+        _asked[key] = thing
+    elif _rooms.has(room):
+        (_rooms[room] as Dictionary)[key] = thing
+
+## What a noise is, for telling one from another: every setting it stores.
+static func noise_key(noise: FastNoiseLite) -> Array:
+    var out := []
+    for property in noise.get_property_list():
+        if int(property["usage"]) & PROPERTY_USAGE_STORAGE:
+            out.append(noise.get(property["name"]))
+    return out
+
+## What a piece of land is made from: terrain()'s arguments, the noise by its settings.
+static func terrain_key(size: float, cells: int, noise: FastNoiseLite, height: float, flat: float, rise: float,
+                        bowl: float, base_y: float, fade: float, dunes: Vector4) -> Array:
+    return ["terrain", size, cells, noise_key(noise), height, flat, rise, bowl, base_y, fade, dunes]
 
 # A profile spun around the Y axis. Points are (radius, height), listed going
 # outward along the top, down the outside, then back in underneath. Each band
@@ -11,6 +86,10 @@ extends RefCounted
 # `arc` below a full turn spins it only that far, from the angle `from` (0 is
 # +X, turning towards +Z): a dome with its slit left open, a shutter leaf.
 static func lathe(profile: PackedVector2Array, segments: int = 64, from: float = 0.0, arc: float = TAU) -> ArrayMesh:
+    var key := ["lathe", profile, segments, from, arc]
+    var had := kept(key)
+    if had != null:
+        return had
     var st := SurfaceTool.new()
     st.begin(Mesh.PRIMITIVE_TRIANGLES)
     var run := 0.0
@@ -38,10 +117,14 @@ static func lathe(profile: PackedVector2Array, segments: int = 64, from: float =
             )
         run += length
     st.generate_tangents()
-    return st.commit()
+    return keep(key, st.commit())
 
 # A flat ring lying in the XZ plane, facing up. inner = 0 gives a disc.
 static func annulus(inner: float, outer: float, segments: int = 96) -> ArrayMesh:
+    var key := ["annulus", inner, outer, segments]
+    var had := kept(key)
+    if had != null:
+        return had
     var st := SurfaceTool.new()
     st.begin(Mesh.PRIMITIVE_TRIANGLES)
     for s in segments:
@@ -58,33 +141,59 @@ static func annulus(inner: float, outer: float, segments: int = 96) -> ArrayMesh
             Vector2(p00.x, p00.z), Vector2(p01.x, p01.z), Vector2(p11.x, p11.z), Vector2(p10.x, p10.z)
         )
     st.generate_tangents()
-    return st.commit()
+    return keep(key, st.commit())
 
 # A disc lying in the XZ plane, facing up, made of rings that start `first` metres apart at the
 # middle and widen in proportion to their distance out (so a surface moved in its vertex shader,
 # like the sea's swell, has its finest grid where you are). The gap between rings at r metres out
 # is disc_step(r, ...). UVs are in metres.
 static func disc(radius: float, rings: int, segments: int, first: float) -> ArrayMesh:
+    var key := ["disc", radius, rings, segments, first]
+    var had := kept(key)
+    if had != null:
+        return had
+    # written straight into the surface's arrays, each point once (a sea is tens of thousands of
+    # triangles: put together a quad at a time it is the slowest shape a room asks for)
     var growth := disc_growth(radius, rings, first)
-    var st := SurfaceTool.new()
-    st.begin(Mesh.PRIMITIVE_TRIANGLES)
-    var inner := 0.0
+    var across := segments + 1                     # the seam's points are doubled, so the UVs do not wrap
+    var points := PackedVector3Array()
+    var normals := PackedVector3Array()
+    var uvs := PackedVector2Array()
+    var indices := PackedInt32Array()
+    points.resize((rings + 1) * across)
+    normals.resize(points.size())
+    uvs.resize(points.size())
+    indices.resize(rings * segments * 6)
+    var whole := exp(growth * float(rings)) - 1.0
+    for k in rings + 1:
+        var r := radius * (exp(growth * float(k)) - 1.0) / whole
+        for s in across:
+            var angle := TAU * float(s) / float(segments)
+            var at := Vector3(cos(angle) * r, 0.0, sin(angle) * r)
+            var n := k * across + s
+            points[n] = at
+            normals[n] = Vector3.UP
+            uvs[n] = Vector2(at.x, at.z)
+    var i := 0
     for k in rings:
-        var outer := radius * (exp(growth * float(k + 1)) - 1.0) / (exp(growth * float(rings)) - 1.0)
         for s in segments:
-            var t0 := TAU * float(s) / float(segments)
-            var t1 := TAU * float(s + 1) / float(segments)
-            var c0 := Vector3(cos(t0), 0.0, sin(t0))
-            var c1 := Vector3(cos(t1), 0.0, sin(t1))
-            var p00 := c0 * inner
-            var p01 := c1 * inner
-            var p11 := c1 * outer
-            var p10 := c0 * outer
-            _quad(st, p00, p01, p11, p10, Vector3.UP, Vector3.UP,
-                  Vector2(p00.x, p00.z), Vector2(p01.x, p01.z), Vector2(p11.x, p11.z), Vector2(p10.x, p10.z))
-        inner = outer
-    st.index()
-    return st.commit()
+            var p00 := k * across + s
+            var p01 := p00 + 1
+            var p10 := p00 + across
+            var p11 := p10 + 1
+            # wound to face up, as _quad winds a face to its normal
+            for index in [p00, p11, p01, p00, p10, p11]:
+                indices[i] = index
+                i += 1
+    var arrays := []
+    arrays.resize(Mesh.ARRAY_MAX)
+    arrays[Mesh.ARRAY_VERTEX] = points
+    arrays[Mesh.ARRAY_NORMAL] = normals
+    arrays[Mesh.ARRAY_TEX_UV] = uvs
+    arrays[Mesh.ARRAY_INDEX] = indices
+    var mesh := ArrayMesh.new()
+    mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+    return keep(key, mesh)
 
 ## How fast disc()'s rings widen: the g for which ring k sits at radius·(e^{gk} − 1)/(e^{gn} − 1)
 ## and the first is `first` metres out.
@@ -197,10 +306,14 @@ static func terrain(
     flat: float, rise: float, bowl: float = 0.0, base_y: float = 0.0, fade: float = 0.0,
     dunes: Vector4 = Vector4.ZERO
 ) -> ArrayMesh:
+    var key := terrain_key(size, cells, noise, height, flat, rise, bowl, base_y, fade, dunes)
+    var had := kept(key)
+    if had != null:
+        return had
     var mesh := ArrayMesh.new()
     mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,
         terrain_arrays(size, cells, noise, height, flat, rise, bowl, base_y, fade, dunes))
-    return mesh
+    return keep(key, mesh)
 
 # The same ground as surface arrays (Mesh.ARRAY_*). Made without touching the scene or the renderer,
 # so it can be made on a worker thread (LandKit.lay(in_background)) with a noise of its own.
@@ -244,6 +357,10 @@ static func terrain_arrays(
 
 # A boulder: a ball pushed in and out by noise. Each seed is a different rock.
 static func rock(seed_value: int, radius: float, lumps: float = 0.35, rings: int = 14) -> ArrayMesh:
+    var key := ["rock", seed_value, radius, lumps, rings]
+    var had := kept(key)
+    if had != null:
+        return had
     var noise := FastNoiseLite.new()
     noise.seed = seed_value
     noise.frequency = 0.9
@@ -271,7 +388,7 @@ static func rock(seed_value: int, radius: float, lumps: float = 0.35, rings: int
                 st.add_index(index)
     st.generate_normals()
     st.generate_tangents()
-    return st.commit()
+    return keep(key, st.commit())
 
 # A mesa or a butte: a hill of flat-lying rock worn back to a hard cap. A flat top under its cap
 # rock, a cliff broken by ledges where softer beds weathered back, and the scree it sheds spread
@@ -279,6 +396,10 @@ static func rock(seed_value: int, radius: float, lumps: float = 0.35, rings: int
 # the cap narrow against the foot (a butte). Each seed is a different hill: the outline wanders
 # and the beds stand out by different amounts. Faces are flat, as broken rock is.
 static func mesa(seed_value: int, radius: float, height: float, cap: float = 1.0, segments: int = 56) -> ArrayMesh:
+    var key := ["mesa", seed_value, radius, height, cap, segments]
+    var had := kept(key)
+    if had != null:
+        return had
     var noise := FastNoiseLite.new()
     noise.seed = seed_value
     noise.frequency = 1.0
@@ -313,7 +434,7 @@ static func mesa(seed_value: int, radius: float, height: float, cap: float = 1.0
                 normal = -normal
             _quad(st, a, b, c, d, normal, normal, Vector2(a.x, a.z), Vector2(b.x, b.z), Vector2(c.x, c.z), Vector2(d.x, d.z))
     st.generate_tangents()
-    return st.commit()
+    return keep(key, st.commit())
 
 # A sheet hanging along a path: aurora, banners, falls of light. UV.x runs
 # along the path in metres, UV.y from 0 at the bottom to 1 at the top.
@@ -340,6 +461,10 @@ static func curtain(path: PackedVector3Array, height: float) -> ArrayMesh:
 # A plant: blades fanned round a point, each standing up and leaning over as
 # it rises. Ferns, kelp, reeds. UV.y is 1 at the root and 0 at the tip.
 static func plant(blades: int, width: float, height: float, lean: float, seed_value: int = 1, segments: int = 6) -> ArrayMesh:
+    var key := ["plant", blades, width, height, lean, seed_value, segments]
+    var had := kept(key)
+    if had != null:
+        return had
     var rng := RandomNumberGenerator.new()
     rng.seed = seed_value
     var st := SurfaceTool.new()
@@ -360,7 +485,7 @@ static func plant(blades: int, width: float, height: float, lean: float, seed_va
             _quad(st, p0 - w, p0 + w, p1 + w, p1 - w, normal, normal,
                 Vector2(0.0, 1.0 - t0), Vector2(1.0, 1.0 - t0), Vector2(1.0, 1.0 - t1), Vector2(0.0, 1.0 - t1))
     st.generate_tangents()
-    return st.commit()
+    return keep(key, st.commit())
 
 # A bird in flight, wings spread, `span` metres from tip to tip, facing −Z with its back up, made
 # to `shape` (the kinds are in kit/flock.gd: body length, the wing's leading and trailing edge at
@@ -371,6 +496,10 @@ static func plant(blades: int, width: float, height: float, lean: float, seed_va
 # negative on the left wing; the body carries 0): that is what bird.gdshader bends at the shoulder
 # (bird_shoulder()) and the wrist to beat and to glide.
 static func bird(span: float, shape: Dictionary) -> ArrayMesh:
+    var key := ["bird", span, shape]
+    var had := kept(key)
+    if had != null:
+        return had
     var st := SurfaceTool.new()
     st.begin(Mesh.PRIMITIVE_TRIANGLES)
     var length: float = float(shape["length"]) * span
@@ -441,13 +570,17 @@ static func bird(span: float, shape: Dictionary) -> ArrayMesh:
                       Vector2.ZERO, Vector2.ZERO, Vector2.ZERO, Vector2.ZERO, top_paint, Vector4(spans.x, spans.x, spans.y, spans.y))
                 _quad(st, under_rows[0][c], under_rows[0][c + 1], under_rows[1][c + 1], under_rows[1][c], Vector3.DOWN, Vector3.DOWN,
                       Vector2.ZERO, Vector2.ZERO, Vector2.ZERO, Vector2.ZERO, under_paint, Vector4(spans.x, spans.x, spans.y, spans.y))
-    return st.commit()
+    return keep(key, st.commit())
 
 # A small open boat's hull, `length` long and `beam` wide, `depth` from the gunwale to the keel at
 # its middle, bow towards −Z: sections lofted from a transom stern through a full middle to a
 # fine bow, the sheer rising fore and aft, the bilge rounded. Open at the top; a material that
 # shows both sides shows the inside of the hull too. UVs run in metres along and round it.
 static func hull(length: float, beam: float, depth: float) -> ArrayMesh:
+    var key := ["hull", length, beam, depth]
+    var had := kept(key)
+    if had != null:
+        return had
     var st := SurfaceTool.new()
     st.begin(Mesh.PRIMITIVE_TRIANGLES)
     var stations := 14
@@ -484,7 +617,7 @@ static func hull(length: float, beam: float, depth: float) -> ArrayMesh:
             _quad(st, Vector3(0.0, a.y, a.z), a, b, Vector3(0.0, b.y, b.z), Vector3.BACK, Vector3.BACK,
                   Vector2(0.0, a.y), Vector2(a.x, a.y), Vector2(b.x, b.y), Vector2(0.0, b.y))
     st.generate_tangents()
-    return st.commit()
+    return keep(key, st.commit())
 
 # A fish, `length` metres from snout to tail tip, facing −Z with its back up, made to `shape` (the
 # kinds are in kit/flock.gd): a deep, narrow body of rings [t, half width, half height] as shares
@@ -492,6 +625,10 @@ static func hull(length: float, beam: float, depth: float) -> ArrayMesh:
 # colours are in the vertex colour, and every vertex carries in UV2.x how far back along the fish
 # it is (0 at the snout, 1 at the tail's tip): what fish.gdshader swings to swim.
 static func fish(length: float, shape: Dictionary) -> ArrayMesh:
+    var key := ["fish", length, shape]
+    var had := kept(key)
+    if had != null:
+        return had
     var st := SurfaceTool.new()
     st.begin(Mesh.PRIMITIVE_TRIANGLES)
     var rings: Array = shape["rings"]
@@ -533,7 +670,7 @@ static func fish(length: float, shape: Dictionary) -> ArrayMesh:
         for side in [1.0, -1.0]:
             _quad(st, q[0], q[1], q[2], q[3], Vector3.RIGHT * side, Vector3.RIGHT * side,
                   Vector2.ZERO, Vector2.ZERO, Vector2.ZERO, Vector2.ZERO, fin, Vector4(spans[0], spans[1], spans[2], spans[3]))
-    return st.commit()
+    return keep(key, st.commit())
 
 ## Where a bird's wings meet its body: metres out from the middle (the body's widest half-width).
 static func bird_shoulder(span: float, shape: Dictionary) -> float:

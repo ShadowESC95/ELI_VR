@@ -93,6 +93,7 @@ var _eli_called_until_ms := 0
 
 func _ready() -> void:
     ModelCache.warm()              # every real model loading on worker threads from the start
+    RoomFactoryClass.warm()        # and what the rooms can work out before they are first built
     # On ELI v3's list before anything else, licensed or not: ELI v3 asks for a key itself.
     EliBundleClass.register_with_v3(str(ProjectSettings.get_setting("application/config/version", "")))
     if not _licensed():

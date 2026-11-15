@@ -22,6 +22,9 @@ const SWELL := [
 
 var _floating: Array = []     # [node, height above the water, how much it leans with the swell, its heading]
 var _sea: ShaderMaterial
+# The swell as sea_height() reads it each frame, worked out once: for each train its direction
+# (x, z), wave number k = 2π/length, angular speed √(g·k) and height.
+var _trains := PackedFloat32Array()
 
 func _build() -> void:
     var env := environment(Color(0.55, 0.5, 0.6), 1.0)
@@ -64,11 +67,14 @@ func _water() -> void:
 ## The water's height at (x, z) now: the same swell the sea is drawn with (water.gdshader), read at
 ## the point under it (the swell's sideways sway, a few centimetres, is left out).
 func sea_height(x: float, z: float) -> float:
+    if _trains.is_empty():
+        for train in SWELL:
+            var way: Vector2 = (train[0] as Vector2).normalized()
+            var k := TAU / float(train[1])
+            _trains.append_array([way.x, way.y, k, sqrt(9.81 * k), float(train[2])])
     var y := SEA_Y
-    for train in SWELL:
-        var way: Vector2 = (train[0] as Vector2).normalized()
-        var k := TAU / float(train[1])
-        y += float(train[2]) * sin(k * (way.x * x + way.y * z) - sqrt(9.81 * k) * _clock)
+    for i in range(0, _trains.size(), 5):
+        y += _trains[i + 4] * sin(_trains[i + 2] * (_trains[i] * x + _trains[i + 1] * z) - _trains[i + 3] * _clock)
     return y
 
 func _animate(_delta: float) -> void:

@@ -25,9 +25,17 @@ func build(theme: Dictionary, config) -> void:
     shadows = bool(config.get_value("graphics.shadows", true))
     motes = bool(config.get_value("graphics.particles", true))
     detail = clampf(float(config.get_value("graphics.world_detail_scale", 1.0)), 0.25, 4.0)
+    # the shapes this room is made of are kept from one build of it to the next (MeshKit)
+    MeshKitClass.build_of((get_script() as Script).resource_path)
     _build()
+    MeshKitClass.built()
 
 func _build() -> void:
+    pass
+
+## What a room can work out before it is first built, started in the background when ELI VR starts
+## (RoomFactory.warm): nothing, for a room that has nothing slow of its own.
+static func warm() -> void:
     pass
 
 # What ELI is and has been doing, for a room's screens to show: {"connected", "state" (the world

@@ -25,6 +25,11 @@ const DISC_ROLL := deg_to_rad(-14.0)
 var _arcs: Array = []
 var _lens: MeshInstance3D
 
+## The lens's table of rays takes a moment to work out: started in the background when ELI VR
+## starts (RoomFactory.warm), so the first walk into this room does not wait for it.
+static func warm() -> void:
+    BlackHole.warm(DECK_AWAY, LENS_REACH)
+
 func _build() -> void:
     var strange := accent.lerp(Color(0.9, 0.2, 0.75), 0.45)
     var env := environment(Color(0.20, 0.13, 0.26).lerp(strange, 0.25), 0.9)

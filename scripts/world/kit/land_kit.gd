@@ -35,6 +35,8 @@ var ground: MeshInstance3D
 var _task := -1                # the worker making the ground's mesh, while it is being made
 var _arrays := []              # what the worker made
 var _tree: SceneTree
+var _key := []                 # what the ground is made from, and the room it is kept for (MeshKit.keep)
+var _room := ""
 
 static var _blades := {}
 
@@ -83,10 +85,16 @@ static func lay(room: Node3D, material: Material, seed_value: int, frequency: fl
     land.ground = MeshInstance3D.new()
     land.ground.material_override = material
     room.add_child(land.ground)
-    if in_background and room.is_inside_tree():
+    var key := MeshKit.terrain_key(size_m, cell_count, land.noise, height_m, flat_m, rise_m, bowl_m, base, edge_fade, dune_field)
+    var had := MeshKit.kept(key)
+    if had != null:
+        land.ground.mesh = had          # this room's land as it was made the last time it was built
+    elif in_background and room.is_inside_tree():
         # the worker gets a noise of its own, so nothing it reads is shared with this thread
         var shape: FastNoiseLite = land.noise.duplicate()
         land._tree = room.get_tree()
+        land._key = key
+        land._room = MeshKit.building()
         land._task = WorkerThreadPool.add_task(func():
             land._arrays = MeshKit.terrain_arrays(size_m, cell_count, shape, height_m, flat_m, rise_m, bowl_m, base, edge_fade, dune_field))
         land._tree.process_frame.connect(land._lay_when_made)
@@ -106,10 +114,12 @@ func _lay_when_made() -> void:
     WorkerThreadPool.wait_for_task_completion(_task)
     _task = -1
     _tree.process_frame.disconnect(_lay_when_made)
-    if is_instance_valid(ground) and not _arrays.is_empty():
+    if not _arrays.is_empty():
         var mesh := ArrayMesh.new()
         mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, _arrays)
-        ground.mesh = mesh
+        MeshKit.keep(_key, mesh, _room)     # kept even if the room has been left meanwhile
+        if is_instance_valid(ground):
+            ground.mesh = mesh
     _arrays = []
 
 ## The ground's height at a point: the figure the mesh was built from.

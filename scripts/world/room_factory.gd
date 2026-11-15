@@ -37,6 +37,11 @@ var palette_world_strength: float = 0.02
 var geometry = ProceduralGeometryClass.new()
 var cinematic = CinematicAssetsClass.new()
 
+## Every room starts on what it can work out ahead of being built (RoomBase.warm), in the background.
+static func warm() -> void:
+    for script in REBUILT.values():
+        script.warm()
+
 func build(
     parent: Node3D,
     environment_id: String,
