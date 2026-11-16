@@ -1,4 +1,4 @@
-# ELI VR 0.9.19 — the lag since 0.9.18 is gone, the Evidence Wall shows each fact once and whole, and the hands and pointers sit where the controllers are
+# ELI VR 0.9.20 — the lag since 0.9.18 is gone, the Evidence Wall shows each fact once and whole, and the hands and pointers sit where the controllers are
 
 **Speed.** 0.9.18 was slow because of ELI's world message, not the rooms: the whole message was read on the main thread every time anything changed, and the Memory Archive rebuilt every book each time. The message is now read on a worker thread. A closed book is one shared shape whose cover is written when you are near enough to read it, books arrive a few at a time, and a book that has not changed is left alone. A room keeps its shapes between visits, so coming back into one no longer rebuilds the sea, the birds or the boat. Nothing was taken out: the gulls, the sea, the moon, the black hole, the books and the wall's 91 sheets are all there.
 
@@ -6,4 +6,4 @@
 
 **Controllers.** The hands stand where the controllers are and each pointer leaves along the controller's own ray, with nothing to calibrate first. Recalibrating brings each pointer onto a ring you point at and is kept per controller. The hand model sits on the grip the way a hand holds a controller, and a controller the runtime stops tracking is placed from the head until it moves again.
 
-Works with ELI v3 3.0.163. Not yet checked in a headset: the speed was measured headless and on a flat desktop view, and the sheet sizes and hand placement were worked out and tested without one. Two beliefs that say the same thing in different words still show as two sheets, and the Evidence Wall itself is still slower to enter than it was in 0.9.17.
+0.9.19 was tagged but never published: its build stopped on closing, which is fixed here. Works with ELI v3 3.0.163. Not yet checked in a headset: the speed was measured headless and on a flat desktop view, and the sheet sizes and hand placement were worked out and tested without one. Two beliefs that say the same thing in different words still show as two sheets, and the Evidence Wall itself is still slower to enter than it was in 0.9.17.
