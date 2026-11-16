@@ -38,6 +38,10 @@ func _build() -> void:
 static func warm() -> void:
     pass
 
+## What warm() started is waited for when ELI VR closes (RoomFactory.rest).
+static func rest() -> void:
+    pass
+
 # What ELI is and has been doing, for a room's screens to show: {"connected", "state" (the world
 # feed), "mind" (the model ELI thinks with), "mode"}. See scripts/world/kit/eli_readout.gd.
 func show_eli(_eli: Dictionary) -> void:

@@ -397,6 +397,9 @@ func _unhandled_key_input(event: InputEvent) -> void:
         KEY_ESCAPE:
             Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 
+func _exit_tree() -> void:
+    RoomFactoryClass.rest()
+
 func _process(_delta: float) -> void:
     ModelCache.poll()                # the next real model, loading in the background
     _process_eli_talk()

@@ -30,6 +30,9 @@ var _lens: MeshInstance3D
 static func warm() -> void:
     BlackHole.warm(DECK_AWAY, LENS_REACH)
 
+static func rest() -> void:
+    BlackHole.rest()
+
 func _build() -> void:
     var strange := accent.lerp(Color(0.9, 0.2, 0.75), 0.45)
     var env := environment(Color(0.20, 0.13, 0.26).lerp(strange, 0.25), 0.9)

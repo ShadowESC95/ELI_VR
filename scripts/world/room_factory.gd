@@ -42,6 +42,10 @@ static func warm() -> void:
     for script in REBUILT.values():
         script.warm()
 
+static func rest() -> void:
+    for script in REBUILT.values():
+        script.rest()
+
 func build(
     parent: Node3D,
     environment_id: String,

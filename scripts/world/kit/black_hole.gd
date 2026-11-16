@@ -109,6 +109,13 @@ static func warm(distance: float, reach: float) -> void:
     var held := {"image": null}
     _making[key] = [WorkerThreadPool.add_task(func(): held["image"] = traced(distance, reach)), held]
 
+## Waits for every lens still being worked out, when ELI VR closes: a worker left running while the
+## scripts it runs are let go of stops the whole program on its way out.
+static func rest() -> void:
+    for key in _making.keys():
+        WorkerThreadPool.wait_for_task_completion(_making[key][0])
+    _making.clear()
+
 ## The lens's rays followed and kept as an image (see table()). Touches nothing shared: safe on a worker thread.
 static func traced(distance: float, reach: float) -> Image:
     var edge := asin(clampf(reach / distance, 0.0, 1.0))

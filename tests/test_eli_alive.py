@@ -320,3 +320,23 @@ class Screens(Alive):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ClosesCleanly(unittest.TestCase):
+    def test_eli_vr_closes_while_a_room_is_still_working_something_out(self):
+        """The black hole's lens is worked out on a worker thread from the start. Closed before it was
+        done, ELI VR let go of the scripts under the worker and the whole program stopped with an
+        abort (the released build's own start check caught it). Closing waits for that work."""
+        godot = os.environ.get("GODOT_BIN") or shutil.which("godot") or shutil.which("godot4")
+        if not godot:
+            raise unittest.SkipTest("Godot is not installed here")
+        sandbox = tempfile.mkdtemp(prefix="eli-vr-test-")
+        self.addCleanup(shutil.rmtree, sandbox, True)
+        env = {k: v for k, v in os.environ.items() if k not in ("DISPLAY", "WAYLAND_DISPLAY")}
+        env.update(XDG_RUNTIME_DIR=sandbox, XDG_DATA_HOME=sandbox, HOME=sandbox, LOCALAPPDATA=sandbox,
+                   APPDATA=sandbox, ELI_VR_TEST_SANDBOX=sandbox)
+        for frames in ("5", "240"):
+            ran = subprocess.run([godot, "--headless", "--xr-mode", "off", "--path", str(ROOT), "--quit-after", frames],
+                                 env=env, capture_output=True, text=True, timeout=300)
+            self.assertEqual(ran.returncode, 0, (frames, ran.stderr[-600:]))
+            self.assertNotRegex(ran.stdout + ran.stderr, r"SCRIPT ERROR:|Parse Error:|Failed to load")
