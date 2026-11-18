@@ -1261,6 +1261,41 @@ func _example_feed_checks() -> void:
            and lesson_on_desk and wall.threads_drawn() >= 3,
            "sheets %d records %d of %d says %s invented %s board %s bars %s desk %s threads %d" % [wall.sheet_count(), wall.records_on_wall(),
            records, wall._on_file.text, invented, board.slice(0, 1), bars.multimesh.instance_count if bars else -1, lesson_on_desk, wall.threads_drawn()])
+    # the boards are worked out again only when what this room reads of ELI's message changed: every
+    # message did, whatever had changed in it (a book in another room, the time it was sent)
+    var before: int = wall.worked_out
+    var writing: Array = _texts_under(wall._sheets)
+    wall.show_eli(eli)
+    var elsewhere: Dictionary = state.duplicate(true)
+    elsewhere["timestamp"] = float(state.get("timestamp", 0.0)) + 5.0
+    for record in elsewhere["objects"]:
+        if record.get("kind") == "book" and record.get("room") != "evidence_wall":
+            record["name"] = str(record.get("name", "")) + " (again)"
+    wall.show_eli({"connected": true, "mind": "", "mode": "idle", "can": ["books", "evidence"], "state": elsewhere})
+    var left_alone: bool = wall.worked_out == before and _texts_under(wall._sheets) == writing
+    var here: Dictionary = state.duplicate(true)
+    var changed_claim := ""
+    for record in here["objects"]:
+        if record.get("kind") == "claim" and record.get("room") == "evidence_wall" and changed_claim.is_empty() \
+                and sent.any(func(e): return e["ref"] == record.get("id")):
+            changed_claim = str(record["id"])
+            record["sureness"] = 1.0 - float(record.get("sureness", 0.5))
+    wall.show_eli({"connected": true, "mind": "", "mode": "idle", "can": ["books", "evidence"], "state": here})
+    _check("the_wall_is_worked_out_again_only_when_its_part_of_the_message_changes",
+           left_alone and not changed_claim.is_empty() and wall.worked_out == before + 1,
+           "worked out %d then %d, left alone %s, changed %s" % [before, wall.worked_out, left_alone, changed_claim])
+    # a place is tried for a record only where it could fit: the least a view can need is never more
+    # than laying it out finds, so no place that takes a record whole is passed over
+    var tight := 0
+    var tried := 0
+    for entry in wall._evidence(state, by_room.call("evidence_wall", "claim")):
+        var view: Dictionary = entry["view"] if entry.has("view") else EvidenceSheet.of_claim(entry["belief"])
+        for slot in wall._slots:
+            for width in [slot["size"].x, slot["cell"].x, (slot["size"].x + slot["cell"].x) * 0.5]:
+                tried += 1
+                if EvidenceSheet.least(view, width, float(slot["distance"])) > float(EvidenceSheet.laid(view, width, float(slot["distance"]))["needs"]) + 0.000001:
+                    tight += 1
+    _check("the_least_a_sheet_could_need_is_never_more_than_it_needs", tried > 0 and tight == 0, "%d of %d over" % [tight, tried])
     on_wall.queue_free()
     wall.queue_free()
     # the Memory Archive: every book shelved, the stories on their own shelves, by time

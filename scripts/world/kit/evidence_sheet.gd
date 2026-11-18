@@ -171,8 +171,10 @@ static func laid(view: Dictionary, width: float, distance: float) -> Dictionary:
     return {"heading": heading, "figure": figure, "date": date, "details": details, "needs": needs}
 
 ## Whether a sheet `size` takes the whole of `view` at the size it is read at from `distance`.
+const FITS_BY := 0.0005             # metres a sheet may be short of its writing and still take it whole
+
 static func fits(view: Dictionary, size: Vector2, distance: float) -> bool:
-    return float(laid(view, size.x, distance)["needs"]) <= size.y + 0.0005
+    return float(laid(view, size.x, distance)["needs"]) <= size.y + FITS_BY
 
 ## The sheet that takes `view` whole where it hangs: `base` (the sheet its place was pinned with) when
 ## that holds it, else wide enough for its longest word, as tall as its writing makes it, and then
@@ -181,10 +183,18 @@ static func fits(view: Dictionary, size: Vector2, distance: float) -> bool:
 ## `tilt` radians on its pin must stay inside). When no sheet there takes it whole, the largest that
 ## the place has room for (fits() then says it does not).
 static func size_for(view: Dictionary, base: Vector2, cell: Vector2, tilt: float, distance: float) -> Vector2:
+    return placed(view, base, cell, tilt, distance)[0]
+
+## size_for(), and whether that sheet takes the view whole: [size, whole]. A width is laid out only
+## when the least the view could need there (least()) is no more than the place has: a record was
+## laid out in full at every width of every place it was tried on, most of which it could never fit.
+static func placed(view: Dictionary, base: Vector2, cell: Vector2, tilt: float, distance: float) -> Array:
     var e := Reading.em(distance)
     var c := cos(absf(tilt))
     var s := sin(absf(tilt))
     var best := base
+    var tried := false
+    var by := 0.0               # the least the view needs at the last width tried
     # wide enough that no word of it is broken across lines, when its place has that room
     var width := maxf(base.x, _widest_word(view, distance) + e * SIDE * 2.0)
     if (cell.y - width * s) / c < base.y or (s > 0.0001 and (cell.x - width * c) / s < base.y):
@@ -196,12 +206,71 @@ static func size_for(view: Dictionary, base: Vector2, cell: Vector2, tilt: float
             most = minf(most, (cell.x - width * c) / s)
         if most < base.y:
             break
-        var needs := float(laid(view, width, distance)["needs"])
-        if needs <= most:
-            return Vector2(width, maxf(base.y, needs))
+        var short := least(view, width, distance)
+        if short <= most:
+            short = float(laid(view, width, distance)["needs"])
+            if short <= most:
+                # checked again as the sheet is kept (a Vector2 holds less of a width than was worked
+                # with here, and a word that fitted exactly may not fit the width that is kept)
+                var size := Vector2(width, maxf(base.y, short))
+                return [size, fits(view, size, distance)]
         best = Vector2(width, most)
+        by = short
+        tried = true
         width += e * Reading.MONO_ADVANCE
-    return best
+    # the largest the place has room for: whole only by the hair fits() allows
+    return [best, fits(view, best, distance) if not tried or by <= best.y + FITS_BY else false]
+
+# What a view's writing weighs: for each of its texts, the width in the font's own units of each
+# paragraph's words set end to end. Kept while a wall is laid (forget() lets them go).
+static var _weighed := {}
+
+static func forget() -> void:
+    _weighed.clear()
+
+static func _weight(view: Dictionary) -> Dictionary:
+    var key := view.hash()
+    if _weighed.has(key):
+        return _weighed[key]
+    var measure := Reading.measurer(Reading.typed())
+    var of := func(text: String) -> Array:
+        var out := []
+        for paragraph in text.split("\n", false):
+            var total := 0.0
+            for word in paragraph.split(" ", false):
+                total += float(measure.call(word))
+            out.append(total)
+        return out
+    var details := []
+    for detail in view.get("details", []):
+        details.append_array(of.call(str(detail)))
+    var weight := {"heading": of.call(str(view.get("heading", ""))), "figure": of.call(str(view.get("figure", ""))),
+                   "date": of.call(str(view.get("date", ""))), "details": details}
+    _weighed[key] = weight
+    return weight
+
+## The least height a sheet `width` across could need for `view` (never more than laid() finds): a
+## paragraph takes at least as many lines as its words, set end to end, are wide in columns.
+static func least(view: Dictionary, width: float, distance: float) -> float:
+    var e := Reading.em(distance)
+    var column := maxf(width - e * SIDE * 2.0, e)
+    var line := Reading.line_height(Reading.typed(), distance)
+    var weight := _weight(view)
+    var lines := func(paragraphs: Array, scale: float) -> int:
+        var room := column / (Reading.pixel(distance) * scale)
+        var count := 0
+        for total in paragraphs:
+            if float(total) > 0.0:
+                count += maxi(1, int(ceil(float(total) / room - 0.000001)))
+        return count
+    var details: int = lines.call(weight["details"], 1.0)
+    var needs := e * TOP + line * KIND_SCALE + line * HEADING_SCALE * int(lines.call(weight["heading"], HEADING_SCALE)) \
+        + line * (int(lines.call(weight["figure"], 1.0)) + int(lines.call(weight["date"], 1.0))) + e * FOOT
+    if float(view.get("fill", -1.0)) >= 0.0:
+        needs += e * BAR_ROOM
+    if details > 0:
+        needs += e * GAP + line * details
+    return needs
 
 # The widest single word of a view as it is written, in metres.
 static func _widest_word(view: Dictionary, distance: float) -> float:

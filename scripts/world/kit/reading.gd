@@ -158,7 +158,27 @@ static func line_height(font: Font, distance: float, scale: float = 1.0) -> floa
 
 ## How wide a text is in `font`, in the pixels a label set in it measures its width in.
 static func measurer(font: Font) -> Callable:
-    return func(s: String) -> float: return font.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, DRAWN).x
+    if not _keeping:
+        return func(s: String) -> float: return font.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, DRAWN).x
+    var of_font := font.get_instance_id()
+    if not _widths.has(of_font):
+        _widths[of_font] = {}
+    var known: Dictionary = _widths[of_font]
+    return func(s: String) -> float:
+        if not known.has(s):
+            known[s] = font.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, DRAWN).x
+        return known[s]
+
+## A piece of work that measures the same writing many times over (a wall of sheets, each record
+## tried on place after place) keeps each width it measures for as long as the work lasts: keep(true)
+## before it, keep(false) after, which lets them go.
+static var _keeping := false
+static var _widths := {}
+
+static func keep(on: bool) -> void:
+    _keeping = on
+    if not on:
+        _widths.clear()
 
 ## A text as every line it takes in a column `width` metres wide read from `distance`: all of it,
 ## however many lines that is (a sheet that takes a record whole asks how tall that makes it).

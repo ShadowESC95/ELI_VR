@@ -86,6 +86,9 @@ var _on_file: Label3D
 var _filled := 0                    # how many sheets carry a record
 var _claim_place: Array = []        # the arranged beliefs' places on the wall (-1 for one with none)
 var _book_slots: Array = []
+var _shown := 0                     # what the room was last shown, as one number (show_eli)
+var _shown_once := false
+var worked_out := 0                 # how many times the boards were worked out
 
 func _build() -> void:
     var env := environment(Color(0.26, 0.22, 0.2), 1.35)
@@ -609,10 +612,10 @@ func _lay(entries: Array) -> void:
         var size := Vector2.ZERO
         for i in free:
             var slot: Dictionary = _slots[i]
-            var takes := EvidenceSheet.size_for(view, slot["size"], slot["cell"], float(slot["tilt"]), float(slot["distance"]))
-            if EvidenceSheet.fits(view, takes, float(slot["distance"])):
+            var takes := EvidenceSheet.placed(view, slot["size"], slot["cell"], float(slot["tilt"]), float(slot["distance"]))
+            if takes[1]:
                 chosen = i
-                size = takes
+                size = takes[0]
                 break
         if chosen < 0:
             chosen = free[0]
@@ -635,6 +638,7 @@ static func _about_keys(thought: Dictionary) -> Array:
 # record or its size changed, the thread run between sheets about the same thing, and how many
 # records are on file.
 func _write_wall(evidence: Array, why: String) -> void:
+    Reading.keep(true)          # each record is measured on place after place: its words once
     _lay(evidence)
     _filled = _placed.size()
     var held := {}
@@ -660,6 +664,8 @@ func _write_wall(evidence: Array, why: String) -> void:
         sheet.transform = _slots[i]["xf"]
         _sheets.add_child(sheet)
         EvidenceSheet.draw(sheet, _slots[i]["now"], float(_slots[i]["distance"]), view, false)
+    Reading.keep(false)
+    EvidenceSheet.forget()
     _paper_up(held)
     if not why.is_empty():
         _on_file.text = why
@@ -1101,9 +1107,19 @@ func show_eli(eli: Dictionary) -> void:
     var claims := []
     _conflicts.clear()
     var lessons := 0
+    # what this room reads of the message: its own records, the questions, and whatever ELI's order
+    # of the wall names. Everything else in it (the books of other rooms) is not this room's to look at.
+    var sent: Dictionary = state.get("evidence", {}) if typeof(state.get("evidence")) == TYPE_DICTIONARY else {}
+    var named := {}
+    for entry in (sent.get("wall", []) if typeof(sent.get("wall")) == TYPE_ARRAY else []):
+        if typeof(entry) == TYPE_DICTIONARY:
+            named[str(entry.get("ref", ""))] = true
+    var read := []
     for record in state.get("objects", []):
         if typeof(record) != TYPE_DICTIONARY:
             continue
+        if str(record.get("room", "")) == "evidence_wall" or str(record.get("kind", "")) == "conflict" or named.has(str(record.get("id", ""))):
+            read.append(record)
         match str(record.get("kind", "")):
             "conflict":
                 # what it is about: ELI v3's relation, or the words of its name
@@ -1118,6 +1134,14 @@ func show_eli(eli: Dictionary) -> void:
                 if str(record.get("room", "")) == "evidence_wall" and str(EliBook.book_of(record).get("of", "")) == "lesson":
                     lessons += 1
     var away := "" if connected else EliReadout.idle_reason(eli)
+    # A message that says of this room what the last one said changes nothing here: every board was
+    # worked out again at each of ELI's messages, whatever had changed in them.
+    var shown := [connected, away, can, eli.has("can"), read, sent, state.get("thoughts")].hash()
+    if _shown_once and shown == _shown:
+        return
+    _shown = shown
+    _shown_once = true
+    worked_out += 1
     var unsent := func(capability: String) -> String:
         return away if not away.is_empty() else ("this ELI does not send that yet" if eli.has("can") and not capability in can else "")
     # the wall of sheets and its threads

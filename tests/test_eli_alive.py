@@ -293,6 +293,8 @@ class Screens(Alive):
 
     def test_the_rooms_show_elis_example_world_message(self) -> None:
         self.check("the_evidence_wall_shows_elis_example_world_message")
+        self.check("the_wall_is_worked_out_again_only_when_its_part_of_the_message_changes")
+        self.check("the_least_a_sheet_could_need_is_never_more_than_it_needs")
         self.check("the_archive_shelves_elis_example_books")
         self.check("elis_room_shelves_its_example_books")
 
