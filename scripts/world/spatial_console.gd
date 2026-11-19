@@ -31,14 +31,17 @@ func setup(p_app: Node, registry, config) -> void:
         ["DESERT","environment","desert_observatory"],["UNDERWATER","environment","underwater_lab"]
     ], 2)
 
-    _build_panel("VISUAL / SYSTEM", "VisualPanel", Vector3(2.35, 1.30, -3.10), 16.0, [
-        ["BLUE","theme","frontier"],["BLACK","theme","obsidian"],["PURPLE","theme","nebula"],
-        ["GREEN","theme","emerald"],["ORANGE","theme","solar"],["CYAN","theme","abyssal"],
-        ["ICE BLUE","theme","aurora"],["WHITE","theme","monolith"],["AUTO","quality","auto"],
+    # the colours are the registry's themes, in its order, each under the name it gives
+    var visual := []
+    for id in registry.themes:
+        visual.append([str(registry.themes[id].get("display_name", id)).to_upper(), "theme", str(id)])
+    visual.append_array([
+        ["AUTO","quality","auto"],
         ["LOW","quality","low"],["MEDIUM","quality","medium"],["HIGH","quality","high"],
         ["ULTRA","quality","ultra"],["DESKTOP","toggle","desktop"],["HUD","toggle","hud"],
         ["RESET UI","system","reset_workspace"],["EXIT","system","exit"]
-    ], 4)
+    ])
+    _build_panel("VISUAL / SYSTEM", "VisualPanel", Vector3(2.35, 1.30, -3.10), 16.0, visual, 4)
 
 # ELI's mind: the models it has, by its own list. The one in use is marked.
 # Pressing another has ELI load it. Nothing is listed until ELI has said.

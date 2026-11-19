@@ -156,21 +156,12 @@ func _writing_rack() -> void:
     box(Vector3(2.7, 0.05, 0.12), steel, Vector3(0, -1.0, 0.06), rack)          # the ledge along the foot
     for x in [-1.2, 1.2]:
         rod(0.03, 1.45, steel, Vector3(rack.position.x, 0.72, rack.position.z) + rack.basis.x * x - rack.basis.z * 0.35)
-    var heading := Label3D.new()
-    heading.text = "WHAT ELI WROTE"
-    heading.font_size = 44
-    heading.pixel_size = 0.0028
-    heading.modulate = Color(1.0, 0.86, 0.66)
-    heading.outline_size = 6
-    heading.position = Vector3(0, 1.15, 0.04)
-    rack.add_child(heading)
+    board_heading(rack, "WHAT ELI WROTE", Vector3(0, 1.15, 0.04), Color(1.0, 0.86, 0.66), 44, 0.0028)
     spot(rack.transform * Vector3(0, 2.0, 2.0), rack.transform * Vector3.ZERO, Color(1.0, 0.88, 0.7), 3.0, 6.0, 40.0)
 
 # What ELI wrote for you is clipped to the rack.
 func pin_spot(kind: String, index: int) -> Variant:
-    if kind != "written" or index < 0 or index >= WRITTEN_PLACES.size():
-        return null
-    return _rack() * Transform3D(Basis.IDENTITY, WRITTEN_PLACES[index])
+    return pinned(_rack(), WRITTEN_PLACES, index) if kind == "written" else null
 
 func show_eli(eli: Dictionary) -> void:
     if _tools == null:

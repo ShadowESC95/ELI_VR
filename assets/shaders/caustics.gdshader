@@ -24,7 +24,6 @@ float web(vec2 p, float t) {
 
 void fragment() {
     float c = web(world_pos.xz * scale * 11.0, TIME * 0.8);
-    float up = clamp(NORMAL.y * 0.5 + 0.5, 0.0, 1.0);
     ALBEDO = tint * energy * c;
     ALPHA = clamp(c * 0.5, 0.0, 1.0);
 }

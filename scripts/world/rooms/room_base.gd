@@ -73,12 +73,7 @@ func _process(delta: float) -> void:
 # --- small helpers -----------------------------------------------------------
 
 func add(mesh: Mesh, material: Material, at: Vector3 = Vector3.ZERO, parent: Node3D = self) -> MeshInstance3D:
-    var node := MeshInstance3D.new()
-    node.mesh = mesh
-    node.material_override = material
-    node.position = at
-    parent.add_child(node)
-    return node
+    return MeshKitClass.part(parent, mesh, material, at)
 
 func spin(node: Node3D, axis: Vector3, speed: float) -> void:
     _turning.append([node, axis.normalized(), speed])
@@ -96,13 +91,7 @@ func strip(extra: Dictionary = {}) -> ShaderMaterial:
     return MaterialKitClass.shader("res://assets/shaders/light_strip.gdshader", params)
 
 func lamp(at: Vector3, colour: Color, energy: float, reach: float, parent: Node3D = self) -> OmniLight3D:
-    var light := OmniLight3D.new()
-    light.position = at
-    light.light_color = colour
-    light.light_energy = energy
-    light.omni_range = reach
-    parent.add_child(light)
-    return light
+    return MeshKitClass.omni(parent, at, colour, reach, energy)
 
 func glow(at: Vector3, colour: Color, size: float, energy: float = 1.0, core: float = 0.5, parent: Node3D = self) -> MeshInstance3D:
     var node := MaterialKitClass.halo(colour, size, energy, core)
@@ -279,17 +268,29 @@ func spot(at: Vector3, towards: Vector3, colour: Color, energy: float, reach: fl
     return light
 
 func box(size: Vector3, material: Material, at: Vector3, parent: Node3D = self) -> MeshInstance3D:
-    var mesh := BoxMesh.new()
-    mesh.size = size
-    return add(mesh, material, at, parent)
+    return add(MeshKitClass.box(size), material, at, parent)
 
 func rod(radius: float, length: float, material: Material, at: Vector3, parent: Node3D = self) -> MeshInstance3D:
-    var mesh := CylinderMesh.new()
-    mesh.top_radius = radius
-    mesh.bottom_radius = radius
-    mesh.height = length
-    mesh.radial_segments = 12
-    return add(mesh, material, at, parent)
+    return add(MeshKitClass.cylinder(radius, radius, length, 12), material, at, parent)
+
+# The heading over a board or a rack of ELI's sheets, on it at `at`.
+func board_heading(board: Node3D, text: String, at: Vector3, colour: Color, font_size: int, pixel_size: float) -> Label3D:
+    var words := Label3D.new()
+    words.text = text
+    words.font_size = font_size
+    words.pixel_size = pixel_size
+    words.modulate = colour
+    words.outline_size = 6
+    words.position = at
+    board.add_child(words)
+    return words
+
+# Where the `index`th sheet goes on a board standing at `board`: the place of that number among
+# its `places` (each a point on the board), or null past the last of them.
+func pinned(board: Transform3D, places: Array, index: int) -> Variant:
+    if index < 0 or index >= places.size():
+        return null
+    return board * Transform3D(Basis.IDENTITY, places[index])
 
 # Reflections on metal, water and polished floors. `inside` is for rooms
 # with no sky.

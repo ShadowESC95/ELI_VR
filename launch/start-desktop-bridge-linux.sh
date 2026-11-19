@@ -2,6 +2,8 @@
 set -Eeuo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# shellcheck source=launch/lib-session.sh
+source "$ROOT/launch/lib-session.sh"
 BIN="$ROOT/native/desktop_bridge/target/release/eli-vr-desktop-bridge"
 # ELI_VR_DESKTOP_INPUT=0 shows the desktop and never moves the pointer or clicks.
 NO_INPUT=()
@@ -12,7 +14,7 @@ NO_INPUT=()
 # screen to share and remembers the answer.
 if [[ "${XDG_SESSION_TYPE:-}" == "wayland" && "${ELI_VR_ALLOW_LEGACY_WAYLAND_CAPTURE:-0}" != "1" ]]; then
   PORTAL="$ROOT/native/desktop_portal_bridge/eli_portal_bridge.py"
-  if ! python3 -c 'import dbus, gi; gi.require_version("Gst","1.0"); from gi.repository import Gst; Gst.init(None); assert Gst.ElementFactory.find("pipewiresrc")' >/dev/null 2>&1; then
+  if ! wayland_capture_ready; then
     echo "Wayland capture dependencies are missing. Run: ./tools/install-linux-wayland-capture-deps.sh" >&2
     exit 1
   fi

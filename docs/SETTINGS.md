@@ -12,7 +12,6 @@ Change one from a terminal with `python3 tools/eli_vr.py set <key> <value>`, or 
 | `xr.render_scale` | `1.0` | Pixels given to the headset, as a multiple of what it asks for. Read when the session starts |
 | `xr.foveation` | `auto` | `auto` uses it when the runtime can, `off` never |
 | `xr.pause_when_unfocused` | `true` | Pause the world when the headset says the session lost focus |
-| `xr.controller_rays` | `true` | Pointer rays from the controllers |
 | `xr.smooth_locomotion` | `true` | Move with the left stick |
 | `xr.move_speed` | `2.0` | Metres a second |
 | `xr.fly_speed` | `5.0` | Metres a second in free flight |
@@ -73,8 +72,6 @@ Holding the screen with the grip changes the last five, and recentring the works
 | `ui.readouts.status` | `false` | Room, desktop link and ELI link on the HUD |
 | `ui.wrist_menu` | `true` | The menu on your left wrist |
 | `ui.console_distance_m` | `2.7` | How far the control panels stand |
-| `ui.spatial_panels_grabbable` | `true` | Panels can be grabbed and moved |
-| `ui.show_help_on_start` | `true` | Controls shown at start |
 
 ## Sound
 
@@ -82,7 +79,6 @@ Holding the screen with the grip changes the last five, and recentring the works
 |---|---|---|
 | `audio.enabled` | `true` | Room sound |
 | `audio.ambient_volume_db` | `-18.0` | Its level |
-| `audio.spatial_ui_volume_db` | `-10.0` | Level of button sounds |
 
 ## ELI link
 

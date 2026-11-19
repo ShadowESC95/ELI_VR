@@ -18,7 +18,7 @@ static func _clock(ts) -> String:
     var t := Time.get_datetime_dict_from_unix_time(int(ts) + bias)
     return "%02d:%02d" % [t.hour, t.minute]
 
-static func _colour_of(kind: String, tint: Color) -> Color:
+static func colour_of(kind: String, tint: Color) -> Color:
     match kind:
         "error_detected", "runtime_fault", "evidence_weak", "memory_uncertainty", "trouble", "action", "surprise", "conflict":
             return TROUBLE
@@ -45,16 +45,16 @@ static func thought_lines(eli: Dictionary, tint: Color, kinds: Array = [], room:
             continue
         if not room.is_empty() and str(thought.get("room", "")) != room:
             continue
-        var colour := _colour_of(kind, tint)
+        var colour := colour_of(kind, tint)
         var what := str(thought.get("what", ""))
         var first := true
-        for chunk in _wrap(what, width):
+        for chunk in Reading.wrap_lines(what, width):
             lines.append([("%s %s" % [_clock(thought.get("when")), chunk]) if first else "      " + chunk, colour])
             first = false
         var decision := str(thought.get("decision", ""))
         var reason := str(thought.get("reason", ""))
         if not decision.is_empty():
-            for chunk in _wrap(decision + (": " + reason if not reason.is_empty() else ""), width - 2):
+            for chunk in Reading.wrap_lines(decision + (": " + reason if not reason.is_empty() else ""), width - 2):
                 lines.append(["  " + chunk, PALE])
         var tail := ""
         if thought.get("chance") != null:
@@ -75,7 +75,7 @@ static func log_lines(eli: Dictionary, tint: Color, keep: Callable = Callable())
         var kind := str(entry.get("type", ""))
         if keep.is_valid() and not keep.call(kind):
             continue
-        out.append(["%s %s" % [_clock(entry.get("ts")), str(entry.get("text", ""))], _colour_of(kind, tint)])
+        out.append(["%s %s" % [_clock(entry.get("ts")), str(entry.get("text", ""))], colour_of(kind, tint)])
     return out
 
 ## The last `rows` of the log, so the newest is always at the bottom.
@@ -130,13 +130,10 @@ static func mind_lines(eli: Dictionary, tint: Color, kinds: Array = []) -> Array
         var kind := str(thought.get("kind", ""))
         if not kinds.is_empty() and not kind in kinds:
             continue
-        lines.append([kind.replace("_", " "), _colour_of(kind, tint).darkened(0.2)])
-        for chunk in _wrap(str(thought.get("text", "")), 40):
-            lines.append(["  " + chunk, _colour_of(kind, tint)])
+        lines.append([kind.replace("_", " "), colour_of(kind, tint).darkened(0.2)])
+        for chunk in Reading.wrap_lines(str(thought.get("text", "")), 40):
+            lines.append(["  " + chunk, colour_of(kind, tint)])
     return lines
-
-static func _wrap(text: String, width: int) -> Array:
-    return Reading.wrap_lines(text, width)
 
 ## What is on your agenda soon, from ELI's own: when, then what, earliest first.
 static func coming_lines(eli: Dictionary, tint: Color) -> Array:

@@ -93,35 +93,17 @@ static func build(body: Node3D, id: String, tint: Color) -> Dictionary:
     _box(body, Vector3(0.03, 0.09, 0.04), Vector3(0, -0.045, 0.0), dark, Vector3(-16, 0, 0))
     return {"muzzle": Vector3(0, 0.05, -0.33), "length": 0.4}
 
-static func _mesh(body: Node3D, mesh: Mesh, at: Vector3, material: Material, rot: Vector3) -> MeshInstance3D:
-    var node := MeshInstance3D.new()
-    node.mesh = mesh
-    node.material_override = material
-    node.position = at
-    node.rotation_degrees = rot
-    body.add_child(node)
-    return node
-
 static func _box(body: Node3D, size: Vector3, at: Vector3, material: Material, rot: Vector3 = Vector3.ZERO) -> MeshInstance3D:
-    var mesh := BoxMesh.new()
-    mesh.size = size
-    return _mesh(body, mesh, at, material, rot)
+    return MeshKit.part(body, MeshKit.box(size), material, at, rot)
 
 static func _cyl(body: Node3D, radius: float, length: float, at: Vector3, material: Material, rot: Vector3 = Vector3.ZERO) -> MeshInstance3D:
-    var mesh := CylinderMesh.new()
-    mesh.top_radius = radius
-    mesh.bottom_radius = radius
-    mesh.height = length
-    mesh.radial_segments = 14
-    return _mesh(body, mesh, at, material, rot)
+    return MeshKit.part(body, MeshKit.cylinder(radius, radius, length, 14), material, at, rot)
 
 static func _ball(body: Node3D, radius: float, at: Vector3, material: Material) -> MeshInstance3D:
-    var mesh := SphereMesh.new()
-    mesh.radius = radius
-    mesh.height = radius * 2.0
+    var mesh := MeshKit.ball(radius)
     mesh.radial_segments = 16
     mesh.rings = 8
-    return _mesh(body, mesh, at, material, Vector3.ZERO)
+    return MeshKit.part(body, mesh, material, at)
 
 static func _torus(body: Node3D, inner: float, outer: float, at: Vector3, material: Material, rot: Vector3) -> MeshInstance3D:
     var mesh := TorusMesh.new()
@@ -129,17 +111,10 @@ static func _torus(body: Node3D, inner: float, outer: float, at: Vector3, materi
     mesh.outer_radius = outer
     mesh.rings = 24
     mesh.ring_segments = 8
-    return _mesh(body, mesh, at, material, rot)
+    return MeshKit.part(body, mesh, material, at, rot)
 
 static func _light(body: Node3D, at: Vector3, tint: Color, energy: float, reach: float) -> OmniLight3D:
-    var light := OmniLight3D.new()
-    light.position = at
-    light.light_color = tint
-    light.light_energy = energy
-    light.omni_range = reach
-    light.shadow_enabled = false
-    body.add_child(light)
-    return light
+    return MeshKit.omni(body, at, tint, reach, energy)
 
 # --- the sounds ---------------------------------------------------------------------------------
 

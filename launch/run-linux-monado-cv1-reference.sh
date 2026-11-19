@@ -124,7 +124,7 @@ vr_snapshot
 # provider so permission is session-oriented instead of screenshot polling.
 if [[ "${XDG_SESSION_TYPE:-}" == "wayland" && "${ELI_VR_DESKTOP_CAPTURE:-1}" != "0" ]]; then
   PORTAL_BRIDGE="$ROOT/native/desktop_portal_bridge/eli_portal_bridge.py"
-  if python3 -c 'import dbus, gi; gi.require_version("Gst","1.0"); from gi.repository import Gst; Gst.init(None); assert Gst.ElementFactory.find("pipewiresrc")' >/dev/null 2>&1; then
+  if wayland_capture_ready; then
     say "Starting XDG Portal + PipeWire desktop capture"
     PYTHONUNBUFFERED=1 python3 "$PORTAL_BRIDGE" \
       --width "${ELI_VR_CAPTURE_WIDTH:-0}" \

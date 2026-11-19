@@ -24,10 +24,6 @@ extends Node
 # How many are up at once, how fast they move and how long each stays come from what ELI chose
 # (count, seconds, pace) and from where things are, never from a table here.
 
-signal started(game: Dictionary)
-signal scored(score: int, misses: int)
-signal ended(result: Dictionary)
-
 const ROLE_MAT := "mat"
 const ROLE_ARM := "arm"
 const ROLE_RACK := "rack"
@@ -189,7 +185,6 @@ func _begin(obj: Dictionary) -> void:
     elif kind() == "hide":
         _hide_again(true)
     print("ELI VR PLAY: %s (%s), %d pieces, %d guns, %d s" % [str(rules.get("name", "")), kind(), _pieces.size(), _arms.size(), int(seconds())])
-    started.emit(game)
     var start := str(rules.get("lines", {}).get("start", ""))
     if not start.is_empty():
         _said_start = true
@@ -406,14 +401,12 @@ func _order_hit(thing) -> void:
             rounds += 1
             score = rounds
             _note(str(rules.get("lines", {}).get("hit", "")))
-            scored.emit(score, misses)
             _pause = beat() * 2.0
             if rounds >= count():
                 _finish(false, true)
         return
     misses += 1
     _note(str(rules.get("lines", {}).get("miss", "")))
-    scored.emit(score, misses)
     _show_sequence()                    # the same sequence again
 
 # --- hide ------------------------------------------------------------------------------------
@@ -460,7 +453,6 @@ func _found(thing) -> void:
     rounds += 1
     score = rounds
     _note(str(rules.get("lines", {}).get("hit", "")))
-    scored.emit(score, misses)
     thing.flash(0.6)
     if rounds >= count():
         _finish(false, true)
@@ -703,7 +695,6 @@ func _struck(thing, points: int, arm, at: Vector3) -> void:
     _marks.append([mark, elapsed + MARK_SECONDS, thing])
     thing.flash(0.3)
     _note(str(rules.get("lines", {}).get("hit", "")))
-    scored.emit(score, misses)
     if presence != null:
         presence.look_toward(at)
 
@@ -756,7 +747,6 @@ func hit(thing) -> void:
 func _hit_scored(_thing) -> void:
     score += 1
     _note(str(rules.get("lines", {}).get("hit", "")))
-    scored.emit(score, misses)
 
 func _miss(thing, gone: bool = true) -> void:
     _live.erase(thing)
@@ -765,7 +755,6 @@ func _miss(thing, gone: bool = true) -> void:
         thing.vanish()
     misses += 1
     _note(str(rules.get("lines", {}).get("miss", "")))
-    scored.emit(score, misses)
 
 func result() -> Dictionary:
     var out := {"score": score, "misses": misses, "rounds": rounds, "seconds": int(round(elapsed))}
@@ -812,7 +801,6 @@ func _finish(abandoned: bool, post: bool) -> void:
     _refresh_board(out)
     print("ELI VR PLAY: %s over: %d, %d misses, %d s%s" % [str(rules.get("name", "")), score, misses, out["seconds"],
                                                            " (stopped)" if abandoned else ""])
-    ended.emit(out)
     if post and link != null and link.can("games"):
         var told = await link.played(str(game.get("id", "")), out)
         if told.ok:

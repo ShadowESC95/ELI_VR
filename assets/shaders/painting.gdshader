@@ -9,22 +9,13 @@ uniform vec3 colours[4];
 uniform int count = 2;
 uniform float seed = 0.0;
 
-float hash(vec2 p) {
-    return fract(sin(dot(p, vec2(127.1, 311.7)) + seed * 13.17) * 43758.5453);
-}
-
-float noise(vec2 p) {
-    vec2 i = floor(p);
-    vec2 f = fract(p);
-    vec2 u = f * f * (3.0 - 2.0 * f);
-    return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y);
-}
+#include "res://assets/shaders/include/noise.gdshaderinc"
 
 float fbm(vec2 p) {
     float sum = 0.0;
     float amp = 0.5;
     for (int i = 0; i < 5; i++) {
-        sum += amp * noise(p);
+        sum += amp * vnoises(p, seed * 13.17);
         p *= 2.03;
         amp *= 0.5;
     }
@@ -60,16 +51,16 @@ void fragment() {
         for (int y = -1; y <= 1; y++) {
             for (int x = -1; x <= 1; x++) {
                 vec2 n = cell + vec2(float(x), float(y));
-                vec2 p = n + vec2(hash(n), hash(n + 7.0));
+                vec2 p = n + vec2(hash12s(n, seed * 13.17), hash12s(n + 7.0, seed * 13.17));
                 float d = length(g - p);
                 if (d < best) { best = d; near = n; }
             }
         }
-        t = hash(near);
+        t = hash12s(near, seed * 13.17);
     } else if (style == 4) {
         float glow = 0.0;
         for (int k = 0; k < 6; k++) {
-            vec2 at = vec2(hash(vec2(float(k), 1.0)), hash(vec2(float(k), 2.0)));
+            vec2 at = vec2(hash12s(vec2(float(k), 1.0), seed * 13.17), hash12s(vec2(float(k), 2.0), seed * 13.17));
             glow += 0.09 / (0.02 + length(uv - at));
         }
         t = clamp(glow * 0.12, 0.0, 1.0);
@@ -81,7 +72,7 @@ void fragment() {
     } else {
         t = fbm(uv * (2.0 + 3.0 * s) + vec2(fbm(uv * 3.0 + seed), fbm(uv * 3.0 - seed)));
     }
-    float grain = 0.92 + 0.08 * noise(uv * 240.0);
+    float grain = 0.92 + 0.08 * vnoises(uv * 240.0, seed * 13.17);
     ALBEDO = paint(t) * grain;
     ROUGHNESS = 0.82;
 }

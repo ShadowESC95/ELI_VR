@@ -35,17 +35,21 @@ def run_godot_checks(case: type[unittest.TestCase], checks: tuple[str, ...]) -> 
     return lines
 
 
-class Alive(unittest.TestCase):
+class Checked(unittest.TestCase):
+    """The two check scripts, run once for every class here that reads their lines."""
     lines: dict = {}
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.lines.update(run_godot_checks(cls, ("eli_alive_check.gd", "eli_screens_check.gd")))
+        if not Checked.lines:
+            Checked.lines.update(run_godot_checks(cls, ("eli_alive_check.gd", "eli_screens_check.gd")))
 
     def check(self, name: str) -> None:
         line = self.lines.get(name, f"FAIL {name}: the check never ran")
         self.assertTrue(line.startswith("PASS"), line)
 
+
+class Alive(Checked):
     def test_eli_is_there_when_you_come_into_its_room(self) -> None:
         self.check("there_when_you_come_in")
 
@@ -134,7 +138,7 @@ class Alive(unittest.TestCase):
         self.check("the_settings_dock_switches_each_readout_or_all_and_follows_the_other_switches")
 
 
-class Screens(Alive):
+class Screens(Checked):
     """The screens in the rooms show ELI's real log and state, and nothing made up."""
 
     def test_a_screen_shows_what_fits_and_cuts_what_does_not(self) -> None:
@@ -272,6 +276,15 @@ class Screens(Alive):
         self.check("elis_room_is_built_once_with_the_look_eli_gave_it")
         self.check("elis_room_has_a_bookcase_of_its_own_books_a_shelf_for_each_kind")
 
+    def test_a_place_no_room_answers_to_is_the_orbital_core(self) -> None:
+        self.check("a_place_no_room_answers_to_is_the_orbital_core")
+
+    def test_the_consoles_colour_buttons_are_the_registrys_themes(self) -> None:
+        self.check("the_consoles_colour_buttons_are_the_registrys_themes_in_its_order")
+
+    def test_the_desktop_link_takes_only_this_machine_as_its_host(self) -> None:
+        self.check("the_desktop_link_takes_only_the_hosts_the_network_policy_calls_this_machine")
+
     def test_the_evidence_wall_shows_beliefs_disputes_exhibits_and_threads(self) -> None:
         self.check("a_belief_is_a_case_card_saying_how_sure_eli_is_and_since_when")
         self.check("the_evidence_wall_pins_up_nothing_that_is_not_elis")
@@ -323,9 +336,6 @@ class Screens(Alive):
         self.check("a_flock_is_ticked_at_its_own_rate_and_drawn_between_ticks")
 
 
-if __name__ == "__main__":
-    unittest.main()
-
 
 class ClosesCleanly(unittest.TestCase):
     def test_eli_vr_closes_while_a_room_is_still_working_something_out(self):
@@ -345,3 +355,7 @@ class ClosesCleanly(unittest.TestCase):
                                  env=env, capture_output=True, text=True, timeout=300)
             self.assertEqual(ran.returncode, 0, (frames, ran.stderr[-600:]))
             self.assertNotRegex(ran.stdout + ran.stderr, r"SCRIPT ERROR:|Parse Error:|Failed to load")
+
+
+if __name__ == "__main__":
+    unittest.main()

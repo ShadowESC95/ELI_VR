@@ -166,11 +166,11 @@ const THOUGHT_PLACES := [Vector3(-1.1, 0.55, 0.0), Vector3(0.0, 0.55, 0.0), Vect
                          Vector3(-1.1, -0.5, 0.0), Vector3(0.0, -0.5, 0.0), Vector3(1.1, -0.5, 0.0)]
 
 func pin_spot(kind: String, index: int) -> Variant:
-    if kind != "thought" or index < 0 or index >= THOUGHT_PLACES.size():
+    if kind != "thought":
         return null
     var a := deg_to_rad(THOUGHT_BEARING)
     var pane := Transform3D(Basis(Vector3.UP, -a), Vector3(sin(a), 0.0, -cos(a)) * 11.16 + Vector3(0, 1.5, 0))
-    return pane * Transform3D(Basis.IDENTITY, THOUGHT_PLACES[index])
+    return pinned(pane, THOUGHT_PLACES, index)
 
 # Two of the glass screens carry what this bay is for: ELI's goals and ambitions, and the
 # improvements it has proposed, reviewed and made.

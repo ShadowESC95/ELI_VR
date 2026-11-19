@@ -33,7 +33,6 @@ Where ELI VR is, and what comes next. Dates are not promised.
 - A second body for the same ELI on the same protocol: a desktop avatar or a 3D web view
 - A keyboard in the headset for the desktop screen
 - The Windows and macOS builds run on real machines, and the other controllers on real hardware
-- The old generated room code and its textures removed
 
 ## Later
 

@@ -42,7 +42,7 @@ func permits_loopback() -> bool:
 func permits_remote() -> bool:
     return mode == Mode.ONLINE and allow_remote
 
-func is_loopback_host(host: String) -> bool:
+static func is_loopback_host(host: String) -> bool:
     var h := host.strip_edges().to_lower()
     return h in ["127.0.0.1", "::1", "[::1]", "localhost"]
 

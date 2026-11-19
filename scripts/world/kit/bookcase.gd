@@ -68,14 +68,7 @@ func build_case(wood: Material, book_height: float) -> void:
         _box(Vector3(width, board, depth), Vector3(0, float(top) - board * 0.5, 0), wood)
 
 func _box(extent: Vector3, at: Vector3, look: Material) -> MeshInstance3D:
-    var mesh := BoxMesh.new()
-    mesh.size = extent
-    var node := MeshInstance3D.new()
-    node.mesh = mesh
-    node.material_override = look
-    node.position = at
-    add_child(node)
-    return node
+    return MeshKit.part(self, MeshKit.box(extent), look, at)
 
 ## Stand `books` (records, in order) across `cases` in turn, shelf by shelf: each book's place in the
 ## room, or null when the shelves are full. `group_of` gives a book's group (a new group starts after

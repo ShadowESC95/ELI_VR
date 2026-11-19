@@ -147,7 +147,7 @@ func _lay_along(line: MeshInstance3D, from: Vector3, to: Vector3) -> void:
     if along.length() < 0.001:
         return
     line.global_position = (from + to) * 0.5
-    line.global_basis = Basis(Quaternion(Vector3.UP, along.normalized()))
+    line.global_basis = MeshKit.laid_along(along)
     line.scale = Vector3(1.0, along.length(), 1.0)
 
 func _process(delta: float) -> void:

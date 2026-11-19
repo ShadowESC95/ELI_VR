@@ -302,21 +302,14 @@ func _notice_board() -> void:
     box(Vector3(1.7, 0.08, 0.1), wood, Vector3(0, -1.29, 0), board)
     for x in [-0.72, 0.72]:
         rod(0.03, 2.9, wood, Vector3(x, -0.1, 0.0), board)
-    var heading := Label3D.new()
-    heading.text = "WHAT ELI RECALLED"
-    heading.font_size = 40
-    heading.pixel_size = 0.0028
-    heading.modulate = Color(1.0, 0.88, 0.7)
-    heading.outline_size = 6
-    heading.position = Vector3(0, 1.4, 0.04)
-    board.add_child(heading)
+    board_heading(board, "WHAT ELI RECALLED", Vector3(0, 1.4, 0.04), Color(1.0, 0.88, 0.7), 40, 0.0028)
     lamp(board.transform * Vector3(0, 0.6, 1.0), Color(1.0, 0.8, 0.55), 0.7, 4.0)
 
 # Where the `index`th of ELI's memories stands: face out on the eye-level shelf of the bays
 # ahead, the nearest first; its thoughts of recall go on the notice board.
 func pin_spot(kind: String, index: int) -> Variant:
     if kind == "thought":
-        return _notice_at() * Transform3D(Basis.IDENTITY, NOTICE_PLACES[index]) if index >= 0 and index < NOTICE_PLACES.size() else null
+        return pinned(_notice_at(), NOTICE_PLACES, index)
     if kind == "book":
         return _book_slots[index] if index >= 0 and index < _book_slots.size() else null
     if kind != "memory" or index < 0 or index >= MEMORY_BAYS.size() * MEMORY_SLOTS:

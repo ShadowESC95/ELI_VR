@@ -343,11 +343,6 @@ func reset_calibration() -> void:
     calibration_reset.emit()
     print("ELI VR XR CALIBRATION: reset")
 
-func recenter_view() -> void:
-    # Recenter the HMD/reference frame separately from hand correction.
-    XRServer.center_on_hmd(XRServer.RESET_BUT_KEEP_TILT, true)
-    print("ELI VR XR CALIBRATION: view recentered")
-
 func offset_centimeters() -> Vector3:
     return offset_m * 100.0
 

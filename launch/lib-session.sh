@@ -105,6 +105,12 @@ session_report(){
   fi
 }
 
+# Whether what capturing a Wayland screen needs is installed: the portal's D-Bus and GStreamer's
+# PipeWire source.
+wayland_capture_ready(){
+  python3 -c 'import dbus, gi; gi.require_version("Gst","1.0"); from gi.repository import Gst; Gst.init(None); assert Gst.ElementFactory.find("pipewiresrc")' >/dev/null 2>&1
+}
+
 # The helper that feeds the desktop screen. Wayland goes through the desktop
 # portal, X11 uses the native helper.
 desktop_helper_start(){
@@ -113,7 +119,7 @@ desktop_helper_start(){
   # ELI_VR_DESKTOP_INPUT=0 shows the desktop and never moves the pointer or clicks
   [[ "${ELI_VR_DESKTOP_INPUT:-1}" == "0" ]] && no_input=(--no-input)
   if [[ "${XDG_SESSION_TYPE:-}" == "wayland" ]]; then
-    if ! python3 -c 'import dbus, gi; gi.require_version("Gst","1.0"); from gi.repository import Gst; Gst.init(None); assert Gst.ElementFactory.find("pipewiresrc")' >/dev/null 2>&1; then
+    if ! wayland_capture_ready; then
       printf '\nWARNING: desktop screen off: Wayland capture pieces are missing. See docs/INSTALL.md.\n' >&2
       return 0
     fi

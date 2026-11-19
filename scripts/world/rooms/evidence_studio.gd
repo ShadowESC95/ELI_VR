@@ -766,7 +766,7 @@ static func score_lines(evidence: Dictionary, columns: int) -> Array:
         if typeof(instead) == TYPE_ARRAY and not instead.is_empty() and typeof(instead[0]) == TYPE_DICTIONARY:
             var other: Dictionary = instead[0]
             detail += ("; " if not detail.is_empty() else "") + "%s worked instead %d×" % [str(other.get("name", "")), int(other.get("n", 0))]
-        for chunk in EliReadout._wrap(detail, columns - 2):
+        for chunk in Reading.wrap_lines(detail, columns - 2):
             lines.append(["  " + chunk, EliReadout.PALE])
     return lines
 
@@ -1173,7 +1173,7 @@ func show_eli(eli: Dictionary) -> void:
         return
     var lines := []
     for conflict in _conflicts:
-        for chunk in EliReadout._wrap(str(conflict[1]), _questions.columns):
+        for chunk in Reading.wrap_lines(str(conflict[1]), _questions.columns):
             lines.append(chunk)
         lines.append("")
     var thought := EliReadout.thought_lines(eli, Color(1.0, 0.93, 0.8), [], "evidence_wall", _questions.columns - 6)

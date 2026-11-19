@@ -64,12 +64,6 @@ class Adding(unittest.TestCase):
         self._bring("lamp")
         self.assertEqual(sorted(json.loads((self.models / "models.json").read_text())), ["lamp", "new_table"])
 
-
-if __name__ == "__main__":
-    unittest.main()
-
-
-class Sharper(Adding):
     def test_a_2k_download_takes_the_place_of_the_1k_model(self) -> None:
         self._bring("old_chair")
         (self.models / "old_chair" / "old_chair_1k.gltf.import").write_text("[remap]\n")
@@ -85,3 +79,7 @@ class Sharper(Adding):
         here = sorted(p.relative_to(self.models / "old_chair").as_posix() for p in (self.models / "old_chair").rglob("*") if p.is_file())
         self.assertEqual(here, ["old_chair.bin", "old_chair_2k.gltf", "textures/old_chair_diff_2k.jpg"],
                          "the 1K files and their import settings are gone")
+
+
+if __name__ == "__main__":
+    unittest.main()

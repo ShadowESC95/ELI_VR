@@ -17,6 +17,55 @@ static var _rooms := {}        # room -> {what a shape was made from: the shape}
 static var _building := ""     # the room being built now, "" between builds
 static var _asked := {}        # the shapes this build has asked for so far
 
+# --- parts: a plain shape hung on something ----------------------------------------------------
+# The rooms, ELI's things, its guns and its bookcases are all put together from these, each with
+# its own sizes and how finely it is turned.
+
+## `mesh` as a part of `parent`, in `material`, at `at` and turned `turn` degrees.
+static func part(parent: Node, mesh: Mesh, material: Material, at: Vector3 = Vector3.ZERO, turn: Vector3 = Vector3.ZERO) -> MeshInstance3D:
+    var node := MeshInstance3D.new()
+    node.mesh = mesh
+    node.material_override = material
+    node.position = at
+    node.rotation_degrees = turn
+    parent.add_child(node)
+    return node
+
+static func box(size: Vector3) -> BoxMesh:
+    var mesh := BoxMesh.new()
+    mesh.size = size
+    return mesh
+
+## A cylinder standing along Y, `sides` round; a top of 0 makes it a cone.
+static func cylinder(top: float, bottom: float, height: float, sides: int) -> CylinderMesh:
+    var mesh := CylinderMesh.new()
+    mesh.top_radius = top
+    mesh.bottom_radius = bottom
+    mesh.height = height
+    mesh.radial_segments = sides
+    return mesh
+
+static func ball(radius: float) -> SphereMesh:
+    var mesh := SphereMesh.new()
+    mesh.radius = radius
+    mesh.height = radius * 2.0
+    return mesh
+
+## A light that shines all round from `at` on `parent`, casting no shadow.
+static func omni(parent: Node, at: Vector3, colour: Color, reach: float, energy: float = 1.0) -> OmniLight3D:
+    var light := OmniLight3D.new()
+    light.position = at
+    light.light_color = colour
+    light.light_energy = energy
+    light.omni_range = reach
+    light.shadow_enabled = false
+    parent.add_child(light)
+    return light
+
+## The turn that lays what stands along Y (a cylinder) along `direction`.
+static func laid_along(direction: Vector3) -> Basis:
+    return Basis(Quaternion(Vector3.UP, direction.normalized()))
+
 ## A room starts building: the shapes it asks for from here to built() are its own to keep.
 static func build_of(room: String) -> void:
     _building = room

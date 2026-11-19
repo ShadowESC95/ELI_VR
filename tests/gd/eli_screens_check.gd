@@ -905,6 +905,41 @@ func _knowledge_checks() -> void:
     var once: bool = own.mood["sky"] == "void" and own.mood["light"] == "#9fd8ff" \
         and own.get_children().map(func(c): return c.get_instance_id()) == before
     _check("elis_room_is_built_once_with_the_look_eli_gave_it", once, "mood %s" % own.mood)
+    # a place no room answers to (a saved override from another version) is the Orbital Core as it is now
+    var elsewhere := Node3D.new()
+    root.add_child(elsewhere)
+    factory.build(elsewhere, "a_place_that_is_not_there", {}, Settings.new())
+    var stood: Array = elsewhere.get_children().filter(func(c): return not c.is_queued_for_deletion())
+    _check("a_place_no_room_answers_to_is_the_orbital_core",
+           stood.size() == 1 and stood[0].get_script() == Core and stood[0].has_method("show_eli"),
+           str(stood.map(func(c): return [c.name, c.get_script()])))
+    elsewhere.queue_free()
+    # the console's colour buttons are the registry's themes, in its order, under the names it gives
+    var registry := EliRegistry.new()
+    registry.load_all()
+    var console := SpatialConsole.new()
+    root.add_child(console)
+    console.setup(null, registry, Settings.new())
+    var pressed: Array = console.panels["VisualPanel"].get_children().filter(func(c): return c is Interactable3D) \
+        .map(func(b): return [b.label, b.kind, b.value])
+    var colours := [["BLUE", "theme", "frontier"], ["BLACK", "theme", "obsidian"], ["PURPLE", "theme", "nebula"],
+                    ["GREEN", "theme", "emerald"], ["ORANGE", "theme", "solar"], ["CYAN", "theme", "abyssal"],
+                    ["ICE BLUE", "theme", "aurora"], ["WHITE", "theme", "monolith"]]
+    _check("the_consoles_colour_buttons_are_the_registrys_themes_in_its_order",
+           pressed.slice(0, 8) == colours and pressed.size() == 17 and pressed[8] == ["AUTO", "quality", "auto"]
+           and pressed[16] == ["EXIT", "system", "exit"] and registry.themes.size() == 8, str(pressed))
+    console.queue_free()
+    # the desktop link takes the hosts NetworkPolicy calls this machine, and no other
+    var hosts := {}
+    for named in ["127.0.0.1", "::1", "[::1]", "localhost", " LocalHost ", "127.0.0.1.example.org", "192.168.1.20", "example.org", ""]:
+        var asked := DesktopBridgeClient.new()
+        asked.configure(named, 47831)
+        hosts[named] = asked.host
+        asked.free()
+    var local: bool = hosts.keys().all(func(h): return (hosts[h] == h) == NetworkPolicy.is_loopback_host(h) \
+        and (hosts[h] == h or hosts[h] == "127.0.0.1"))
+    _check("the_desktop_link_takes_only_the_hosts_the_network_policy_calls_this_machine",
+           local and hosts["example.org"] == "127.0.0.1" and hosts["::1"] == "::1", str(hosts))
     var mine := [
         _book_record("book_diary_1", "diary", "Notes from a quiet day", T0 + 2.0 * DAY, [{"heading": "", "text": "Rain on the roof."}], "own_room", {"shelf": "My diary"}),
         _book_record("book_like_2", "likes", "Tides", T0 + 5.0 * DAY, [{"heading": "", "text": "I like how they keep time."}], "own_room", {"shelf": "What I like"}),

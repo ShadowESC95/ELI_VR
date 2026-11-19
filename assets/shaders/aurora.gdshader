@@ -18,7 +18,6 @@ void fragment() {
     float up = UV.y;
     // bright along the bottom edge, thinning out upwards
     float body = smoothstep(0.0, 0.06, up) * pow(1.0 - up, 1.7 + rays * 2.0);
-    float ends = smoothstep(0.0, 0.08, fract(UV.x * 0.002 + 0.5)) ;
     float a = body * (0.25 + rays * 0.9) * fold;
     ALBEDO = mix(low, high, smoothstep(0.15, 0.85, up)) * a * energy;
     ALPHA = clamp(a, 0.0, 1.0);

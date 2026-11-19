@@ -113,7 +113,7 @@ static func of_thought(thought: Dictionary) -> Dictionary:
     var why = thought.get("why", [])
     if typeof(why) == TYPE_ARRAY and not why.is_empty():
         details.append("because " + "; ".join(why.slice(0, 3)))
-    return {"kind": kind.to_upper(), "colour": EliReadout._colour_of(kind, EliReadout.PALE), "heading": str(thought.get("what", "")),
+    return {"kind": kind.to_upper(), "colour": EliReadout.colour_of(kind, EliReadout.PALE), "heading": str(thought.get("what", "")),
             "figure": figure, "fill": float(thought["chance"]) if thought.get("chance") != null else -1.0,
             "date": Reading.day(thought.get("when")), "details": details, "stamp": ""}
 

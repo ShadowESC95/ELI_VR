@@ -6,19 +6,13 @@
   },
   "xr": {
     "mode": "auto",
-    "reference_space": "stage",
     "render_scale": 1.0,
     "snap_turn_degrees": 30,
     "smooth_locomotion": true,
     "move_speed": 2.0,
     "turn_cooldown_seconds": 0.3,
-    "controller_rays": true,
     "foveation": "auto",
-    "hand_tracking": "auto",
-    "eye_gaze": "auto",
-    "composition_layers": "auto",
     "pause_when_unfocused": true,
-    "locomotion_mode": "auto",
     "fly_speed": 5.0,
     "boost_multiplier": 2.4,
     "controller_calibration": {
@@ -35,7 +29,6 @@
   },
   "graphics": {
     "quality": "auto",
-    "renderer": "mobile",
     "shadows": true,
     "fog": true,
     "particles": true,
@@ -44,19 +37,15 @@
     "dynamic_resolution": true,
     "minimum_render_scale": 0.65,
     "maximum_render_scale": 1.1,
-    "target_fps_ratio": 0.92,
-    "texture_budget": "auto",
-    "stereo_safe_effects_only": true
+    "target_fps_ratio": 0.92
   },
   "world": {
     "room": "core_room",
     "environment_override": "",
     "theme": "frontier",
-    "time_of_day": "dusk",
     "portals": true,
     "spatial_console": true,
-    "object_manipulation": true,
-    "palette_world_strength": 0.02
+    "object_manipulation": true
   },
   "desktop": {
     "enabled": true,
@@ -78,14 +67,8 @@
       "input": false,
       "status": false
     },
-    "show_help_on_start": true,
     "console_distance_m": 2.7,
-    "wrist_menu": true,
-    "spatial_panels_grabbable": true
-  },
-  "developer": {
-    "log_level": "info",
-    "allow_experimental": true
+    "wrist_menu": true
   },
   "eli_bridge": {
     "enabled": "auto",
@@ -97,12 +80,7 @@
   },
   "audio": {
     "enabled": true,
-    "ambient_volume_db": -18.0,
-    "spatial_ui_volume_db": -10.0
-  },
-  "diagnostics": {
-    "hardware_doctor_on_first_run": true,
-    "write_session_report": true
+    "ambient_volume_db": -18.0
   },
   "network": {
     "mode": "local_only",

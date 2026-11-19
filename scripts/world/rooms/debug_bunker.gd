@@ -228,21 +228,12 @@ func _tried_board() -> void:
     board.transform = _tried_board_at()
     add_child(board)
     box(Vector3(2.9, 2.3, 0.08), cork, Vector3.ZERO, board)
-    var heading := Label3D.new()
-    heading.text = "WHAT ELI TRIED"
-    heading.font_size = 44
-    heading.pixel_size = 0.003
-    heading.modulate = Color(0.4, 1.0, 0.6)
-    heading.outline_size = 6
-    heading.position = Vector3(0, 1.35, 0.05)
-    board.add_child(heading)
+    board_heading(board, "WHAT ELI TRIED", Vector3(0, 1.35, 0.05), Color(0.4, 1.0, 0.6), 44, 0.003)
     lamp(board.transform * Vector3(0, 0.3, 1.2), Color(0.4, 1.0, 0.6), 0.7, 4.0)
 
 # The thoughts of what ELI tried are pinned on the board beside the log.
 func pin_spot(kind: String, index: int) -> Variant:
-    if kind != "thought" or index < 0 or index >= TRIED_PLACES.size():
-        return null
-    return _tried_board_at() * Transform3D(Basis.IDENTITY, TRIED_PLACES[index])
+    return pinned(_tried_board_at(), TRIED_PLACES, index) if kind == "thought" else null
 
 # ELI's whole log, on the wall ahead where nothing else stands.
 func _log_board() -> void:

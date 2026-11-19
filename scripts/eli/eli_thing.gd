@@ -211,7 +211,7 @@ func unpin() -> void:
 # what ELI thought, decided and why, how sure it was and what became of it written down it.
 func _thought_sheet() -> void:
     var kind_of := str(thought.get("kind", ""))
-    var tint := EliReadout._colour_of(kind_of, Color("#d9e4f2"))
+    var tint := EliReadout.colour_of(kind_of, Color("#d9e4f2"))
     _paper(Color(0.95, 0.94, 0.9).lerp(colour, 0.3), "pin", false)
     var tab := MeshInstance3D.new()
     var strip := BoxMesh.new()
@@ -741,53 +741,27 @@ func _shape() -> void:
                 _light(Vector3(0, 0.9 * s, 0), 4.0 * s)
 
 func _mesh(mesh: Mesh, at: Vector3, tint = null) -> MeshInstance3D:
-    var node := MeshInstance3D.new()
-    node.mesh = mesh
-    node.position = at
     if tint == null:
-        node.material_override = _material
-    else:
-        var plain := StandardMaterial3D.new()
-        plain.albedo_color = tint
-        plain.roughness = 0.7
-        node.material_override = plain
-    _body.add_child(node)
-    return node
+        return MeshKit.part(_body, mesh, _material, at)
+    var plain := StandardMaterial3D.new()
+    plain.albedo_color = tint
+    plain.roughness = 0.7
+    return MeshKit.part(_body, mesh, plain, at)
 
 func _box(extent: Vector3, at: Vector3) -> MeshInstance3D:
-    var mesh := BoxMesh.new()
-    mesh.size = extent
-    return _mesh(mesh, at)
+    return _mesh(MeshKit.box(extent), at)
 
 func _cyl(top: float, bottom: float, height: float, at: Vector3, tint = null) -> MeshInstance3D:
-    var mesh := CylinderMesh.new()
-    mesh.top_radius = top
-    mesh.bottom_radius = bottom
-    mesh.height = height
-    mesh.radial_segments = 24
-    return _mesh(mesh, at, tint)
+    return _mesh(MeshKit.cylinder(top, bottom, height, 24), at, tint)
 
 func _cone(radius: float, height: float, at: Vector3, sides: int) -> MeshInstance3D:
-    var mesh := CylinderMesh.new()
-    mesh.top_radius = 0.0
-    mesh.bottom_radius = radius
-    mesh.height = height
-    mesh.radial_segments = sides
-    return _mesh(mesh, at)
+    return _mesh(MeshKit.cylinder(0.0, radius, height, sides), at)
 
 func _ball(radius: float, at: Vector3) -> MeshInstance3D:
-    var mesh := SphereMesh.new()
-    mesh.radius = radius
-    mesh.height = radius * 2.0
-    return _mesh(mesh, at)
+    return _mesh(MeshKit.ball(radius), at)
 
 func _light(at: Vector3, reach: float) -> void:
-    lamp = OmniLight3D.new()
-    lamp.position = at
-    lamp.light_color = colour
-    lamp.omni_range = reach
-    lamp.shadow_enabled = false
-    _body.add_child(lamp)
+    lamp = MeshKit.omni(_body, at, colour, reach)
 
 # --- made part by part -------------------------------------------------------------
 
@@ -958,18 +932,8 @@ func _tube(path: Array, radius: float, look: Material) -> Node3D:
         var along := b - a
         if along.length() < 0.001:
             continue
-        var piece := CylinderMesh.new()
-        piece.top_radius = radius
-        piece.bottom_radius = radius
-        piece.height = along.length()
-        piece.radial_segments = 12
-        var node := MeshInstance3D.new()
-        node.mesh = piece
-        node.material_override = look
-        node.position = (a + b) * 0.5
-        # a cylinder stands along Y: turn Y onto the direction of this piece
-        node.basis = Basis(Quaternion(Vector3.UP, along.normalized()))
-        whole.add_child(node)
+        var node := MeshKit.part(whole, MeshKit.cylinder(radius, radius, along.length(), 12), look, (a + b) * 0.5)
+        node.basis = MeshKit.laid_along(along)
         var joint := MeshInstance3D.new()
         var bead := SphereMesh.new()
         bead.radius = radius

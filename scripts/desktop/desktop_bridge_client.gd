@@ -28,8 +28,7 @@ var _max_side := 0                      # the largest texture this GPU takes; a 
 
 
 func configure(p_host: String, p_port: int) -> void:
-    var requested: String = p_host.strip_edges().to_lower()
-    if requested not in ["127.0.0.1", "::1", "[::1]", "localhost"]:
+    if not NetworkPolicy.is_loopback_host(p_host):
         push_warning("ELI VR desktop bridge is local-only; refusing host: %s" % p_host)
         host = "127.0.0.1"
     else:

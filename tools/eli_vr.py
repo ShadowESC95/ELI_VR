@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import argparse, json, os, shutil, subprocess, sys
+import argparse, json, os, subprocess, sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
+from eli_vr.bundle import _godot as find_godot  # noqa: E402  (GODOT_BIN first, as the launch/ scripts)
 DEFAULTS = ROOT / "config/defaults.json"
 USER = ROOT / "config/user.json"
 ROOMS = json.loads((ROOT/"config/rooms/rooms.json").read_text())
@@ -54,17 +56,6 @@ def set_path(data,path,value):
     for p in parts[:-1]:
         cur=cur.setdefault(p,{})
     cur[parts[-1]]=value
-
-def find_godot():
-    # GODOT_BIN wins, matching the launch/ scripts on every OS.
-    env=os.getenv("GODOT_BIN")
-    if env and Path(env).exists(): return env
-    for name in ("godot","godot4","Godot"):
-        p=shutil.which(name)
-        if p: return p
-    mac=Path("/Applications/Godot.app/Contents/MacOS/Godot")
-    if mac.exists(): return str(mac)
-    return None
 
 def main():
     ap=argparse.ArgumentParser(prog="eli-vr",description="ELI VR standalone project CLI")
