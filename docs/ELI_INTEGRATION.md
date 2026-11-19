@@ -77,7 +77,7 @@ ELI: BUILD asks now: the oldest urge if one is waiting, otherwise simply what is
 
 **True screens** (`scripts/world/kit/info_screen.gd`, `eli_readout.gd`). Each room is handed ELI's state (`RoomBase.show_eli`) and its screens show it: the feed's `log` (version 2: a screenful of ELI's own world events, newest last, without the room's own reports), `awareness`, `recent`, `mind`, the records in `objects`, and the model ELI thinks with. A screen with nothing true to show says why.
 
-**ELI's records in its rooms.** The Memory Archive carries ELI's real recent memories as books stood face out on the eye-level shelves ahead, each with its words on the cover; the Upgrade Bay carries the goals ELI holds now; the Evidence Wall carries what ELI believes about you, each with when it learned it (amber where something disputes it); the Anomaly Room carries each place where two things ELI was told disagree, with the question that would settle it. What ELI did for you is there too, from its evidence ledger, only what worked and only yours: what it found (`kind` `found`: a search, the news, the weather) on the board over the Evidence Wall's desk, what it wrote (`written`) on the Workshop's rack, and what it is playing (`playing`) on the Core Room's radio. These carry `lines`, what the sheet or the radio says line by line; an older ELI VR reads `meaning` instead. Pictures ELI took or looked at for you (`kind` `seen`) also carry `picture`, the path ELI v3 serves the picture at (`GET /v1/world/picture/<row>`, capability `pictures`): only a picture its evidence ledger records as one ELI took or looked at for you, still on disk, and a picture by its own first bytes. The message also carries `coming_up`: what is on your agenda in the next day and a half, each with when and what, which the Core Room shows. Needs ELI v3 3.0.148 or newer. They are read from ELI's memory, claims, goal store and evidence ledger, refreshed every half minute. You can pick one up; moving one changes nothing in ELI.
+**ELI's records in its rooms.** The Memory Archive carries ELI's real recent memories as books stood face out on the eye-level shelves ahead, each with its words on the cover; the Upgrade Bay carries the goals ELI holds now; the Evidence Wall carries what ELI believes about you, each with when it learned it (amber where something disputes it); the Anomaly Room carries each place where two things ELI was told disagree, with the question that would settle it. What ELI did for you is there too, from its evidence ledger, only what worked and only yours: what it found (`kind` `found`: a search, the news, the weather) on the board over the Evidence Wall's desk, what it wrote (`written`) on the Workshop's rack, and what it is playing (`playing`) on the Core Room's radio. The Evidence Wall's sheets, scoreboard and charts come from the feed's `evidence` (capability `evidence`: `wall`, the records to pin in ELI's order of what matters most, `actions` and `accuracy`) and `thoughts`; the room works them out again only when its own part of the message has changed. These carry `lines`, what the sheet or the radio says line by line; an older ELI VR reads `meaning` instead. Pictures ELI took or looked at for you (`kind` `seen`) also carry `picture`, the path ELI v3 serves the picture at (`GET /v1/world/picture/<row>`, capability `pictures`): only a picture its evidence ledger records as one ELI took or looked at for you, still on disk, and a picture by its own first bytes. The message also carries `coming_up`: what is on your agenda in the next day and a half, each with when and what, which the Core Room shows. Needs ELI v3 3.0.148 or newer. They are read from ELI's memory, claims, goal store and evidence ledger, refreshed every half minute. You can pick one up; moving one changes nothing in ELI.
 
 ## ELI makes games
 
@@ -113,7 +113,7 @@ Sixteen shapes: orb, pillar, block, slab, arch, ring, crystal, tree, lamp, board
 
 ## What moves between them
 
-The world protocol has versions and they are agreed, not assumed. On connecting, ELI VR says which versions it speaks (1 and 2) and what it would like; ELI v3 answers with the one both have, or with a refusal that says why. An ELI v3 from before that (3.0.131 to 3.0.133) never answers, and is spoken to in version 1.
+The world protocol has versions and they are agreed, not assumed. On connecting, ELI VR says which versions it speaks (1 and 2), what it would like (the capabilities below) and the largest message it can take (`max_message`); ELI v3 answers with a `welcome` carrying the version both have and the capabilities it grants, or with a refusal that says why. An ELI v3 from before that (3.0.131 to 3.0.133) never answers, and is spoken to in version 1 with `world-state` and `room-events` only.
 
 | Version | What it carries |
 |---|---|
@@ -123,7 +123,7 @@ The world protocol has versions and they are agreed, not assumed. On connecting,
 | Direction | Route on ELI v3 | What | Version |
 |---|---|---|---|
 | ELI → VR | `WS /v1/world/ws` | The world state, again whenever it changes | 1 |
-| VR → ELI | same socket | `hello` with versions and capabilities; `vr_session_started`, `vr_room_entered` | 1 |
+| VR → ELI | same socket | `hello` with versions and capabilities; `vr_session_started`, `vr_room_entered`, `vr_session_ended` | 1 |
 | VR → ELI | `POST /v1/voice/stt` | The clip you recorded while holding the talk button | 1 |
 | VR → ELI | `POST /v1/chat` | What you said, as text, when ELI v3 only has version 1 | 1 |
 | ELI → VR | `POST /v1/voice/tts` | ELI's answer, as speech | 1 |
@@ -135,6 +135,32 @@ The world protocol has versions and they are agreed, not assumed. On connecting,
 | VR → ELI | `POST /v1/world/played` | How a game ELI set went | 2 |
 | ELI → VR | `GET /v1/world/mind` | Which model is loaded, and which ones ELI has, by name | 2 |
 | VR → ELI | `POST /v1/world/mind` | The model you chose | 2 |
+| VR → ELI | `POST /v1/world/body` | The real models ELI VR can draw, each with its size (`props`) | 2 |
+| ELI → VR | `GET /v1/world/picture/<row>` | A picture ELI took or looked at for you (`pictures`) | 2 |
+| ELI → VR | `GET /v1/world/model/<id>/<file>` | A model of ELI's own that ELI VR did not come with (`models`) | 2 |
+| ELI → VR | `GET /v1/world/book/<id>` | The pages of a book, when it is first opened (`books`) | 2 |
+
+The capabilities ELI VR asks for in its `hello` (`WANTS` in `scripts/eli/eli_link.gd`). ELI v3 answers with the ones it has, and ELI VR uses a route or a part of the message only when its capability was granted:
+
+| Capability | What it is for |
+|---|---|
+| `world-state`, `room-events` | The world message; telling ELI the session started and which room you entered |
+| `scene` | Telling ELI what you and it can see (`/v1/world/scene`) |
+| `say` | A sentence to ELI that it answers or builds from (`/v1/world/say`) |
+| `building` | ELI: BUILD (`/v1/world/compose`) and things moved by hand (`/v1/world/edit`) |
+| `undo` | UNDO (`/v1/world/undo`) |
+| `own-room` | ELI's own room, with its sky, ground and light |
+| `mind` | Which model ELI thinks with, and choosing another (`/v1/world/mind`) |
+| `props` | The real models ELI VR can draw, told to ELI (`/v1/world/body`) |
+| `pictures` | Pictures ELI took or looked at (`/v1/world/picture/`) |
+| `models` | Models of ELI's own, fetched and kept (`/v1/world/model/`) |
+| `games` | Games ELI sets, and how they went (`/v1/world/played`) |
+| `thoughts` | ELI's silent decisions, for the screens and the thought sheets (the message's `thoughts`) |
+| `books` | ELI's books, their pages fetched when opened (`/v1/world/book/`) |
+| `evidence` | The Evidence Wall's sheets, scoreboard and charts (the message's `evidence`) |
+| `kept-records` | An unchanged record sent by its id alone, below |
+
+**Records are sent whole once.** ELI VR keeps the records of the last world message by id. To a client that asked for `kept-records`, ELI v3 (3.0.165 or newer) sends a record of `objects` whole when it is new, has changed or comes back after leaving the message, and as `{"id": "...", "kept": true}` while it is the same; ELI VR then shows the one it holds. If a record comes by an id ELI VR holds nothing for, the message is not shown and the link is opened anew, which brings every record whole. With an older ELI v3 every message is whole.
 
 A turn is the owner's. ELI VR is a surface of yours, not another user: it sends a session id and its surface name, never a user of its own, so what you say in a headset is in the same conversation and memory as what you say anywhere else.
 
@@ -186,6 +212,7 @@ A failure has a kind, and the status line and the line under ELI say which:
 | `eli_bridge.enabled` | `"auto"` | The link: on where ELI v3 is installed or started ELI VR; `true` or `false` to decide |
 | `eli_bridge.endpoint` | `http://127.0.0.1:8081` | ELI v3's local server. 8081 is ELI's default port. Started on its own, ELI VR uses the port a running ELI v3 says it serves on (`server.json` in ELI v3's data folder; ELI v3 moves to the next free port when another program, ELI v2 among them, holds 8081). `ELI_API_PORT` overrides both; a moved port can also be set here. Only loopback addresses are accepted. |
 | `eli_bridge.voice` | `true` | Push to talk |
+| `eli_bridge.microphone` | empty | The microphone to talk through, by name. Empty: ELI VR finds one that gives sound ([SETTINGS.md](SETTINGS.md#eli-link)) |
 | `eli_bridge.model` | empty | A model of ELI's, by name, to ask for when ELI has nothing loaded yet. Empty: whichever ELI has |
 | `eli_bridge.token_env` | `ELI_VR_TOKEN` | Name of an environment variable holding ELI's API token, if you set one |
 
