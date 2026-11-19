@@ -15,7 +15,7 @@ Builds are not code-signed, so Windows and macOS warn on first launch. [INSTALL.
 
 ## Headsets
 
-Any PC headset with an OpenXR runtime. Controller layouts for Oculus Touch, Valve Index, HTC Vive and Windows Mixed Reality are bound, with the OpenXR simple profile as the fallback. Touch is the one tested on hardware.
+Any PC headset with an OpenXR runtime. Controller layouts for Oculus Touch, Valve Index, HTC Vive, Windows Mixed Reality and the OpenXR generic controller are bound in `openxr_action_map.tres`, with the OpenXR simple profile as the fallback. Touch is the one tested on hardware.
 
 Standalone headsets (Quest, Pico and the like) work through a PC link: Link, Air Link, Virtual Desktop, ALVR, WiVRn. There is no native app for them yet.
 

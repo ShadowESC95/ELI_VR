@@ -26,7 +26,7 @@ A headset is optional everywhere. Without one, ELI VR opens as a normal 3D windo
 | OS | Linux x86_64, Windows 10/11 64-bit, or macOS 11+ (Apple Silicon or Intel) |
 | GPU | Anything with Vulkan 1.0 or newer. Older cards can use the OpenGL fallback. |
 | RAM | 8 GB. 16 GB is comfortable. |
-| Disk | About 300 MB |
+| Disk | A source checkout is about 670 MB, and Godot's import of it adds about 2.7 GB the first time it starts. A release build's size is on the Releases page |
 | Headset | Optional. Any PC headset with an OpenXR runtime. |
 | Network | Only to download. Nothing at runtime. |
 

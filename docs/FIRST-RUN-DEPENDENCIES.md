@@ -20,6 +20,10 @@ After Cargo's dependency cache is populated, subsequent builds can be done offli
 
 `apt update` and `apt install` contact the machine's configured operating-system package repositories.
 
+### Python packages
+
+`python3 -m pip install -r requirements.txt` downloads what the helper tools in `tools/` use. On Linux under Wayland, `tools/install-linux-wayland-capture-deps.sh` installs what the screen-sharing helper needs (`requirements-linux-capture.txt` lists it). The app itself uses no Python.
+
 ### Windows/macOS development tools
 
 Platform SDKs and compiler toolchains may similarly need one-time installation.

@@ -9,7 +9,6 @@ Change one from a terminal with `python3 tools/eli_vr.py set <key> <value>`, or 
 | Key | Default | Meaning |
 |---|---|---|
 | `xr.mode` | `auto` | `auto` uses a headset when an OpenXR runtime is active; `on` and `off` force it |
-| `xr.render_scale` | `1.0` | Pixels given to the headset, as a multiple of what it asks for. Read when the session starts |
 | `xr.foveation` | `auto` | `auto` uses it when the runtime can, `off` never |
 | `xr.pause_when_unfocused` | `true` | Pause the world when the headset says the session lost focus |
 | `xr.smooth_locomotion` | `true` | Move with the left stick |
@@ -28,11 +27,12 @@ Change one from a terminal with `python3 tools/eli_vr.py set <key> <value>`, or 
 |---|---|---|
 | `graphics.quality` | `auto` | `low`, `medium`, `high`, `ultra`, or `auto`: a profile picked at start from this machine's CPU, memory and GPU type. The pick is not saved, so the same settings file works on another machine |
 | `graphics.shadows` | `true` | Lights cast shadows |
-| `graphics.fog` | `true` | Fog and haze |
 | `graphics.particles` | `true` | Dust, snow, sparks and the like |
 | `graphics.world_detail_scale` | `1.0` | How much moves and drifts in a room |
 
-A profile sets the last four and the render scale together. The table is in [ADVANCED-PLATFORM-OPTIMIZATION.md](ADVANCED-PLATFORM-OPTIMIZATION.md); the files are `config/profiles/`.
+A profile sets the last three together. The table is in [ADVANCED-PLATFORM-OPTIMIZATION.md](ADVANCED-PLATFORM-OPTIMIZATION.md); the files are `config/profiles/`. `graphics.auto_quality` (`true`) is what lets `auto` pick; choosing a profile in the app sets it to `false`.
+
+Six keys are in `config/defaults.json`, and two of them in every profile, that nothing in the app reads yet: `xr.render_scale`, `graphics.fog`, `graphics.dynamic_resolution`, `graphics.minimum_render_scale`, `graphics.maximum_render_scale` and `audio.enabled`. Changing them changes nothing. The headset is given the size its runtime asks for.
 
 ## World
 
@@ -77,17 +77,16 @@ Holding the screen with the grip changes the last five, and recentring the works
 
 | Key | Default | Meaning |
 |---|---|---|
-| `audio.enabled` | `true` | Room sound |
-| `audio.ambient_volume_db` | `-18.0` | Its level |
+| `audio.ambient_volume_db` | `-18.0` | The level of a place's own sound. Which sound each place plays is in `config/rooms/environment_assets.json` |
 
 ## ELI link
 
 | Key | Default | Meaning |
 |---|---|---|
-| `eli_bridge.enabled` | `false` | The link to ELI v3. Off: ELI VR runs on its own |
+| `eli_bridge.enabled` | `"auto"` | The link to ELI v3. `auto`: on where ELI v3 is installed on this machine or started ELI VR, off anywhere else. `true` or `false` to decide. Off, ELI VR runs on its own |
 | `eli_bridge.endpoint` | `http://127.0.0.1:8081` | ELI v3's local server. Loopback only; the port a running ELI v3 says it serves on is used, and `ELI_API_PORT` overrides it |
 | `eli_bridge.voice` | `true` | Push to talk |
-| `eli_bridge.microphone` | (none) | The microphone to talk through, by the name the log prints (`ELI VR VOICE: listening through ...`). Without it: the one that last gave sound, else the headset's own, else the system's default, else the others; one that gives only digital silence is passed over in the same press |
+| `eli_bridge.microphone` | empty | The microphone to talk through, by the name the log prints (`ELI VR VOICE: listening through ...`). Without it: the one that last gave sound, else the headset's own, else the system's default, else the others; one that gives only digital silence is passed over in the same press |
 | `eli_bridge.model` | empty | A model of ELI's, by name, asked for when ELI has nothing loaded yet. Empty means whichever ELI has |
 | `eli_bridge.token_env` | `ELI_VR_TOKEN` | Name of an environment variable holding ELI's API token, if you set one |
 

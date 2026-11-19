@@ -33,11 +33,11 @@ ELI VR's standalone `NetworkPolicy` defaults to:
 LOCAL_ONLY
 ```
 
-The desktop client refuses a non-loopback host.
+The desktop client refuses a non-loopback host; which hosts count as this machine is one list, `NetworkPolicy.is_loopback_host` in `scripts/core/network_policy.gd`.
 
 The Rust desktop bridge refuses to bind to a non-loopback IP.
 
-The ELI link is off by default and refuses any address that is not loopback. With it on, the microphone is recorded only while the talk button is held, and the clip goes to ELI v3 on this machine and nowhere else.
+The ELI link is on by itself only where ELI v3 is installed on the machine or started ELI VR, and refuses any address that is not loopback. With it on, the microphone is recorded only while the talk button is held, and the clip goes to ELI v3 on this machine and nowhere else.
 
 ## First-time dependency downloads
 
@@ -63,7 +63,7 @@ Users can install an already-downloaded/local pack with:
 python3 tools/install_room_pack.py /path/to/room-pack.zip
 ```
 
-This installer accepts local `.zip` files only.
+This installer accepts local `.zip` files only and unpacks them into `assets/user_packs/`. The app does not load packs from there yet.
 
 ## ELI v3
 
