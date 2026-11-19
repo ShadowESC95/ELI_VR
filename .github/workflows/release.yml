@@ -78,6 +78,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
+          retention-days: 3   # passed between the jobs of one run; the release keeps its own files
           name: source
           path: build/release/ELI_VR-*-source.zip
           if-no-files-found: error
@@ -236,16 +237,19 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
+          retention-days: 3   # passed between the jobs of one run; the release keeps its own files
           name: export-linux
           path: build/linux/
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
+          retention-days: 3   # passed between the jobs of one run; the release keeps its own files
           name: export-windows
           path: build/windows/
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
+          retention-days: 3   # passed between the jobs of one run; the release keeps its own files
           name: export-macos
           path: build/macos/ELI-VR.zip
           if-no-files-found: error
@@ -314,6 +318,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
+          retention-days: 3   # passed between the jobs of one run; the release keeps its own files
           name: bridge-${{ matrix.name }}
           path: native/desktop_bridge/target/release/${{ matrix.bin }}
           if-no-files-found: error
@@ -432,6 +437,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
+          retention-days: 3   # passed between the jobs of one run; the release keeps its own files
           name: release-packages
           path: dist/
           if-no-files-found: error
