@@ -30,9 +30,10 @@ class StandIn extends Node3D:
     var spoken := []
     func current_room_id() -> String:
         return "core_room"
+    signal build_done           # the check says when the act is over
     func eli_build() -> void:
         built += 1
-        await get_tree().create_timer(0.3).timeout
+        await build_done
     func eli_speak(words: String) -> void:
         spoken.append(words)
 
@@ -106,23 +107,33 @@ func _run() -> void:
     var near := Vector2(_presence.global_position.x, _presence.global_position.z).distance_to(Vector2(lantern.x, lantern.z))
     _check("goes_to_what_it_makes", near < 1.2, "orb at %s, %.2f m from the lantern" % [_presence.global_position, near])
 
-    # ELI acts on a waiting moment when it is free, once, and not while you talk
+    # ELI acts on a waiting moment when it is free, once, and not while you talk. Its clock is stepped
+    # by hand and the act ends when the check says: on the runner's own time a slow frame decided these.
+    _initiative.set_process(false)
+    var step := func(seconds: float):
+        for _i in int(round(seconds * 10.0)):
+            _initiative._process(0.1)
     _initiative.apply_world_state({"waiting": 1, "free": false})
-    await _frames(0.3)
+    step.call(0.3)
     _check("not_when_not_free", _app.built == 0, "built %d" % _app.built)
     _presence.set_mode("listening")
     _initiative.apply_world_state({"waiting": 1, "free": true})
-    await _frames(0.3)
+    step.call(0.3)
     _check("not_while_you_talk", _app.built == 0, "built %d" % _app.built)
     _presence.set_mode("idle")
-    await _frames(0.6)
-    _check("acts_when_free", _app.built == 1, "built %d" % _app.built)
-    # the next waits for three times as long as that one took (0.3 s here): not at once
+    step.call(0.1)
+    var began: bool = _app.built == 1 and _presence.mode == "thinking"
+    step.call(0.3)                  # the act takes 0.3 s of its clock
+    _app.build_done.emit()
+    _check("acts_when_free", began and _app.built == 1 and _presence.mode == "idle", "built %d, began %s" % [_app.built, began])
+    # the next waits for three times as long as that one took: not before, and then at once
     _initiative.apply_world_state({"waiting": 1, "free": true})
-    await _frames(0.4)
+    step.call(0.8)
     _check("paced_by_the_last", _app.built == 1, "built %d" % _app.built)
-    await _frames(1.0)
+    step.call(0.2)
     _check("acts_again_after", _app.built == 2, "built %d" % _app.built)
+    _app.build_done.emit()
+    _initiative.set_process(true)
 
     # you go to another room where ELI is not: it is simply not there, nothing about leaving
     _motion.set_here(false, "workshop", "Core Room")
