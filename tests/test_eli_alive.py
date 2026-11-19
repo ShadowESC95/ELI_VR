@@ -99,6 +99,9 @@ class Alive(unittest.TestCase):
     def test_the_hello_says_how_big_a_message_the_link_takes(self) -> None:
         self.check("the_hello_says_how_big_a_message_the_link_takes")
 
+    def test_a_record_sent_by_its_id_is_the_one_held_from_before(self) -> None:
+        self.check("a_record_sent_by_its_id_is_the_one_held_from_before")
+
     def test_the_range_begins_with_guns_on_the_table_and_shots_score_by_their_ring(self) -> None:
         self.check("the_range_begins_with_the_guns_on_the_table_and_a_target_up")
         self.check("a_shot_scores_by_the_ring_it_hits")

@@ -29,7 +29,7 @@ const SURFACE := "eli_vr"
 const PROTOCOL_VERSIONS := [1, 2]
 const WANTS_NOTE := "models: the real things ELI brought in of its own, fetched and drawn"
 const WANTS := ["world-state", "room-events", "scene", "say", "building", "undo", "own-room", "mind", "props", "pictures",
-                "games", "thoughts", "books", "evidence"]
+                "games", "thoughts", "books", "evidence", "kept-records"]
 const WELCOME_SECONDS := 4.0
 const CLOSE_UNAUTHORISED := 4401
 const CLOSE_INCOMPATIBLE := 4406
@@ -58,6 +58,11 @@ var _reading: Array = []
 # a frame). The tasks doing that, until they are done.
 var _shown = null
 var _letting_go: Array = []
+# The records of the last world message, by id ("kept-records"): ELI sends a record whole when it is
+# new or changed, and by its id alone while it is the same; the one held here is then the record.
+# ELI's books and what it holds about you are most of a message, and every change anywhere used to
+# bring all of them again.
+var _held: Dictionary = {}
 
 func configure(config, policy) -> void:
     var asked = config.get_value("eli_bridge.enabled", "auto")
@@ -138,6 +143,7 @@ func _process(delta: float) -> void:
             protocol = 0
             capabilities = []
             _agreed_told = false
+            _held = {}                  # a new link is sent every record whole
             _drop_reading()             # what was still being read is of a link that is gone
             _set_connected(false)
 
@@ -180,10 +186,43 @@ func _take(msg: Dictionary) -> void:
             print("ELI link: %s" % problem.sentence())
         "eli_world_state":
             _set_connected(true)
+            if not _whole(msg):
+                return
             world_state_received.emit(msg)
             var last := [_shown]        # the only hold on the one before, once _shown is the new one
             _shown = msg
             _let_go(last)
+
+# A world message made whole: each record that came by its id alone ({"id", "kept": true}) is the one
+# held from the message before. False when one came by an id nothing is held for (the two ends no
+# longer agree on what was sent): the message is not shown and the link is opened anew, which brings
+# every record whole.
+func _whole(msg: Dictionary) -> bool:
+    var records = msg.get("objects")
+    if typeof(records) != TYPE_ARRAY:
+        _held = {}
+        return true
+    var now := {}
+    var out := []
+    for record in records:
+        if typeof(record) != TYPE_DICTIONARY:
+            out.append(record)
+            continue
+        var ident := str(record.get("id", ""))
+        if record.get("kept") == true:
+            if not _held.has(ident):
+                push_warning("ELI link: the record %s came by its id and is not held; opening the link anew" % ident)
+                _held = {}
+                if _socket != null:
+                    _socket.close()
+                return false
+            record = _held[ident]
+        if not ident.is_empty() and not now.has(ident):       # an id twice: ELI keeps it by the first
+            now[ident] = record
+        out.append(record)
+    msg["objects"] = out
+    _held = now
+    return true
 
 func _agree(version: int, has: Array, from: String) -> void:
     protocol = version

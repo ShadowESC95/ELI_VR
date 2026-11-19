@@ -1,7 +1,7 @@
 # ELI v3's world feed, as ELI VR's tests read it
 
 `world_feed_v2_contract.json` and `world_feed_v2_example.json` are copied unchanged from ELI v3's
-`tests/fixtures/` (branch `wave4/VRE_feed`, commit `5911af7d`), where `tests/test_world_spatial_feed.py`
+`tests/fixtures/` (commit `31ec0ed1`), where `tests/test_world_spatial_feed.py`
 checks every real world message against the contract and writes the example from real records
 (`ELI_WRITE_WORLD_FIXTURES=1`). The example's records are invented test data, not anyone's own.
 

@@ -1,8 +1,10 @@
 {
   "about": "The shapes ELI v3 sends a body in the version-2 world message for the Memory Archive's and ELI's own room's books, the Evidence Wall's beliefs, sheets, scoreboard and charts (eli/world/shown.py, eli/world/books.py, eli/world/spatial_feed.py). tests/test_world_spatial_feed.py checks every real payload against it; world_feed_v2_example.json is one real payload, for a body's own tests. A key starting with ? may be left out. Types: str, int, number, bool, null, object, a name of a shape here, array<type>, and a|b for either.",
   "message": {"objects": "array<object>", "thoughts": "array<thought>", "evidence": "evidence"},
-  "capabilities": ["books", "evidence"],
+  "capabilities": ["books", "evidence", "kept-records"],
+  "kept": "Over the WebSocket, to a client whose hello asks for kept-records: a record of objects that is the same as when it was last sent over that link goes as the kept_record shape, and the client shows the one it holds; every record goes whole first, when it changes, and when it comes back after leaving the message (eli/world/spatial_feed.py, lighten). GET /v1/world/state always gives every record whole.",
   "shapes": {
+    "kept_record": {"id": "str", "kept": "bool"},
     "book_object": {"id": "str", "kind": "str", "room": "str", "name": "str", "meaning": "str", "made_by": "str",
                     "when": "number|null", "x": "number", "y": "number", "importance": "number", "form": "form", "book": "book"},
     "book": {"of": "str", "title": "str", "spine": "str", "about": "str", "from": "number|null", "to": "number|null",

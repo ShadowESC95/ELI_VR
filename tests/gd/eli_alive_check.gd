@@ -494,6 +494,26 @@ func _link_checks() -> void:
         link.queue_free()
     _check("the_session_is_told_once_whichever_comes_first", heard.all(func(h): return h[0] == [true] and h[1] == 1), str(heard))
 
+    # a record the same as when ELI last sent it comes by its id alone, and is the one held
+    var keeper = EliLinkClass.new()
+    root.add_child(keeper)
+    var shown := []
+    keeper.world_state_received.connect(func(msg): shown.append((msg["objects"] as Array).duplicate(true)))
+    var book := {"id": "book_1", "kind": "book", "name": "A week by the canal", "book": {"sections": [{"heading": "Monday", "text": "Rain."}]}}
+    var belief := {"id": "claim_2", "kind": "claim", "name": "keeps bees"}
+    var changed := {"id": "claim_2", "kind": "claim", "name": "keeps bees and an orchard"}
+    var by_id := func(ident): return {"id": ident, "kept": true}
+    keeper._take({"type": "eli_world_state", "objects": [book, belief]})
+    keeper._take({"type": "eli_world_state", "objects": [by_id.call("book_1"), by_id.call("claim_2")]})
+    keeper._take({"type": "eli_world_state", "objects": [by_id.call("book_1"), changed]})
+    keeper._take({"type": "eli_world_state", "objects": [by_id.call("claim_2")]})          # the book left
+    var before_lost: int = shown.size()
+    keeper._take({"type": "eli_world_state", "objects": [by_id.call("book_1")]})           # not held any more: not shown
+    _check("a_record_sent_by_its_id_is_the_one_held_from_before", before_lost == 4 and shown.size() == 4
+           and shown[0] == [book, belief] and shown[1] == [book, belief] and shown[2] == [book, changed]
+           and shown[3] == [changed] and "kept-records" in EliLinkClass.WANTS, str(shown))
+    keeper.queue_free()
+
     var server := TCPServer.new()
     if server.listen(0, "127.0.0.1") != OK:
         _check("closing_the_window_or_ending_the_app_tells_eli_the_session_ended", false, "no loopback port")

@@ -54,7 +54,7 @@ READ = {
     "form": {"shape": {"str"}, "colour": {"str"}, "pos": {"array<number>"}},
 }
 # what ELI VR asks for in its hello (EliLink.WANTS) and its rooms read from the "can" they are given
-CAPABILITIES = {"books", "evidence"}
+CAPABILITIES = {"books", "evidence", "kept-records"}
 # where the rooms look for them in the message
 MESSAGE = {"objects": "array<object>", "thoughts": "array<thought>", "evidence": "evidence"}
 
