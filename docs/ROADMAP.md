@@ -17,6 +17,8 @@ Where ELI VR is, and what comes next. Dates are not promised.
 - Things made part by part and a sky painted ELI's own way, not only named shapes
 - ELI building of its own accord from its own moments and records, with nothing scheduled or chosen for ELI
 - ELI's real memories in the Memory Archive and its goals in the Upgrade Bay
+- The Evidence Wall showing ELI's real records, one to a sheet, with a scoreboard and charts, and the Anomaly Room its open contradictions
+- ELI's books, taken from a shelf and read in the hand
 - Small games ELI makes up for the room you are in (targets, catch, sort, order, hide), played on its own things, scored, told back and remembered
 - Every room furnished with real things: the Core deck's seating and gear, the Simulation Lab's towers, data streams and house hologram, the Debug Basement's stores, bench and services, the platforms' desks, camps and lamps, the forest's undergrowth
 - ELI VR as an ELI v3 bundle: ELI v3 lists it and opens it
@@ -26,7 +28,6 @@ Where ELI VR is, and what comes next. Dates are not promised.
 ## Next
 
 - ELI as a figure, not a light
-- The Evidence Wall showing ELI's real claims and the Anomaly Room its open contradictions
 - ELI's own pictures: a sky or a surface painted by ELI v3's image engine, with the headset off
 - Rooms of ELI's own founding, beyond the one it has
 - Told on arriving what ELI made while you were away
@@ -40,5 +41,5 @@ Where ELI VR is, and what comes next. Dates are not promised.
 - Hand tracking where the runtime has it
 - A native build for standalone headsets
 - Signed and notarised builds
-- Room packs made by other people, installed from a local file
+- Room packs made by other people, loaded from a local file (the installer exists; the app does not load them yet)
 - Licence editions in ELI v3 deciding which bundles open

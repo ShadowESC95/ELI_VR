@@ -64,6 +64,8 @@ python3 tools/eli_vr.py model Some-Model-Q4.gguf   # asked for when ELI has noth
 
 python3 tools/eli_vr.py set desktop.distance_m 4.5
 python3 tools/eli_vr.py set xr.move_speed 2.5
+
+python3 tools/eli_vr.py launch                     # start it through Godot; --xr, --flat or --compat
 ```
 
 Every key is in [SETTINGS.md](SETTINGS.md).
@@ -131,7 +133,7 @@ godot --path . --xr-mode off -- --eli-xr=off --eli-environment=forest_sanctuary 
 python3 tools/source_sanity.py
 python3 tools/validate_project.py
 python3 tools/network_audit.py
-python3 -m unittest discover -s tests
+python3 -m unittest discover -s tests           # runs the Godot checks in tests/gd/ too, where Godot is installed
 ./tools/godot_parse_check.sh
 python3 tools/make_release.py --check
 python3 tools/doctor.py                         # what this machine has: GPU, OpenXR runtime, capture
@@ -155,7 +157,7 @@ The release workflow does this, builds the helper on each OS and packages the lo
 python3 tools/install_room_pack.py /path/to/room-pack.zip
 ```
 
-From a local file only. ELI VR does not fetch packs.
+From a local file only, unpacked into `assets/user_packs/`. ELI VR does not fetch packs, and does not load them from there yet.
 
 ## In the headset
 

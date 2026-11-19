@@ -25,6 +25,8 @@ python3 -m unittest discover -s tests
 python3 tools/make_release.py --check
 ```
 
+The unit tests run the Godot checks in `tests/gd/` where Godot is installed, and skip them where it is not.
+
 `make_release.py` is the privacy gate. It stops if anything that would be published contains a home folder path, the builder's user or host name, an e-mail address, a Steam ID, a device serial or a compiled binary.
 
 ## 3. Tag and push
@@ -50,4 +52,4 @@ The three apps are exported from one Linux machine with Godot's official export 
 
 ## Dry run
 
-Actions → **release** → **Run workflow** builds everything and keeps the packages as workflow artifacts without publishing a Release. Do this before tagging when the workflow itself has changed.
+Actions → **release** → **Run workflow** builds everything and keeps the packages as a workflow artifact, `release-packages`, without publishing a Release. Workflow artifacts are kept for three days; a published Release keeps its own files. Do this before tagging when the workflow itself has changed.
