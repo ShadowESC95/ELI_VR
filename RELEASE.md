@@ -32,7 +32,7 @@ The unit tests run the Godot checks in `tests/gd/` where Godot is installed, and
 ## 3. Tag and push
 
 ```bash
-git tag v0.9.24 && git push origin v0.9.24
+git tag v0.9.25 && git push origin v0.9.25
 ```
 
 The `release` workflow does the rest. It fails early if the tag and the three version lines differ.
