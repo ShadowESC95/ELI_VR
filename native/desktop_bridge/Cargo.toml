@@ -17,8 +17,5 @@ image = { version = "0.25", default-features = true, features = ["jpeg"] }
 serde_json = "1"
 # the trial's seal (HMAC-SHA-256) and the machine fingerprint, as eli-sdk makes them
 sha2 = "0.10"
-# HTTPS to ELI's licence store (activation, revocation lists, the trial): pure Rust TLS, so no
-# system OpenSSL is needed on any platform
-ureq = { version = "3.3", default-features = false, features = ["rustls"] }
 xcap = "=0.9.8"
 enigo = "=0.6.1"

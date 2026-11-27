@@ -1,8 +1,8 @@
 extends CanvasLayer
 
 ## The licence screen: in place of the rooms when this copy has no licence, or opened from the
-## control dock ("Licence…") to see this computer's activation code, enter another key, or
-## deactivate this computer so the licence can move to another. Only an ELI VR key, or an ELI v3
+## control dock ("Licence…") to see this computer's activation code (what the seller needs to make
+## this computer's key), enter a key, or deactivate this computer. Only an ELI VR key, or an ELI v3
 ## key with ELI VR included, opens ELI VR.
 
 const LicenceClass = preload("res://scripts/core/licence.gd")
@@ -44,7 +44,7 @@ func setup(got: Dictionary, manage := false) -> void:
     _reason = _wrapped(box, "")
     if not manage:
         _wrapped(box, "Every ELI product starts with a seven-day trial from its first use; after it, a licence is needed. ELI VR opens with an ELI VR key, or an ELI v3 key sold with ELI VR included. Keys for other ELI products don't open it.")
-    _wrapped(box, "The first time a key is entered on a computer it is activated with ELI's licence server (this needs the internet once), and counts as one of the computers the licence is for.").add_theme_color_override("font_color", Color("#9fb3c8"))
+    _wrapped(box, "A licence covers a number of computers, each with its own key. Nothing is sent anywhere: the key is checked on this computer.").add_theme_color_override("font_color", Color("#9fb3c8"))
 
     _key = LineEdit.new()
     _key.placeholder_text = "ELIV3-…"
@@ -60,7 +60,7 @@ func setup(got: Dictionary, manage := false) -> void:
     row.add_child(_activate)
     _deactivate = Button.new()
     _deactivate.text = "Deactivate this computer"
-    _deactivate.tooltip_text = "Give this computer's seat back, so the licence can be activated on another computer"
+    _deactivate.tooltip_text = "Remove ELI VR's key from this computer; then tell the seller, so its seat can be used on another computer"
     _deactivate.pressed.connect(_on_deactivate)
     _deactivate.visible = manage and LicenceClass.granted(got) and not LicenceClass.on_trial(got)
     row.add_child(_deactivate)
@@ -80,7 +80,7 @@ func _code_section(box: VBoxContainer) -> void:
     var code := str(info.get("activation_code", ""))
     if code.is_empty():
         return
-    _wrapped(box, "No internet on this computer? Activate it from any other device at %s with this computer's activation code, then enter the key you are given there:" % info.get("activate_page", "")).add_theme_color_override("font_color", Color("#9fb3c8"))
+    _wrapped(box, "To get this computer's key, send the seller your licence number and this computer's activation code, then enter the key you get back:").add_theme_color_override("font_color", Color("#9fb3c8"))
     var row := HBoxContainer.new()
     row.add_theme_constant_override("separation", 10)
     box.add_child(row)
@@ -136,7 +136,7 @@ func _on_deactivate() -> void:
     var got := LicenceClass.deactivate()
     _deactivate.disabled = false
     if bool(got.get("deactivated", false)):
-        print("ELI VR deactivated on this computer")
+        print("ELI VR's key removed from this computer: tell the seller, to free its seat")
         licensed.emit()  # reload: the app now asks for a key (or runs on another one held)
         return
     _show(got)

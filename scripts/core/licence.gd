@@ -7,7 +7,7 @@ extends RefCounted
 ## (native/desktop_bridge: licence.rs, trial.rs), and anything it can't answer counts as unlicensed.
 
 const HELPER := "native/desktop_bridge/target/release/eli-vr-desktop-bridge"
-const BUY := "ko-fi.com/shadowesc95 · jaybridgeman0095@gmail.com"
+const BUY := "geteli.tech"
 const _YES := ["1", "true", "yes", "on"]
 
 ## An exported copy needs a licence; running from the source in Godot doesn't, unless
@@ -49,28 +49,18 @@ static func on_trial(got: Dictionary) -> bool:
 static func trial_line(got: Dictionary) -> String:
     return str(got.get("trial", {}).get("describe", "")) if on_trial(got) else ""
 
-## Take a key in. A key bought to be activated is activated with ELI's licence store first (the
-## internet, once), and the key the store makes for this computer is kept. An ELI v3 key without
-## ELI VR is still kept, for ELI v3. On failure "reason" says why, and what to do.
+## Keep this computer's key (nothing is sent anywhere). An ELI v3 key without ELI VR is still kept,
+## for ELI v3. On failure "reason" says why, and what to do.
 static func activate(key: String) -> Dictionary:
     return _ask(["licence", "--for-release", release(), "--data-dir", OS.get_user_data_dir(), "activate", "--", key.strip_edges()])
 
-## Give this computer's seat back to the licence and forget ELI VR's key, so the licence can be
-## activated on another computer.
+## Remove ELI VR's key from this computer (the buyer then tells the seller, who frees its seat).
 static func deactivate() -> Dictionary:
     return _ask(["licence", "--for-release", release(), "--data-dir", OS.get_user_data_dir(), "deactivate"])
 
-## This computer's activation code ("activation_code"), and the store's pages for activating a
-## computer that cannot go online ("activate_page") and for releasing one ("manage_page").
+## This computer's activation code ("activation_code"): what the seller needs to make its key.
 static func code() -> Dictionary:
     return _ask(["licence", "code"])
-
-## When online: the newest revocation lists, and the trial held to the store's record of this
-## computer's. Started at launch, never waited for; the next check reads what it kept.
-static func refresh_in_background() -> void:
-    var helper := helper_path()
-    if not helper.is_empty():
-        OS.create_process(helper, PackedStringArray(["licence", "--for-release", release(), "--data-dir", OS.get_user_data_dir(), "refresh"]))
 
 static func _ask(args: PackedStringArray) -> Dictionary:
     var helper := helper_path()

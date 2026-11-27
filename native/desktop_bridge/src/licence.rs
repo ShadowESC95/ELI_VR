@@ -3,10 +3,10 @@
 //! The same keys, folder and rules as every ELI product (the ELI SDK is the reference): a key of
 //! ELI VR's own, or an ELI v3 key that includes ELI VR, checked offline against ELI's public key,
 //! or signed by an issuer key that ELI's key certified (the store's). A key bound to a computer
-//! opens nothing on any other; a key bought to be activated (format 3) opens nothing until the store
-//! binds it to this computer (activation.rs); a licence or a single computer's activation that ELI
-//! has withdrawn (the signed revocation lists) opens nothing. Godot can't verify Ed25519, so the
-//! app asks this program.
+//! opens nothing on any other; a licence for computers to be added (format 3) opens nothing until
+//! the seller makes this computer's own key from its activation code (activation.rs); a licence that
+//! ELI has withdrawn (the revocation lists shipped in each release) opens nothing. Nothing is ever
+//! sent anywhere. Godot can't verify Ed25519, so the app asks this program.
 
 use std::{
     collections::{BTreeMap, BTreeSet},
@@ -499,6 +499,7 @@ pub struct RevocationList {
     pub licences: BTreeSet<String>,
     pub issuers: BTreeSet<String>,
     pub activations: BTreeSet<String>,
+    #[allow(dead_code)] // the list as it was signed, for saving it (tests)
     pub token: String,
 }
 
@@ -604,6 +605,7 @@ impl Revocations {
         String::new()
     }
 
+    #[cfg(test)]
     pub fn tokens(&self) -> Vec<String> {
         self.lists.values().map(|r| r.token.clone()).filter(|t| !t.is_empty()).collect()
     }
@@ -641,8 +643,7 @@ pub fn entitlement_here(
         }
         if lic.needs_activation() {
             return format!(
-                "the {} key has not been activated on this computer: enter it in {} (activating needs the internet once)",
-                lic.label(),
+                "the {} licence needs this computer's own key: send the seller this computer's activation code",
                 lic.label()
             );
         }
@@ -836,7 +837,9 @@ impl KeyStore {
         known
     }
 
-    /// Keep a revocation list if it verifies and is newer than the one held from its signer.
+    /// Keep a revocation list if it verifies and is newer than the one held from its signer. (Lists
+    /// arrive inside each release; nothing is fetched.)
+    #[cfg(test)]
     pub fn add_revocations(&self, token: &str, public_key: &VerifyingKey) -> Result<bool, InvalidKey> {
         let rev = read_revocations(token, public_key)?;
         let mut known = self.revocations(public_key);
@@ -860,7 +863,7 @@ impl KeyStore {
         let label = lic.label();
         if lic.needs_activation() {
             return Err(invalid(format!(
-                "this {label} key must be activated first: enter it in {label} (activating needs the internet once)"
+                "this is the {label} licence, not this computer's key: send the seller this computer's activation code"
             )));
         }
         if lic.bound_elsewhere(Some(machine)) {
@@ -1165,10 +1168,10 @@ mod tests {
         let lic = read_key(s(&v, "bought"), &root).unwrap();
         assert!(lic.needs_activation() && lic.machine.is_empty() && lic.seats == 2);
         let got = entitlement_here(PRODUCT, &[lic], None, Utc::now(), Some(s(&v, "here")), &Revocations::default());
-        assert!(!got.granted && got.reason.contains("has not been activated on this computer"));
+        assert!(!got.granted && got.reason.contains("needs this computer's own key"));
         let dir = std::env::temp_dir().join(format!("eli-vr-act-{}", std::process::id()));
         let refused = KeyStore::new(&dir).add_on(s(&v, "bought"), &root, s(&v, "here")).unwrap_err();
-        assert!(refused.0.contains("must be activated first"));
+        assert!(refused.0.contains("not this computer's key"));
         let _ = fs::remove_dir_all(dir);
     }
 

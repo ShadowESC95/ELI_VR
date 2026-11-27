@@ -152,7 +152,6 @@ func _licensed() -> bool:
     if not LicenceClass.required():
         return true
     var got := LicenceClass.status()
-    LicenceClass.refresh_in_background()  # newest withdrawals, the trial held to the store's
     if LicenceClass.granted(got):
         var line := LicenceClass.trial_line(got)
         if not line.is_empty():

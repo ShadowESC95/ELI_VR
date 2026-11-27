@@ -587,40 +587,6 @@ impl LocalTrial {
         self.status(now)
     }
 
-    pub fn machine(&self) -> &str {
-        &self.machine
-    }
-
-    pub fn product(&self) -> &str {
-        &self.product
-    }
-
-    /// Bring the trial's end forward to `ends_at` when that is earlier (the store's record of this
-    /// computer's first trial: activation::anchor_trial). Never moves it later.
-    pub fn no_later_than(&self, ends_at: &str, started_at: &str, now: DateTime<Utc>) -> TrialStatus {
-        let (record, _) = self.merged();
-        let ends = when(Some(&Value::String(ends_at.to_string())));
-        let Some(mut record) = record else {
-            return self.status(now);
-        };
-        let current = when(record.get("ends_at"));
-        let (Some(ends), Some(current)) = (ends, current) else {
-            return self.status(now);
-        };
-        if ends >= current {
-            return self.status(now);
-        }
-        record.insert("ends_at".into(), json!(iso(ends)));
-        let start = when(Some(&Value::String(started_at.to_string())));
-        if let (Some(start), Some(began)) = (start, when(record.get("started_at"))) {
-            if start < began {
-                record.insert("started_at".into(), json!(iso(start)));
-            }
-        }
-        self.write_all(&record);
-        self.touch(now)
-    }
-
     /// Record that ELI VR is running now, and write back any copy that is missing, so deleting
     /// some copies never helps. An ended trial stays ended.
     pub fn touch(&self, now: DateTime<Utc>) -> TrialStatus {

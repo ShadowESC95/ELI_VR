@@ -2,7 +2,7 @@
 
 A spatial workspace you can stand inside: fifteen places from an orbiting station to a misty forest, a movable live desktop screen, and a control console, built on Godot 4.7 and OpenXR. It runs in a headset, and it runs on a plain monitor when there isn't one.
 
-**Version 0.9.26** · Linux · Windows · macOS
+**Version 0.9.27** · Linux · Windows · macOS
 
 ![The Core Room: an observation deck in orbit, Earth below and the Milky Way overhead](docs/images/core-room.jpg)
 
@@ -276,9 +276,9 @@ an ELI v3 licence that includes it. The schedule includes VR's health and safety
 components, including the Godot Engine and your OpenXR runtime, keep their own licences.
 
 Like every ELI product, an installed copy runs for seven days from its first use before a key is
-needed, and a key can be entered at any time ([docs/INSTALL.md](docs/INSTALL.md#your-licence)). A
-key bought from the store is activated once online, the first time it is entered on a computer, and
-counts that computer against the licence's seats; the control dock's **Licence…** shows the
-computer's activation code and **Deactivate this computer** (to move the licence to another).
+needed, and a key can be entered at any time ([docs/INSTALL.md](docs/INSTALL.md#your-licence)).  A
+licence covers a number of computers, each with its own key, made by the seller from that computer's
+activation code (the control dock's **Licence…** shows it, with **Deactivate this computer**).
+Nothing about the licence ever goes online.
 
 A release build asks for your key the first time it opens: see [Your licence](docs/INSTALL.md#your-licence).

@@ -16,7 +16,6 @@ mod licence;
 mod pointer;
 mod screen;
 mod server;
-mod store;
 mod trial;
 
 #[derive(Parser, Debug)]
@@ -50,20 +49,15 @@ enum Command {
 
 #[derive(Subcommand, Debug)]
 enum LicenceAction {
-    /// Take a key in on this computer. A key bought to be activated is activated with ELI's licence
-    /// store first (the internet, once); the key the store makes for this computer is kept. Exits 2
-    /// if it isn't taken (the "error" says why and what to do), 3 if it is but doesn't license ELI
-    /// VR (an ELI v3 key without it is still kept, for ELI v3).
+    /// Keep this computer's key. Nothing is sent anywhere. Exits 2 if it isn't taken (the "error"
+    /// says why and what to do), 3 if it is but doesn't license ELI VR (an ELI v3 key without it is
+    /// still kept, for ELI v3).
     Activate { key: String },
-    /// Give this computer's seat back to the licence (so the licence can be activated on another
-    /// computer) and remove ELI VR's key. Exits 2 if the seat could not be freed.
+    /// Remove ELI VR's key from this computer (then tell the seller, who frees its seat).
     Deactivate,
-    /// This computer's activation code, for activating it from another device.
+    /// This computer's activation code: what the seller needs to make this computer's key.
     Code,
-    /// When online: fetch the newest revocation lists and hold the trial to the store's record of
-    /// this computer's. The app starts this at launch, without waiting for it.
-    Refresh,
-    /// Forget ELI VR's own key without freeing its seat (Deactivate frees it).
+    /// The same as Deactivate.
     Remove,
 }
 
@@ -263,11 +257,8 @@ fn run_licence(release: Option<&str>, data_dir: Option<&str>, action: Option<&Li
             }
         }
         Some(LicenceAction::Activate { key }) => {
-            match activation::activate(&store, key, &public, &trial::fingerprint(), store::STORE_URL) {
-                Err(err) => (
-                    serde_json::json!({ "licensed": false, "error": err.message, "why": err.code, "detail": err.detail }),
-                    2,
-                ),
+            match activation::activate(&store, key, &public, &trial::fingerprint()) {
+                Err(err) => (serde_json::json!({ "licensed": false, "error": err }), 2),
                 Ok(_) => {
                     let got = status(&store);
                     (licence::report(&store, &got), if got.granted { 0 } else { 3 })
@@ -275,34 +266,15 @@ fn run_licence(release: Option<&str>, data_dir: Option<&str>, action: Option<&Li
             }
         }
         Some(LicenceAction::Deactivate) => {
-            match activation::deactivate(&store, licence::PRODUCT, &public, store::STORE_URL) {
-                Err(err) => (serde_json::json!({ "deactivated": false, "error": err.message, "why": err.code }), 2),
-                Ok(done) => {
-                    let mut shown = licence::report(&store, &status(&store));
-                    shown["deactivated"] = done.into();
-                    (shown, 0)
-                }
-            }
-        }
-        Some(LicenceAction::Code) => (
-            serde_json::json!({
-                "activation_code": activation::activation_code(&trial::fingerprint()),
-                "activate_page": store::activate_page(store::STORE_URL),
-                "manage_page": store::manage_page(store::STORE_URL),
-            }),
-            0,
-        ),
-        Some(LicenceAction::Refresh) => {
-            let lists = activation::refresh_revocations(&store, &public, store::STORE_URL);
-            let mut shown = serde_json::json!({ "online": lists.is_ok(), "lists_changed": lists.unwrap_or(0) });
-            if !status(&store).granted {
-                let trial = vr_trial(data_dir);
-                let ts = activation::anchor_trial(&trial, &store, &public, store::STORE_URL, chrono::Utc::now());
-                let label = licence::product_label(licence::PRODUCT);
-                shown["trial"] = ts.to_json(&label, chrono::Utc::now());
-            }
+            let done = activation::deactivate(&store, licence::PRODUCT);
+            let mut shown = licence::report(&store, &status(&store));
+            shown["deactivated"] = done.into();
             (shown, 0)
         }
+        Some(LicenceAction::Code) => (
+            serde_json::json!({ "activation_code": activation::activation_code(&trial::fingerprint()) }),
+            0,
+        ),
         Some(LicenceAction::Remove) => {
             let removed = store.remove(licence::PRODUCT);
             let mut shown = licence::report(&store, &status(&store));
