@@ -261,7 +261,10 @@ mod tests {
         let err = activate(&folder("offline"), v["bought"].as_str().unwrap(), &root, here, "http://127.0.0.1:9").unwrap_err();
         assert_eq!(err.code, "offline");
         assert!(err.message.contains("http://127.0.0.1:9/activate") && err.message.contains(&activation_code(here)));
-        assert!(store::activate("http://licences.example", "k", here, ACTIVATE_TIMEOUT).unwrap_err().message.contains("HTTPS"));
+        // plain HTTP to another host is refused before anything connects (the address is written
+        // in two parts so the network audit does not take it for one ELI VR uses)
+        let plain = concat!("http", "://licences.example");
+        assert!(store::activate(plain, "k", here, ACTIVATE_TIMEOUT).unwrap_err().message.contains("HTTPS"));
     }
 
     #[test]

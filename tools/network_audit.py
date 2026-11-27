@@ -19,9 +19,16 @@ network_tokens = re.compile(
     r'StreamPeerTCP|PacketPeerUDP|socket\.|urllib|requests\.)\b'
 )
 
-loopback_host = re.compile(r"^(?:127\.0\.0\.1|localhost|\[::1\]|::1)(?::\d+)?$", re.I)
+loopback_host = re.compile(r"^(?:127\.0\.0\.1|localhost|\[::1\]|::1)(?::(?:\d+|\{\w*\}))?$", re.I)
+
+# The one remote host ELI VR may contact: ELI's licence store, for activating a key (once per
+# computer), giving a computer's seat back, the signed list of withdrawn licences and this
+# computer's trial. Allowed only in the one file that talks to it; anywhere else it fails like any
+# other address. docs/NETWORK-POLICY.md says what is sent.
+LICENCE_STORE = {"licences.geteli.tech": "native/desktop_bridge/src/store.rs"}
 findings = []
 remote_hosts = []
+licence_store = []
 
 for path in ROOT.rglob("*"):
     if not path.is_file():
@@ -39,14 +46,20 @@ for path in ROOT.rglob("*"):
 
     for m in remote_url.finditer(text):
         host = m.group(1).lower()
-        if not loopback_host.match(host):
+        if LICENCE_STORE.get(host) == rel.replace("\\", "/"):
+            licence_store.append({"file": rel, "host": host})
+        elif not loopback_host.match(host):
             remote_hosts.append({"file": rel, "host": host, "url": m.group(0)})
 
 report = {
     "runtime_network_primitives": findings,
     "remote_runtime_urls": remote_hosts,
+    "licence_store": licence_store,
     "policy": {
         "runtime_remote_network_required": False,
+        "licence_store_only": "licences.geteli.tech: activating a key once per computer, deactivating, "
+                              "the withdrawn-licence list and the trial; sends the key and the "
+                              "computer's one-way activation code, nothing else",
         "sign_in_required": False,
         "telemetry": False,
         "analytics": False,
@@ -66,4 +79,5 @@ if remote_hosts:
     print("\nFAILED: remote URL(s) present in runtime source.", file=sys.stderr)
     sys.exit(1)
 
-print("\nPASS: no remote internet URL is present in runtime source.")
+print("\nPASS: no remote internet URL is present in runtime source, beyond the licence store in "
+      "its one file.")

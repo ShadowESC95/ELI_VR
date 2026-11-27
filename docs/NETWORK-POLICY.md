@@ -18,6 +18,23 @@ The application does not require:
 
 Normal world rendering, OpenXR operation, settings, room switching, themes, audio and local assets are offline.
 
+## The licence store: the one remote contact
+
+ELI VR contacts one host on the internet, ELI's licence store (`licences.geteli.tech`, over HTTPS),
+and only from the desktop helper (`native/desktop_bridge/src/store.rs`):
+
+- when you enter a key bought from the store, once per computer, to activate it (the store counts
+  the computer against the licence's seats), and when you choose **Deactivate this computer**;
+- at launch, when the computer is online and without waiting for it: the signed list of withdrawn
+  licences, and, during the trial, this computer's trial (so the trial is not restarted by deleting
+  its records).
+
+It sends the licence key and this computer's activation code (a one-way code made from the
+operating system's install id: nothing about you, your rooms or your desktop), and nothing else.
+An internet connection is still never required: a computer that cannot go online is activated
+from any other device at https://licences.geteli.tech/activate. `tools/network_audit.py` allows this
+host in that one file and fails on it anywhere else.
+
 ## Loopback IPC
 
 Two optional local services use loopback-only IPC:

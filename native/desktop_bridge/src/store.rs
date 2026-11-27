@@ -1,7 +1,7 @@
 //! Talking to ELI's licence store, as eli-sdk's `store` does: activating a key on this computer,
 //! giving the seat back, the signed revocation lists, and this computer's trial.
 //!
-//! HTTPS only (`http://localhost` aside, for tests). What is sent is what each call needs: the
+//! HTTPS only (plain HTTP to this computer aside, for tests). What is sent is what each call needs: the
 //! licence key and this computer's fingerprint (a one-way hash, nothing about the person), or the
 //! product and that fingerprint for the trial. Nothing else, and nothing in the background except
 //! `licence refresh`, which the app starts at launch.
