@@ -120,6 +120,12 @@ func setup(p_app: Node, registry, config) -> void:
         readouts.changed.connect(show_readouts)
         show_readouts()
 
+    var licence_button := Button.new()
+    licence_button.text = "Licence…"
+    licence_button.tooltip_text = "This computer's licence: enter a key, see its activation code, or deactivate it"
+    licence_button.pressed.connect(func(): app.show_licence())
+    root.add_child(licence_button)
+
     var exit_button := Button.new()
     exit_button.text = "Exit ELI VR"
     exit_button.pressed.connect(func(): app.request_exit())

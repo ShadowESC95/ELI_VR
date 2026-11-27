@@ -1,8 +1,10 @@
 extends RefCounted
 
 ## Whether this copy of ELI VR may run: a key of its own, or an ELI v3 key that includes it, from
-## the folder every ELI product shares. Godot can't check a key's signature, so the desktop helper
-## shipped beside the app does, and anything it can't answer counts as unlicensed.
+## the folder every ELI product shares; before a key is entered, the seven-day trial every ELI
+## product gives (ELI v3, ELI Legal, ELI Creation Station), started on first use. Godot can't check
+## a key's signature or seal a trial's record, so the desktop helper shipped beside the app does
+## (native/desktop_bridge: licence.rs, trial.rs), and anything it can't answer counts as unlicensed.
 
 const HELPER := "native/desktop_bridge/target/release/eli-vr-desktop-bridge"
 const BUY := "ko-fi.com/shadowesc95 · jaybridgeman0095@gmail.com"
@@ -36,11 +38,39 @@ static func granted(got: Dictionary) -> bool:
     return int(got.get("code", -1)) == 0 and bool(got.get("licensed", false))
 
 static func status() -> Dictionary:
-    return _ask(["licence", "--for-release", release()])
+    return _ask(["licence", "--for-release", release(), "--data-dir", OS.get_user_data_dir()])
 
-## Keep a key and check it. An ELI v3 key without ELI VR is still kept, for ELI v3.
+## Whether what the helper said is the trial, not a key.
+static func on_trial(got: Dictionary) -> bool:
+    var trial = got.get("trial", {})
+    return granted(got) and typeof(trial) == TYPE_DICTIONARY and str(trial.get("state", "")) == "active"
+
+## "ELI VR trial: 6 days left", or "" when this copy runs on a key.
+static func trial_line(got: Dictionary) -> String:
+    return str(got.get("trial", {}).get("describe", "")) if on_trial(got) else ""
+
+## Take a key in. A key bought to be activated is activated with ELI's licence store first (the
+## internet, once), and the key the store makes for this computer is kept. An ELI v3 key without
+## ELI VR is still kept, for ELI v3. On failure "reason" says why, and what to do.
 static func activate(key: String) -> Dictionary:
-    return _ask(["licence", "--for-release", release(), "activate", "--", key.strip_edges()])
+    return _ask(["licence", "--for-release", release(), "--data-dir", OS.get_user_data_dir(), "activate", "--", key.strip_edges()])
+
+## Give this computer's seat back to the licence and forget ELI VR's key, so the licence can be
+## activated on another computer.
+static func deactivate() -> Dictionary:
+    return _ask(["licence", "--for-release", release(), "--data-dir", OS.get_user_data_dir(), "deactivate"])
+
+## This computer's activation code ("activation_code"), and the store's pages for activating a
+## computer that cannot go online ("activate_page") and for releasing one ("manage_page").
+static func code() -> Dictionary:
+    return _ask(["licence", "code"])
+
+## When online: the newest revocation lists, and the trial held to the store's record of this
+## computer's. Started at launch, never waited for; the next check reads what it kept.
+static func refresh_in_background() -> void:
+    var helper := helper_path()
+    if not helper.is_empty():
+        OS.create_process(helper, PackedStringArray(["licence", "--for-release", release(), "--data-dir", OS.get_user_data_dir(), "refresh"]))
 
 static func _ask(args: PackedStringArray) -> Dictionary:
     var helper := helper_path()

@@ -275,4 +275,10 @@ in full in [LICENSE](LICENSE) and shipped in every package: a licence to ELI VR 
 an ELI v3 licence that includes it. The schedule includes VR's health and safety terms. Third-party
 components, including the Godot Engine and your OpenXR runtime, keep their own licences.
 
+Like every ELI product, an installed copy runs for seven days from its first use before a key is
+needed, and a key can be entered at any time ([docs/INSTALL.md](docs/INSTALL.md#your-licence)). A
+key bought from the store is activated once online, the first time it is entered on a computer, and
+counts that computer against the licence's seats; the control dock's **Licence…** shows the
+computer's activation code and **Deactivate this computer** (to move the licence to another).
+
 A release build asks for your key the first time it opens: see [Your licence](docs/INSTALL.md#your-licence).

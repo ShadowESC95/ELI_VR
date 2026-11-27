@@ -389,8 +389,30 @@ jobs:
           (cd dist && sha256sum ELI_VR-* > SHA256SUMS.txt && cat SHA256SUMS.txt)
           ls -la dist
 
+      # Every ELI product runs for seven days from its first use (native/desktop_bridge/src/trial.rs,
+      # eli-sdk's LocalTrial). The runner is a machine ELI VR has never run on, so the trial starts.
+      - name: On a new machine the seven-day trial starts and the AppImage opens a room
+        run: |
+          export XDG_STATE_HOME="$RUNNER_TEMP/state-trial" APPIMAGE_EXTRACT_AND_RUN=1 ELI_KEYS_DIR="$RUNNER_TEMP/no-keys"
+          LOG="$RUNNER_TEMP/trial.log"
+          timeout 180 "dist/ELI_VR-$VERSION-x86_64.AppImage" --flat --no-desktop --headless --quit-after 240 > "$LOG" 2>&1 || true
+          cat "$XDG_STATE_HOME/eli-vr-standalone/session.log" >> "$LOG" 2>/dev/null || true
+          cat "$LOG"
+          grep -q 'ELI VR trial: 7 days left' "$LOG" || {
+            echo "::error::The trial did not start on a machine ELI VR had never run on."
+            exit 1
+          }
+          grep -q 'ELI VR ready' "$LOG" || {
+            echo "::error::The AppImage did not open a room during its trial."
+            exit 1
+          }
+
+      # A trial record that fails its seal ends the trial, as eli-sdk's does: the same as one ended.
       - name: The AppImage will not open a room without a licence
         run: |
+          for folder in ~/.config/eli-keys ~/.local/share/eli-keys ~/.local/state/eli-keys; do
+            mkdir -p "$folder" && echo '{"product": "vr", "seal": "altered"}' > "$folder/.vr-trial"
+          done
           export XDG_STATE_HOME="$RUNNER_TEMP/state-unlicensed" APPIMAGE_EXTRACT_AND_RUN=1 ELI_KEYS_DIR="$RUNNER_TEMP/no-keys"
           LOG="$RUNNER_TEMP/unlicensed.log"
           timeout 180 "dist/ELI_VR-$VERSION-x86_64.AppImage" --flat --no-desktop --headless --quit-after 240 > "$LOG" 2>&1 || true

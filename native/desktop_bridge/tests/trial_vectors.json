@@ -1,0 +1,16 @@
+{
+  "about": "Produced by eli-sdk 1.2.1 itself (eli_sdk.trial.LocalTrial and eli_sdk.machine's fingerprint formula), so ELI VR's trial reads and writes the record every ELI product's trial uses.",
+  "fingerprint_inputs": ["Linux", "x86_64", "0123456789abcdef0123456789abcdef"],
+  "fingerprint": "adbd2294a7919f47fffd462dc812fc4eec828ffeb4f1c701a2fe16f14e327bee",
+  "record": {
+    "v": 1,
+    "product": "vr",
+    "machine": "adbd2294a7919f47fffd462dc812fc4eec828ffeb4f1c701a2fe16f14e327bee",
+    "reference": "TRIAL-ABCD-EF01-2345-6789",
+    "started_at": "2026-11-20T10:00:00+00:00",
+    "ends_at": "2026-11-27T10:00:00+00:00",
+    "last_seen": "2026-11-21T10:00:00+00:00"
+  },
+  "seal": "e32d7645a0e4a633fcd98dadc430dbc3d5f872c2b4033cc8ba504c86ad89be4a",
+  "sealed_text": "{\"ends_at\": \"2026-11-27T10:00:00+00:00\", \"last_seen\": \"2026-11-21T10:00:00+00:00\", \"machine\": \"adbd2294a7919f47fffd462dc812fc4eec828ffeb4f1c701a2fe16f14e327bee\", \"product\": \"vr\", \"reference\": \"TRIAL-ABCD-EF01-2345-6789\", \"seal\": \"e32d7645a0e4a633fcd98dadc430dbc3d5f872c2b4033cc8ba504c86ad89be4a\", \"started_at\": \"2026-11-20T10:00:00+00:00\", \"v\": 1}\n"
+}

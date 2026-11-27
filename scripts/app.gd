@@ -146,12 +146,18 @@ func _ready() -> void:
     print("ELI VR ready")
     print(JSON.stringify(capabilities, "\t"))
 
-## An installed copy opens its rooms only with a licence; without one it asks for a key.
+## An installed copy opens its rooms only with a licence or during its seven-day trial; without
+## either it asks for a key.
 func _licensed() -> bool:
     if not LicenceClass.required():
         return true
     var got := LicenceClass.status()
+    LicenceClass.refresh_in_background()  # newest withdrawals, the trial held to the store's
     if LicenceClass.granted(got):
+        var line := LicenceClass.trial_line(got)
+        if not line.is_empty():
+            print(line)
+            _show_trial_banner(line)
         return true
     print("ELI VR needs a licence: %s" % got.get("reason", ""))
     set_process(false)
@@ -165,6 +171,33 @@ func _licensed() -> bool:
     screen.setup(got)
     screen.licensed.connect(func(): get_tree().reload_current_scene())
     return false
+
+## The licence screen over the rooms (the control dock's "Licence…"): this computer's activation
+## code, another key, or deactivating this computer.
+func show_licence() -> void:
+    if has_node("Licence"):
+        return
+    var screen = LicenceScreenClass.new()
+    screen.name = "Licence"
+    add_child(screen)
+    screen.setup(LicenceClass.status(), true)
+    screen.licensed.connect(func(): get_tree().reload_current_scene())
+    screen.closed.connect(screen.queue_free)
+
+## For a few seconds at start, on the monitor: how long the trial has left and where to buy.
+func _show_trial_banner(line: String) -> void:
+    if DisplayServer.get_name() == "headless":
+        return
+    var layer := CanvasLayer.new()
+    layer.layer = 90
+    add_child(layer)
+    var label := Label.new()
+    label.text = "%s. Buy a licence: %s" % [line, LicenceClass.BUY]
+    label.add_theme_font_size_override("font_size", 18)
+    label.add_theme_color_override("font_color", Color("#63ddff"))
+    label.position = Vector2(24, 18)
+    layer.add_child(label)
+    get_tree().create_timer(10.0).timeout.connect(layer.queue_free)
 
 func _apply_adaptive_hardware_profile() -> void:
     if not bool(config.get_value("graphics.auto_quality", true)):

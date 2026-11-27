@@ -38,9 +38,9 @@ What has actually been tested is listed in the [README](../README.md#status). Li
 
 ## Your licence
 
-A release build opens its rooms only with a licence: an ELI VR key, or an ELI v3 key that includes ELI VR. Without one it opens a window that asks for the key; paste it and press **Activate**. The key is checked on your machine. Nothing is sent anywhere.
+A release build opens its rooms only with a licence: an ELI VR key, or an ELI v3 key that includes ELI VR. Before a key is entered it runs a **seven-day trial** from its first use, the same trial every ELI product gives (ELI v3, ELI Legal, ELI Creation Station): it says how many days are left when it starts, and deleting its record, editing it or setting the clock back does not restart it. After the trial, or without one, it opens a window that asks for the key; paste it and press **Activate**. A key bought from the store is activated once online: ELI VR sends the key and this computer's activation code (a one-way code from the operating system's install id) to ELI's licence server, which counts the computer against the licence's seats; after that it is checked on your machine. When online, ELI VR also fetches the list of withdrawn licences at launch and, during the trial, asks for this computer's trial. Nothing else is sent. To move the licence to another computer: the control dock's **Licence…** → **Deactivate this computer**. A computer with no internet: activate it from any other device at https://licences.geteli.tech/activate with the activation code that window shows (or `native/desktop_bridge/target/release/eli-vr-desktop-bridge licence code`).
 
-Keys are kept in a folder every ELI product shares, so a key already activated in ELI v3 or ELI Legal counts here, and one activated here counts there:
+Only an ELI VR key, or an ELI v3 key sold with ELI VR included, opens ELI VR; keys for other ELI products don't. Keys are kept in one folder on the computer that each ELI product reads for its own key, so an ELI v3 key with ELI VR included works here wherever it was entered:
 
 | OS | Folder |
 |---|---|
